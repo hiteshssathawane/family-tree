@@ -2,21 +2,41 @@
   "app": {
     "familyName": "The Family Tree",
     "familyNameMarathi": "आपले कुटुंब",
-    "tagline": "हमारा परिवार · Our Heritage",
+    "tagline": "आपले कुटुंब . हमारा परिवार . Our Heritage",
     "defaultLanguage": "en",
-    "supportedLanguages": ["en", "mr"]
+    "supportedLanguages": [
+      "en",
+      "mr",
+      "hi"
+    ]
   },
   "branches": [
-    { "id": "sharma", "name": "Sharma (Paternal)", "color": "#4a7c59" },
-    { "id": "kulkarni", "name": "Kulkarni (Maternal)", "color": "#c8963e" },
-    { "id": "nair", "name": "Nair (In-laws)", "color": "#5c3d1e" }
+    {
+      "id": "SATHAWANE",
+      "name": "Sathawane (Paternal)",
+      "color": "#4a7c59"
+    },
+    {
+      "id": "WAGHMARE",
+      "name": "Waghmare (Maternal)",
+      "color": "#c8963e"
+    },
+    {
+      "id": "BIRADAR",
+      "name": "Biradar (In-laws)",
+      "color": "#5c3d1e"
+    }
   ],
   "media": {
     "provider": "cloudflare-r2",
     "r2PublicUrl": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com/family-tree",
     "uploadPresetUrl": "REPLACE_WITH_CLOUDFLARE_R2_PUBLIC_BUCKET_URL",
     "maxPhotoSizeMB": 5,
-    "allowedTypes": ["image/jpeg", "image/png", "image/webp"]
+    "allowedTypes": [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ]
   },
   "github": {
     "owner": "REPLACE_WITH_YOUR_GITHUB_USERNAME",
