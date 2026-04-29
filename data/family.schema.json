@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Family Tree Data Schema",
+  "type": "object",
+  "required": ["meta", "persons", "relationships", "events", "media"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["familyName", "version", "rootPersonId"],
+      "properties": {
+        "familyName": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "rootPersonId": { "type": "string", "pattern": "^P\\d+$" },
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "hideLivingContactInfo": { "type": "boolean" },
+            "hideLivingDOBYear": { "type": "boolean" },
+            "publicViewAllowed": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "persons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "firstName", "lastName", "gender", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^P\\d+$" },
+          "firstName": { "type": "string", "minLength": 1 },
+          "lastName": { "type": "string", "minLength": 1 },
+          "gender": { "enum": ["M", "F", "X"] },
+          "status": { "enum": ["living", "deceased", "unknown"] },
+          "birthDate": { "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$" },
+          "deathDate": { "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$" },
+          "private": { "type": "boolean" }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^R\\d+$" },
+          "type": { "enum": ["marriage", "parent-child", "adoption", "step-parent", "foster"] }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "title"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^E\\d+$" },
+          "type": { "enum": ["birth", "death", "marriage", "divorce", "education", "career", "migration", "medical", "award", "other"] },
+          "date": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "media": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "filename"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^M\\d+$" },
+          "type": { "enum": ["photo", "video", "document", "audio"] },
+          "filename": { "type": "string" }
+        }
+      }
+    }
+  }
+}

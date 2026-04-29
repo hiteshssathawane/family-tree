@@ -1,0 +1,24 @@
+{
+  "projectName": "The Family Tree",
+  "description": "Zero-cost static family genealogy web application",
+  "model": "claude-sonnet-4-20250514",
+  "context": {
+    "files": [
+      "CLAUDE.md",
+      "data/family.json",
+      "data/auth.json",
+      "data/config.json",
+      "data/i18n/en.json",
+      "package.json"
+    ],
+    "excludePatterns": [
+      "node_modules/**",
+      "dist/**",
+      ".git/**",
+      "media/**/*.jpg",
+      "media/**/*.png",
+      "media/**/*.mp4"
+    ]
+  },
+  "systemPrompt": "You are working on 'The Family Tree' — a zero-cost, static HTML genealogy application. Read CLAUDE.md in full before making any change. The data is in data/family.json. All features must work without a server or backend. Never add paid services or APIs requiring keys. Privacy is paramount: living persons' contact info must be filtered by role. Always run node scripts/validate.js after modifying family.json. Design tokens are in CLAUDE.md — use them consistently. Current phase: check CLAUDE.md Build Phases section."
+}

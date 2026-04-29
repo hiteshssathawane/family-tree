@@ -1,0 +1,19 @@
+id,firstName,middleName,lastName,maidenName,gender,status,birthDate,birthPlace,deathDate,deathPlace,occupation,religion,education,biography
+P010,Suresh,,Nair,,M,living,20081973,"Kochi, Kerala, India",,,,Architect,Hindu,B.Arch CEPT Ahmedabad,Suresh Nair is an architect based in Kochi.
+P011,Kavya,,Nair,,F,living,03042005,"Kochi, Kerala, India",,,,Student,Hindu,High School,Daughter of Meera and Suresh Nair.
+
+# INSTRUCTIONS FOR FAMILY MEMBERS
+# =================================
+# Fill in one row per person. Keep the commas — even if a field is empty.
+#
+# MANDATORY fields (must fill): id, firstName, lastName, gender, status
+# OPTIONAL fields: everything else — leave blank if unknown
+#
+# id:        Must be unique. Continue the numbering: P012, P013, P014...
+# gender:    M (Male), F (Female), or X (Other)
+# status:    living  OR  deceased
+# birthDate: DDMMYYYY format — e.g. 04111972 for 4 Nov 1972
+# deathDate: DDMMYYYY — only for deceased members
+#
+# Save as CSV (not .xlsx) and send to your family administrator.
+# They will import it via the Admin panel or run: node scripts/csv-import.js your-file.csv

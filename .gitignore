@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+*.pem
+*.key
+# Never commit the family password
+staticrypt-password.txt
+.DS_Store
+*.log
+
+# vendor/ is intentionally committed — local copies of libraries
+# so the app works without any CDN or internet dependency

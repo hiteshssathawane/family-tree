@@ -1,0 +1,29 @@
+{
+  "name": "family-tree",
+  "version": "1.0.0",
+  "description": "The Family Tree — zero-cost static genealogy web app",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.js",
+    "setup:auth": "node scripts/setup-auth.js",
+    "gedcom:in": "node scripts/gedcom-import.js",
+    "gedcom:out": "node scripts/gedcom-export.js",
+    "csv:import": "node scripts/csv-import.js",
+    "encrypt": "node scripts/encrypt.js",
+    "prebuild": "npm run validate"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "staticrypt": "^3.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "genealogy",
+    "family-tree",
+    "static-site",
+    "zero-cost"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,156 @@
+{
+  "app": {
+    "name": "The Family Tree",
+    "tagline": "Our Heritage"
+  },
+  "login": {
+    "title": "The Family Tree",
+    "subtitle": "Our Heritage",
+    "step1": {
+      "heading": "Family password",
+      "placeholder": "e.g. Shankar15071952Vijay",
+      "hint": "No spaces. Suggested format: FirstnameOfElderDOBFriendName. Example: Shankar15071952Vijay (Elder's name + their DOB + a friend only family knows)",
+      "button": "Enter the family home"
+    },
+    "step2": {
+      "heading": "Who are you?",
+      "subtitle": "Enter your details to identify yourself",
+      "namePlaceholder": "Your full name (e.g. Vikram Sharma)",
+      "dobPlaceholder": "Date of birth — DDMMYYYY (e.g. 04111972)",
+      "hint": "Like your PAN card password — your name + birthday",
+      "button": "Confirm identity",
+      "guestLink": "Continue as guest (view ancestors only)"
+    },
+    "step3": {
+      "heading": "One-time code",
+      "subtitle": "Open Google Authenticator → Family Tree",
+      "hint": "Code changes every 30 seconds · No internet needed",
+      "adminOnly": "Only required for Admin and Contributors",
+      "button": "Verify and enter"
+    }
+  },
+  "nav": {
+    "tree": "Tree",
+    "calendar": "Calendar",
+    "map": "Map",
+    "admin": "Admin",
+    "search": "Search family members…"
+  },
+  "tree": {
+    "viewModes": {
+      "full": "Full tree",
+      "ancestorFour": "4 generations up",
+      "descendantFour": "4 generations down",
+      "hourglass": "Hourglass (both)",
+      "compact": "Compact (2 gen)"
+    },
+    "allMembers": "All members",
+    "controls": {
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit to screen",
+      "print": "Print tree"
+    }
+  },
+  "profile": {
+    "tabs": {
+      "timeline": "Timeline",
+      "bio": "Bio",
+      "family": "Family"
+    },
+    "fields": {
+      "born": "Born",
+      "birthplace": "Birthplace",
+      "died": "Died",
+      "deathPlace": "Death place",
+      "occupation": "Occupation",
+      "education": "Education",
+      "religion": "Religion",
+      "maidenName": "Maiden name"
+    },
+    "relationships": {
+      "spouse": "Spouse / Partner",
+      "parents": "Parents",
+      "children": "Children",
+      "siblings": "Siblings"
+    },
+    "noEvents": "No events recorded yet."
+  },
+  "calendar": {
+    "title": "Family calendar",
+    "subtitle": "Upcoming occasions · Next 365 days",
+    "filters": {
+      "allBranches": "All branches",
+      "birthdays": "Birthdays",
+      "anniversaries": "Anniversaries",
+      "deathAnniversaries": "Death anniversaries",
+      "reunions": "Reunions"
+    },
+    "daysAway": "days away",
+    "today": "Today!",
+    "shareWhatsApp": "Share via WhatsApp",
+    "downloadIcs": "Download .ics",
+    "eventTypes": {
+      "birth": "Birthday",
+      "marriage": "Anniversary",
+      "death": "Death anniversary",
+      "reunion": "Reunion"
+    }
+  },
+  "admin": {
+    "title": "Admin panel",
+    "stats": {
+      "members": "Members",
+      "events": "Events",
+      "photos": "Photos",
+      "pendingPRs": "Pending PRs"
+    },
+    "addMember": {
+      "title": "Add member",
+      "subtitle": "Mandatory fields only — fill the rest later",
+      "firstName": "First name *",
+      "lastName": "Last name *",
+      "dob": "Date of birth (DDMMYYYY) *",
+      "roles": { "viewer": "Viewer", "contributor": "Contributor", "admin": "Admin" },
+      "branch": "Branch",
+      "photoUpload": "Drop profile photo here or tap to select",
+      "photoHint": "Uploaded to Cloudflare R2 · max 5MB",
+      "submit": "Add to tree → GitHub PR"
+    },
+    "bulkImport": {
+      "title": "Bulk import (CSV)",
+      "subtitle": "Import multiple family members at once",
+      "downloadTemplate": "Download CSV template",
+      "uploadCSV": "Upload filled CSV",
+      "pasteCSV": "Or paste CSV data here",
+      "preview": "Preview",
+      "confirm": "Import to family tree",
+      "instructions": "Fill in the template in Excel or Google Sheets. Mandatory columns: id, firstName, lastName, gender, status. All others optional."
+    },
+    "totp": {
+      "title": "TOTP setup",
+      "subtitle": "Generate a QR code for a family member to scan once",
+      "namePlaceholder": "Member name",
+      "dobPlaceholder": "Date of birth",
+      "generate": "Generate QR code",
+      "instructions": "Send QR screenshot via WhatsApp. Member scans once in Google Authenticator."
+    },
+    "importExport": {
+      "title": "Import / export",
+      "importCsv": "Import CSV",
+      "downloadJson": "Download family.json",
+      "exportGedcom": "Export GEDCOM (.ged)"
+    }
+  },
+  "security": {
+    "printBlocked": "This content cannot be printed.",
+    "screenshotWarning": "Screenshot detected — this action has been logged.",
+    "watermarkText": "· Family Tree"
+  },
+  "errors": {
+    "wrongPassword": "Incorrect family password. Please try again.",
+    "identityNotFound": "Name and date of birth not found. Check spelling or continue as guest.",
+    "wrongTotp": "Incorrect code. Please check Google Authenticator and try again.",
+    "dataLoadFailed": "Could not load family data. Please refresh."
+  }
+}

@@ -1,0 +1,36 @@
+[hooks]
+
+[[hooks.pre_tool_use]]
+matcher = "Write|Edit|Bash"
+description = "Validate family.json before any data modification"
+command = """
+if echo "$TOOL_INPUT" | grep -q "family.json"; then
+  echo "🔍 Validating family.json..."
+  node scripts/validate.js || { echo "❌ Validation failed — fix errors first"; exit 1; }
+fi
+"""
+
+[[hooks.post_tool_use]]
+matcher = "Write|Edit"
+description = "Re-validate after data changes"
+command = """
+if echo "$TOOL_INPUT" | grep -q "data/family.json"; then
+  echo "🔍 Re-validating after edit..."
+  node scripts/validate.js
+fi
+"""
+
+[[hooks.pre_bash]]
+matcher = "git commit"
+description = "Always validate before committing"
+command = "node scripts/validate.js"
+
+[[hooks.pre_tool_use]]
+matcher = "Write|Edit"
+description = "Block secrets and passwords from being written to repo files"
+command = """
+if echo "$TOOL_INPUT" | grep -qi "FAMILY_PASSWORD\|password.*=.*[a-zA-Z0-9]" && echo "$TOOL_INPUT" | grep -qv "placeholder\|hint\|example\|YOUR_PASSWORD"; then
+  echo "🚫 BLOCKED: Do not commit passwords. Use GitHub Secrets or local .env"
+  exit 1
+fi
+"""

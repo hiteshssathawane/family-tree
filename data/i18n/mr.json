@@ -1,0 +1,128 @@
+{
+  "app": {
+    "name": "आपले कुटुंब",
+    "tagline": "आपली परंपरा"
+  },
+  "login": {
+    "title": "आपले कुटुंब",
+    "subtitle": "आपली परंपरा",
+    "step1": {
+      "heading": "कुटुंबाचा पासवर्ड",
+      "placeholder": "उदा. Shankar15071952Vijay",
+      "hint": "कोणतेही स्पेस नकोत. सूचित स्वरूप: वडिलांचे नाव + त्यांची जन्मतारीख + कुटुंबाच्या मैत्रीचे नाव. उदाहरण: Shankar15071952Vijay",
+      "button": "कुटुंबात प्रवेश करा"
+    },
+    "step2": {
+      "heading": "तुम्ही कोण आहात?",
+      "subtitle": "ओळख पटवण्यासाठी माहिती द्या",
+      "namePlaceholder": "पूर्ण नाव (उदा. विक्रम शर्मा)",
+      "dobPlaceholder": "जन्मतारीख — DDMMYYYY (उदा. 04111972)",
+      "hint": "PAN कार्डसारखे — तुमचे नाव + जन्मतारीख",
+      "button": "ओळख निश्चित करा",
+      "guestLink": "पाहुणा म्हणून पुढे जा (केवळ पूर्वज पाहा)"
+    },
+    "step3": {
+      "heading": "एक-वेळचा कोड",
+      "subtitle": "Google Authenticator उघडा → Family Tree",
+      "hint": "दर ३० सेकंदात बदलतो · इंटरनेट लागत नाही",
+      "adminOnly": "केवळ Admin आणि Contributor साठी आवश्यक",
+      "button": "प्रवेश करा"
+    }
+  },
+  "nav": {
+    "tree": "वंशवृक्ष",
+    "calendar": "दिनदर्शिका",
+    "map": "नकाशा",
+    "admin": "व्यवस्थापन",
+    "search": "कुटुंब सदस्य शोधा…"
+  },
+  "tree": {
+    "viewModes": {
+      "full": "संपूर्ण वंशवृक्ष",
+      "ancestorFour": "४ पिढ्या वरती",
+      "descendantFour": "४ पिढ्या खाली",
+      "hourglass": "दोन्ही बाजूंनी",
+      "compact": "संक्षिप्त (२ पिढ्या)"
+    },
+    "allMembers": "सर्व सदस्य",
+    "controls": {
+      "zoomIn": "मोठे करा",
+      "zoomOut": "लहान करा",
+      "fit": "स्क्रीनवर बसवा",
+      "print": "छापा"
+    }
+  },
+  "profile": {
+    "tabs": {
+      "timeline": "टाइमलाइन",
+      "bio": "माहिती",
+      "family": "कुटुंब"
+    },
+    "fields": {
+      "born": "जन्म",
+      "birthplace": "जन्मस्थान",
+      "died": "निधन",
+      "deathPlace": "निधनस्थान",
+      "occupation": "व्यवसाय",
+      "education": "शिक्षण",
+      "religion": "धर्म",
+      "maidenName": "माहेरचे आडनाव"
+    },
+    "relationships": {
+      "spouse": "जोडीदार",
+      "parents": "आई-वडील",
+      "children": "मुले",
+      "siblings": "भाऊ-बहीण"
+    },
+    "noEvents": "अद्याप कोणतेही प्रसंग नोंदवले नाहीत."
+  },
+  "calendar": {
+    "title": "कुटुंब दिनदर्शिका",
+    "subtitle": "येणारे प्रसंग · पुढील ३६५ दिवस",
+    "filters": {
+      "allBranches": "सर्व शाखा",
+      "birthdays": "वाढदिवस",
+      "anniversaries": "लग्नवर्धापनदिन",
+      "deathAnniversaries": "पुण्यतिथी",
+      "reunions": "कुटुंब मेळावा"
+    },
+    "daysAway": "दिवस बाकी",
+    "today": "आजच!",
+    "shareWhatsApp": "WhatsApp वर शेअर करा",
+    "downloadIcs": ".ics डाउनलोड करा",
+    "eventTypes": {
+      "birth": "वाढदिवस",
+      "marriage": "लग्नवर्धापनदिन",
+      "death": "पुण्यतिथी",
+      "reunion": "कुटुंब मेळावा"
+    }
+  },
+  "admin": {
+    "title": "व्यवस्थापन",
+    "addMember": {
+      "title": "सदस्य जोडा",
+      "subtitle": "केवळ आवश्यक माहिती — बाकी नंतर भरता येईल",
+      "firstName": "पहिले नाव *",
+      "lastName": "आडनाव *",
+      "dob": "जन्मतारीख (DDMMYYYY) *",
+      "submit": "वंशवृक्षात जोडा → GitHub PR"
+    },
+    "bulkImport": {
+      "title": "एकत्र आयात (CSV)",
+      "subtitle": "एकाच वेळी अनेक सदस्य आयात करा",
+      "downloadTemplate": "CSV नमुना डाउनलोड करा",
+      "uploadCSV": "भरलेला CSV अपलोड करा",
+      "confirm": "वंशवृक्षात आयात करा"
+    }
+  },
+  "security": {
+    "printBlocked": "हे पान छापता येत नाही.",
+    "screenshotWarning": "स्क्रीनशॉट नोंदवला गेला."
+  },
+  "errors": {
+    "wrongPassword": "चुकीचा पासवर्ड. पुन्हा प्रयत्न करा.",
+    "identityNotFound": "नाव आणि जन्मतारीख सापडली नाही.",
+    "wrongTotp": "चुकीचा कोड. Google Authenticator तपासा.",
+    "dataLoadFailed": "डेटा लोड करणे शक्य झाले नाही. पुन्हा प्रयत्न करा."
+  }
+}
