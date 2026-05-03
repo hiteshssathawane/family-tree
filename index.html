@@ -236,9 +236,18 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
 .occ-date{font-size:10px;color:var(--muted);margin-bottom:2px;}
 .occ-name{font-size:14px;font-weight:700;}
 .occ-who{font-size:12px;color:var(--bark);}
-.days-away{margin-left:auto;text-align:right;}
+.days-away{margin-left:auto;text-align:right;margin-right:8px;}
 .days-away .num{font-size:22px;font-weight:700;color:var(--leaf);}
 .days-away .lbl{font-size:10px;color:var(--muted);}
+.type-badge{font-size:10px;padding:2px 6px;border-radius:8px;color:white;font-weight:600;}
+.type-birthday{background:#ff6b6b;}
+.type-anniversary{background:var(--family-gold);}
+.type-remembrance{background:#6c7b7f;}
+.type-event{background:var(--family-leaf);}
+.card-actions{display:flex;flex-direction:column;gap:4px;}
+.wa-mini-btn,.person-btn{width:32px;height:28px;border:0.5px solid var(--border);background:white;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.wa-mini-btn:hover{background:#25D366;color:white;}
+.person-btn:hover{background:var(--family-leaf);color:white;}
 
 /* ── Map view ── */
 #map-view{display:none;flex:1;}
@@ -636,7 +645,13 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
       <button class="ical-btn" onclick="exportICal()" data-i18n="calendar.downloadIcs">📥 Download .ics</button>
     </div>
     <div class="filter-row" id="cal-filters">
-      <button class="filter-chip active" data-filter="all" onclick="filterCalendar('all')" data-i18n="calendar.filters.allBranches">All branches</button>
+      <button class="filter-chip active" data-filter="all" onclick="filterCalendar('all')">All</button>
+      <button class="filter-chip" data-filter="birthdays" onclick="filterCalendar('birthdays')">🎂 Birthdays</button>
+      <button class="filter-chip" data-filter="anniversaries" onclick="filterCalendar('anniversaries')">💍 Anniversaries</button>
+      <button class="filter-chip" data-filter="remembrance" onclick="filterCalendar('remembrance')">🙏 Remembrance</button>
+    </div>
+    <div class="filter-row" id="branch-filters" style="margin-top:8px;">
+      <span style="font-size:11px;color:var(--muted);margin-right:8px;">By family:</span>
     </div>
     <div id="occasions-list"></div>
   </div>
@@ -721,6 +736,25 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
         <button class="admin-btn outline" onclick="exportJSON()">📥 Download family.json</button>
         <button class="admin-btn gold" onclick="exportGEDCOM()">Export GEDCOM (.ged)</button>
         <div style="font-size:11px;color:var(--muted);margin-top:10px;">GEDCOM compatible with Ancestry, MyHeritage, FamilySearch</div>
+      </div>
+
+      <!-- Event Creator (Admin/Contributor only) -->
+      <div class="admin-card" id="event-creator-card" style="display:none;">
+        <h3>📅 Add Family Event</h3>
+        <p>Create reunions, milestones, or other family occasions</p>
+        <input class="admin-inp" id="event-title" placeholder="Event title *"/>
+        <input class="admin-inp" id="event-date" type="date" placeholder="Event date *"/>
+        <select class="admin-select" id="event-type">
+          <option value="reunion">🏠 Family Reunion</option>
+          <option value="milestone">🎯 Milestone</option>
+          <option value="other">📌 Other</option>
+        </select>
+        <textarea class="admin-inp" id="event-description" placeholder="Description (optional)" rows="3" style="resize:vertical;height:auto;"></textarea>
+        <select class="admin-select" id="event-person" multiple>
+          <option value="">Select linked family members (optional)</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin:6px 0;">Hold Ctrl/Cmd to select multiple people</div>
+        <button class="admin-btn" onclick="createFamilyEvent()">Add Event</button>
       </div>
     </div>
   </div>
@@ -979,12 +1013,19 @@ function startTOTPTimer() {
 function buildApp() {
   populateBranchSelect();
   populateRelationshipDropdown();
+  populateEventPersonDropdown();
   buildMemberList();
   buildCalendarFilters();
   renderTree();
   setupSearch();
   setupTreeKeyboardShortcuts();
   setupMobileTree();
+
+  // Show/hide Event Creator based on role
+  const eventCreatorCard = document.getElementById('event-creator-card');
+  if (eventCreatorCard) {
+    eventCreatorCard.style.display = (currentRole === 'admin' || currentRole === 'contributor') ? 'block' : 'none';
+  }
 
   // Hide map nav when mapView is disabled in config
   if (!config.features?.mapView) {
@@ -2107,23 +2148,32 @@ window.showView = function(view) {
 
 // ── Calendar ───────────────────────────────────────────────
 function buildCalendarFilters() {
-  const row = document.getElementById('cal-filters');
-  const branches = config.branches || [];
-  branches.forEach(b => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-chip';
-    btn.textContent = b.name;
-    btn.dataset.filter = b.id;
-    btn.onclick = () => filterCalendar(b.id);
-    row.appendChild(btn);
-  });
-  ['Birthdays','Anniversaries','Death anniversaries','Reunions'].forEach(type => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-chip';
-    btn.textContent = type;
-    btn.dataset.filter = type.toLowerCase().replace(/\s+/g,'-');
-    row.appendChild(btn);
-  });
+  // Branch filters go in separate row
+  const branchRow = document.getElementById('branch-filters');
+  if (branchRow && familyData) {
+    const branches = config.branches || [];
+    branches.forEach(b => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-chip';
+      btn.textContent = b.name;
+      btn.dataset.filter = b.id;
+      btn.onclick = () => filterCalendar(b.id);
+      branchRow.appendChild(btn);
+    });
+
+    // Also get unique surnames from family data
+    const uniqueLastNames = [...new Set(familyData.persons.map(p => p.lastName))];
+    uniqueLastNames.forEach(surname => {
+      if (!branches.some(b => b.name.includes(surname))) {
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip';
+        btn.textContent = `${surname} family`;
+        btn.dataset.filter = getBranchFromLastName(surname);
+        btn.onclick = () => filterCalendar(getBranchFromLastName(surname));
+        branchRow.appendChild(btn);
+      }
+    });
+  }
 }
 
 window.filterCalendar = function(filter) {
@@ -2135,50 +2185,224 @@ window.filterCalendar = function(filter) {
 
 function buildCalendar(filter = 'all') {
   const occasions = [];
-  const persons = filterByRole(familyData.persons).filter(p => p.status === 'living');
-  persons.forEach(p => {
-    if (p.birthDate) occasions.push({ type:'birth', icon:'🎂', name:`${p.firstName} ${p.lastName}`, date:p.birthDate, daysAway: daysUntil(p.birthDate), personId:p.id, branch:p.tags?.[0]||'sharma' });
+  const allPersons = filterByRole(familyData.persons);
+
+  // Add birthdays (living people only)
+  allPersons.filter(p => p.status === 'living' && p.birthDate).forEach(p => {
+    occasions.push({
+      type: 'birthday',
+      icon: '🎂',
+      name: `${p.firstName} ${p.lastName}`,
+      date: p.birthDate,
+      daysAway: daysUntil(p.birthDate),
+      personId: p.id,
+      branch: getBranchFromLastName(p.lastName)
+    });
   });
-  familyData.relationships.filter(r => r.type==='marriage' && r.startDate && !r.endDate).forEach(r => {
+
+  // Add marriage anniversaries
+  familyData.relationships.filter(r => r.type === 'marriage' && r.startDate && !r.endDate).forEach(r => {
     const p1 = familyData.persons.find(p => p.id === r.person1Id);
     const p2 = familyData.persons.find(p => p.id === r.person2Id);
-    if (p1 && p2) occasions.push({ type:'marriage', icon:'💍', name:`${p1.firstName} & ${p2.firstName}`, date:r.startDate, daysAway: daysUntil(r.startDate), personId:r.person1Id, branch:'all' });
+    if (p1 && p2) {
+      occasions.push({
+        type: 'anniversary',
+        icon: '💍',
+        name: `${p1.firstName} & ${p2.firstName}`,
+        date: r.startDate,
+        daysAway: daysUntil(r.startDate),
+        personId: r.person1Id,
+        branch: 'all'
+      });
+    }
   });
+
+  // Add death anniversaries (remembrance)
+  allPersons.filter(p => p.status === 'deceased' && p.deathDate).forEach(p => {
+    occasions.push({
+      type: 'remembrance',
+      icon: '🙏',
+      name: `${p.firstName} ${p.lastName}`,
+      date: p.deathDate,
+      daysAway: daysUntil(p.deathDate),
+      personId: p.id,
+      branch: getBranchFromLastName(p.lastName)
+    });
+  });
+
+  // Add custom events
+  if (familyData.events) {
+    familyData.events.filter(e => e.type === 'reunion' || e.type === 'milestone' || e.type === 'other').forEach(e => {
+      occasions.push({
+        type: 'event',
+        icon: getEventIcon(e.type),
+        name: e.title,
+        date: e.date,
+        daysAway: daysUntil(e.date),
+        personId: e.personId,
+        branch: 'all'
+      });
+    });
+  }
   familyData.persons.filter(p => p.status==='deceased' && p.deathDate).forEach(p => {
     occasions.push({ type:'death', icon:'🕊️', name:`${p.firstName} ${p.lastName}`, date:p.deathDate, daysAway: daysUntil(p.deathDate), personId:p.id, branch:'sharma' });
   });
+  // Sort by days away, today's events first
   occasions.sort((a,b) => a.daysAway - b.daysAway);
-  const filtered = filter === 'all' ? occasions : occasions.filter(o => o.branch === filter || o.type === filter.replace('-',' ').replace(/s$/,''));
-  document.getElementById('occasions-list').innerHTML = filtered.slice(0,15).map(o => `
-    <div class="occ-card" onclick="selectPerson('${o.personId}')">
-      <div class="occ-icon">${o.icon}</div>
-      <div>
-        <div class="occ-date">${formatDate(o.date)}</div>
-        <div class="occ-name">${o.name}</div>
-        <div class="occ-who">${cap(o.type)}</div>
-      </div>
-      <div class="days-away">
-        <div class="num">${o.daysAway === 0 ? '🎉' : o.daysAway}</div>
-        <div class="lbl">${o.daysAway === 0 ? 'Today!' : 'days away'}</div>
-      </div>
-    </div>`).join('');
+
+  // Apply filters
+  let filtered = occasions;
+  if (filter === 'birthdays') filtered = occasions.filter(o => o.type === 'birthday');
+  else if (filter === 'anniversaries') filtered = occasions.filter(o => o.type === 'anniversary');
+  else if (filter === 'remembrance') filtered = occasions.filter(o => o.type === 'remembrance');
+  else if (filter === 'events') filtered = occasions.filter(o => o.type === 'event');
+  else if (filter !== 'all') filtered = occasions.filter(o => o.branch === filter);
+
+  // Render occasion cards (limit to next 50 events)
+  document.getElementById('occasions-list').innerHTML = filtered.slice(0, 50).map(o => {
+    const whatsappMsg = generateWhatsAppMessage(o);
+    return `
+      <div class="occ-card">
+        <div class="occ-icon">${o.icon}</div>
+        <div style="flex:1;">
+          <div class="occ-date">${formatDate(o.date)}</div>
+          <div class="occ-name">${o.name}</div>
+          <div class="occ-who">
+            <span class="type-badge type-${o.type}">${getTypeBadge(o.type)}</span>
+          </div>
+        </div>
+        <div class="days-away">
+          <div class="num">${o.daysAway === 0 ? '🎉' : o.daysAway > 365 ? '1y+' : o.daysAway}</div>
+          <div class="lbl">${o.daysAway === 0 ? 'Today!' : o.daysAway === 1 ? 'Tomorrow' : 'days away'}</div>
+        </div>
+        <div class="card-actions">
+          <button class="wa-mini-btn" onclick="shareOccasionWhatsApp('${whatsappMsg.replace(/'/g, '\\\'')}')" title="Share on WhatsApp">
+            📱
+          </button>
+          <button class="person-btn" onclick="selectPerson('${o.personId}')" title="View profile">
+            👤
+          </button>
+        </div>
+      </div>`;
+  }).join('') || '<div style="text-align:center;color:var(--muted);padding:40px;">No upcoming occasions in this category</div>';
 }
 
+function getBranchFromLastName(lastName) {
+  const branchMap = {
+    'Sathawane': 'SATHAWANE',
+    'Waghmare': 'WAGHMARE',
+    'Biradar': 'BIRADAR'
+  };
+  return branchMap[lastName] || 'SATHAWANE';
+}
+
+function getTypeBadge(type) {
+  const badges = {
+    'birthday': 'Birthday',
+    'anniversary': 'Anniversary',
+    'remembrance': 'Remembrance',
+    'event': 'Family Event'
+  };
+  return badges[type] || type;
+}
+
+function generateWhatsAppMessage(occasion) {
+  const familyName = config.app.familyName || 'The Sathawane Family';
+  const date = formatDate(occasion.date);
+
+  switch (occasion.type) {
+    case 'birthday':
+      return `🎂 Wishing ${occasion.name} a happy birthday on ${date}! — ${familyName}`;
+    case 'anniversary':
+      return `💍 Congratulating ${occasion.name} on their wedding anniversary on ${date}! — ${familyName}`;
+    case 'remembrance':
+      return `🙏 Remembering ${occasion.name} on their death anniversary (${date}). Always in our hearts. — ${familyName}`;
+    default:
+      return `📅 Family event: ${occasion.name} on ${date} — ${familyName}`;
+  }
+}
+
+// ── WhatsApp sharing functions ────────────────────────────
 window.shareWhatsApp = function() {
   const url = encodeURIComponent(window.location.href);
-  const msg = encodeURIComponent(`Check out our family calendar on The Family Tree: `);
+  const familyName = config.app.familyName || 'The Family Tree';
+  const msg = encodeURIComponent(`📅 Check out our family calendar on ${familyName}: `);
   window.open(`https://wa.me/?text=${msg}${url}`, '_blank');
 };
 
+window.shareOccasionWhatsApp = function(message) {
+  const encodedMsg = encodeURIComponent(message);
+  window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
+};
+
 window.exportICal = function() {
-  let ical = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//The Family Tree//EN\n';
-  familyData.persons.filter(p => p.birthDate && p.status==='living').forEach(p => {
-    const [y,m,d] = (p.birthDate+'-01-01').split('-');
-    ical += `BEGIN:VEVENT\nSUMMARY:🎂 ${p.firstName} ${p.lastName}'s Birthday\nDTSTART;VALUE=DATE:${y}${(m||'01').padStart(2,'0')}${(d||'01').padStart(2,'0')}\nRRULE:FREQ=YEARLY\nEND:VEVENT\n`;
+  const familyName = config.app.familyName || 'The Family Tree';
+  let ical = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//${familyName}//NONSGML Family Calendar//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n`;
+
+  // Add birthdays (living people only)
+  familyData.persons.filter(p => p.birthDate && p.status === 'living').forEach(p => {
+    const [y, m, d] = (p.birthDate + '-01-01').split('-');
+    const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
+    ical += `BEGIN:VEVENT\n`;
+    ical += `UID:birthday-${p.id}@family-tree\n`;
+    ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
+    ical += `SUMMARY:🎂 ${p.firstName} ${p.lastName}'s Birthday\n`;
+    ical += `RRULE:FREQ=YEARLY\n`;
+    ical += `DESCRIPTION:Birthday celebration for ${p.firstName} ${p.lastName}\n`;
+    ical += `CATEGORIES:Birthday,Family\n`;
+    ical += `END:VEVENT\n`;
   });
+
+  // Add marriage anniversaries
+  familyData.relationships.filter(r => r.type === 'marriage' && r.startDate && !r.endDate).forEach(r => {
+    const p1 = familyData.persons.find(p => p.id === r.person1Id);
+    const p2 = familyData.persons.find(p => p.id === r.person2Id);
+    if (p1 && p2) {
+      const [y, m, d] = (r.startDate + '-01-01').split('-');
+      const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
+      ical += `BEGIN:VEVENT\n`;
+      ical += `UID:anniversary-${r.id}@family-tree\n`;
+      ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
+      ical += `SUMMARY:💍 ${p1.firstName} & ${p2.firstName} Anniversary\n`;
+      ical += `RRULE:FREQ=YEARLY\n`;
+      ical += `DESCRIPTION:Wedding anniversary of ${p1.firstName} ${p1.lastName} and ${p2.firstName} ${p2.lastName}\n`;
+      ical += `CATEGORIES:Anniversary,Family\n`;
+      ical += `END:VEVENT\n`;
+    }
+  });
+
+  // Add death anniversaries (remembrance)
+  familyData.persons.filter(p => p.deathDate && p.status === 'deceased').forEach(p => {
+    const [y, m, d] = (p.deathDate + '-01-01').split('-');
+    const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
+    ical += `BEGIN:VEVENT\n`;
+    ical += `UID:remembrance-${p.id}@family-tree\n`;
+    ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
+    ical += `SUMMARY:🙏 Remembering ${p.firstName} ${p.lastName}\n`;
+    ical += `RRULE:FREQ=YEARLY\n`;
+    ical += `DESCRIPTION:Death anniversary remembrance for ${p.firstName} ${p.lastName}\n`;
+    ical += `CATEGORIES:Remembrance,Family\n`;
+    ical += `END:VEVENT\n`;
+  });
+
+  // Add custom family events
+  if (familyData.events) {
+    familyData.events.filter(e => e.date && (e.type === 'reunion' || e.type === 'milestone' || e.type === 'other')).forEach(e => {
+      const [y, m, d] = (e.date + '-01-01').split('-');
+      const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
+      ical += `BEGIN:VEVENT\n`;
+      ical += `UID:event-${e.id}@family-tree\n`;
+      ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
+      ical += `SUMMARY:📅 ${e.title}\n`;
+      if (e.description) ical += `DESCRIPTION:${e.description}\n`;
+      ical += `CATEGORIES:Family Event\n`;
+      ical += `END:VEVENT\n`;
+    });
+  }
+
   ical += 'END:VCALENDAR';
-  const blob = new Blob([ical], {type:'text/calendar'});
-  dlBlob(blob, 'family-birthdays.ics');
+  const blob = new Blob([ical], { type: 'text/calendar' });
+  dlBlob(blob, `${familyName.replace(/\s+/g, '-').toLowerCase()}-calendar.ics`);
 };
 
 // ── Map ────────────────────────────────────────────────────
@@ -2324,6 +2548,102 @@ function populateRelationshipDropdown() {
   ).join('');
 
   select.innerHTML = `<option value="">Select relationship to existing member *</option>${options}`;
+}
+
+function populateEventPersonDropdown() {
+  const select = document.getElementById('event-person');
+  if (!familyData || !select) return;
+
+  const options = familyData.persons.map(p =>
+    `<option value="${p.id}">${p.firstName} ${p.lastName}</option>`
+  ).join('');
+
+  select.innerHTML = `<option value="">Select linked family members (optional)</option>${options}`;
+}
+
+// ── Event Creator ─────────────────────────────────────────
+window.createFamilyEvent = async function() {
+  const title = document.getElementById('event-title').value.trim();
+  const date = document.getElementById('event-date').value;
+  const type = document.getElementById('event-type').value;
+  const description = document.getElementById('event-description').value.trim();
+  const personSelect = document.getElementById('event-person');
+  const selectedPersonIds = Array.from(personSelect.selectedOptions).map(option => option.value).filter(Boolean);
+
+  if (!title || !date) {
+    alert('Please enter both event title and date.');
+    return;
+  }
+
+  // Generate new event ID
+  const existingEventIds = (familyData.events || []).map(e => parseInt(e.id?.substring(1) || 0));
+  const newId = Math.max(0, ...existingEventIds) + 1;
+  const eventId = `E${newId.toString().padStart(3, '0')}`;
+
+  const newEvent = {
+    id: eventId,
+    type: type,
+    title: title,
+    date: date,
+    description: description || null,
+    place: null,
+    personIds: selectedPersonIds.length > 0 ? selectedPersonIds : null,
+    personId: selectedPersonIds[0] || null, // Primary linked person
+    media: null
+  };
+
+  if (config.workerUrl && (currentRole === 'admin' || currentRole === 'contributor')) {
+    // Submit via worker (future enhancement)
+    try {
+      const response = await fetch(config.workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'addEvent',
+          data: newEvent
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(`✅ Event "${title}" created successfully!`);
+        clearEventForm();
+        if (document.getElementById('calendar-view').style.display !== 'none') {
+          buildCalendar(); // Refresh calendar if visible
+        }
+        return;
+      }
+    } catch (error) {
+      console.log('Worker not available, using local storage');
+    }
+  }
+
+  // Fallback: Add to local familyData and download JSON
+  if (!familyData.events) familyData.events = [];
+  familyData.events.push(newEvent);
+
+  // Update metadata
+  familyData.meta.updatedAt = new Date().toISOString().split('T')[0];
+
+  // Download updated JSON
+  const blob = new Blob([JSON.stringify(familyData, null, 2)], { type: 'application/json' });
+  dlBlob(blob, `family-updated-${new Date().toISOString().split('T')[0]}.json`);
+
+  alert(`✅ Event "${title}" created! Download the updated family.json file and replace it in your repository.`);
+  clearEventForm();
+
+  // Refresh calendar if visible
+  if (document.getElementById('calendar-view').style.display !== 'none') {
+    buildCalendar();
+  }
+};
+
+function clearEventForm() {
+  document.getElementById('event-title').value = '';
+  document.getElementById('event-date').value = '';
+  document.getElementById('event-type').value = 'reunion';
+  document.getElementById('event-description').value = '';
+  document.getElementById('event-person').selectedIndex = -1;
 }
 
 // ── Bulk CSV Import ────────────────────────────────────────
@@ -2510,7 +2830,7 @@ function daysUntil(dateStr) {
   return Math.round((next-today)/86400000);
 }
 function eventIcon(type) {
-  return {birth:'👶',death:'🕊️',marriage:'💍',education:'🎓',career:'💼',migration:'✈️',medical:'🏥',award:'🏆',reunion:'🏠'}[type]||'📌';
+  return {birth:'👶',death:'🕊️',marriage:'💍',education:'🎓',career:'💼',migration:'✈️',medical:'🏥',award:'🏆',reunion:'🏠',milestone:'🎯',other:'📌'}[type]||'📌';
 }
 function cap(s) { return s ? s[0].toUpperCase()+s.slice(1) : ''; }
 function getPhotoUrl(photoRef) {
