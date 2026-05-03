@@ -46,6 +46,7 @@
   },
   "workerUrl": "",
   "r2BaseUrl": "",
+  "photoBaseUrl": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev",
   "features": {
     "totp": true,
     "multiLanguage": true,
