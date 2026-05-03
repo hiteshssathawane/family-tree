@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>The Family Tree</title>
+<title data-i18n="app.name">The Family Tree</title>
 <meta name="description" content="Our family genealogy"/>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
@@ -46,6 +46,12 @@ html,body{height:100%;font-family:var(--fb);background:var(--cream);color:#1e1a1
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
 }
 #loading p{font-family:var(--fd);font-size:18px;color:var(--g);}
+#loading-spinner{
+  width:48px;height:48px;border:4px solid rgba(26,58,42,0.2);
+  border-left-color:var(--g);border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
 @keyframes sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
 #loading svg{animation:sway 3s ease-in-out infinite;}
 
@@ -79,6 +85,7 @@ html,body{height:100%;font-family:var(--fb);background:var(--cream);color:#1e1a1
   padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);
 }
 .login-btn:hover{background:#264d3a;}
+.login-btn:disabled{background:#9e9080;cursor:not-allowed;}
 .login-hint{font-size:11px;color:var(--muted);margin-top:12px;}
 .login-lock{font-size:11px;color:var(--leaf);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:5px;}
 .totp-box{display:flex;gap:8px;justify-content:center;margin-bottom:14px;}
@@ -92,9 +99,16 @@ html,body{height:100%;font-family:var(--fb);background:var(--cream);color:#1e1a1
   width:48px;height:48px;border-radius:50%;border:3px solid var(--leaf);
   display:flex;align-items:center;justify-content:center;
   font-size:14px;font-weight:700;color:var(--leaf);margin:0 auto 16px;
+  position:relative;
+}
+.totp-timer::after{
+  content:'';position:absolute;inset:3px;border-radius:50%;
+  background:conic-gradient(transparent var(--angle), var(--leaf) 0);
+  transition:--angle 0.1s linear;
 }
 .guest-link{font-size:11px;color:var(--leaf);text-decoration:underline;cursor:pointer;margin-top:12px;display:block;}
 .error-msg{font-size:15px;color:#a32d2d;margin-top:8px;display:none;}
+.attempt-warning{font-size:11px;color:#d67c00;margin-top:8px;}
 
 /* ── Language toggle ── */
 #lang-toggle{
@@ -133,6 +147,17 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
   border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer;color:rgba(255,255,255,.7);
   font-family:var(--fb);font-weight:700;margin-left:8px;
 }
+#user-badge{
+  background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);
+  border-radius:12px;padding:5px 12px;font-size:11px;color:rgba(255,255,255,.9);
+  font-family:var(--fb);margin-right:8px;
+}
+#logout-btn{
+  background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);
+  border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.7);
+  font-family:var(--fb);cursor:pointer;margin-left:8px;
+}
+#logout-btn:hover{background:rgba(255,255,255,.2);}
 
 /* ── App layout ── */
 #app{display:flex;height:100vh;padding-top:54px;display:none;}
@@ -148,679 +173,448 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
   padding:7px 10px;font-size:15px;color:#1e1a14;cursor:pointer;
   font-family:var(--fb);margin-bottom:3px;text-align:left;transition:.15s;
 }
-.view-btn.active,.view-btn:hover{background:rgba(74,124,89,.1);border-color:var(--leaf);color:var(--leaf);}
-.member-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;cursor:pointer;transition:.15s;}
-.member-item:hover,.member-item.selected{background:rgba(74,124,89,.08);}
-.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
-.mi-name{font-size:15px;font-weight:700;}
-.mi-sub{font-size:13px;color:var(--muted);}
+.view-btn:hover{background:var(--cream);}
+.view-btn.active{background:var(--leaf);color:white;border-color:var(--leaf);}
+.view-btn .em{font-size:12px;opacity:.6;margin-right:4px;}
+.view-btn.active .em{opacity:1;}
 
-/* ── Tree canvas ── */
-#tree-view{flex:1;position:relative;overflow:hidden;background:#faf6f0 !important;} /* Force cream background even in dark mode */
-#tree-svg{width:100%;height:100%;cursor:grab;background:transparent;}
-#tree-svg:active{cursor:grabbing;}
-.tree-controls{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:5;}
-.tc-btn{
-  width:32px;height:32px;border-radius:7px;background:white;
-  border:0.5px solid var(--border);display:flex;align-items:center;
-  justify-content:center;font-size:14px;cursor:pointer;font-family:var(--fb);
-  transition:all 0.15s ease;
+.member-item{
+  display:flex;align-items:center;gap:8px;padding:6px;
+  border-radius:6px;cursor:pointer;transition:.15s;margin-bottom:2px;
 }
-.tc-btn:hover{background:rgba(74,124,89,0.08);border-color:var(--leaf);}
+.member-item:hover{background:var(--cream);}
+.member-item.selected{background:var(--leaf);color:white;}
+.member-item .av{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:white;
+}
+.mi-name{font-size:11px;font-weight:700;line-height:1.2;}
+.mi-sub{font-size:9px;opacity:.6;line-height:1.2;}
 
-/* ── Tree D3 elements ── */
-.tree-node{transition:all 0.2s ease;}
-.tree-node:hover .node-bg{stroke-width:2px !important;stroke:#4a7c59 !important;}
-.tree-link{transition:stroke-width 0.2s ease;}
-.marriage-line{transition:all 0.2s ease;}
+#tree-view{
+  flex:1;position:relative;background:var(--cream);
+  overflow:hidden;
+}
+#tree-controls{
+  position:absolute;top:12px;left:12px;z-index:20;
+  display:flex;gap:6px;
+}
+.tree-btn{
+  background:rgba(255,255,255,.9);border:0.5px solid var(--border);
+  border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;
+  font-family:var(--fb);transition:.15s;
+}
+.tree-btn:hover{background:white;}
 
-/* ── Node hover effects ── */
-.tree-node:hover{transform:scale(1.05) !important;}
-.tree-node:hover .node-bg{filter:drop-shadow(0 6px 16px rgba(74,124,89,0.2)) !important;}
-
-/* ── Print styles for tree ── */
-@media print {
-  #tree-view{background:white;}
-  .tree-controls{display:none;}
-  #tree-svg{width:297mm;height:210mm;} /* A4 landscape */
-  .tree-node .node-bg{stroke-width:0.5px;}
-  .tree-link{stroke-width:1px;}
-  .marriage-line{stroke-width:1px;}
+#calendar-view, #admin-view{
+  flex:1;overflow-y:auto;padding:24px;background:var(--cream);
+  display:none;
 }
 
-/* ── Member panel ── */
-#member-panel{
-  width:400px;height:100%;background:white;border-left:0.5px solid var(--border);
-  flex-shrink:0;display:none;flex-direction:column;overflow:hidden;
-  position:fixed;right:0;top:54px;z-index:90;
-  transform:translateX(100%);transition:transform 0.3s ease-in-out;
-  box-shadow:0 0 20px rgba(26,58,42,0.15);
+/* ── Export Modal ── */
+#export-modal{
+  position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);
+  display:none;align-items:center;justify-content:center;
 }
-#member-panel.open{display:flex;transform:translateX(0);}
-.panel-hdr{background:var(--g);padding:14px 16px;display:flex;gap:11px;align-items:flex-start;}
-.panel-av{width:56px;height:56px;border-radius:50%;border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white;flex-shrink:0;}
-.panel-name{font-family:var(--fd);font-size:16px;font-weight:700;color:white;}
-.panel-dates{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
-.panel-occ{font-size:11px;color:rgba(255,255,255,.5);}
-.panel-close{margin-left:auto;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;}
-.ptabs{display:flex;border-bottom:0.5px solid var(--border);}
-.ptab{flex:1;padding:9px 0;background:transparent;border:none;border-bottom:2px solid transparent;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;font-family:var(--fb);letter-spacing:.05em;text-transform:uppercase;}
-.ptab.active{color:var(--leaf);border-bottom-color:var(--leaf);}
-#panel-content{padding:14px;overflow-y:auto;flex:1;}
-.timeline{padding-left:20px;border-left:1.5px solid var(--border);}
-.tl-evt{position:relative;padding-bottom:18px;}
-.tl-evt::before{content:'';position:absolute;left:-24px;top:4px;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--leaf);background:white;}
-.tl-date{font-size:13px;color:var(--muted);margin-bottom:2px;}
-.tl-title{font-size:15px;font-weight:700;}
-.tl-desc{font-size:15px;color:var(--bark);margin-top:3px;line-height:1.5;}
-.tl-photo{width:100%;height:90px;border-radius:7px;background:#f0ebe3;margin-top:8px;overflow:hidden;object-fit:cover;}
-.info-row{display:flex;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:15px;}
-.info-row:last-child{border:none;}
-.ir-lbl{color:var(--muted);min-width:88px;font-size:13px;}
-.ir-val{font-weight:700;}
-.rel-h{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px;}
-.rel-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(74,124,89,.08);border:0.5px solid rgba(74,124,89,.2);border-radius:20px;padding:4px 10px;font-size:12px;margin:2px;cursor:pointer;}
-
-/* ── Calendar view ── */
-#calendar-view{display:none;flex:1;overflow-y:auto;padding:20px 24px;}
-.cal-title{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--g);margin-bottom:4px;}
-.cal-subtitle{font-size:13px;color:var(--muted);margin-bottom:16px;}
-.cal-actions{display:flex;gap:8px;margin-bottom:16px;}
-.wa-btn{display:flex;align-items:center;gap:6px;background:#25D366;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);}
-.ical-btn{background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:var(--fb);}
-.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.filter-chip{font-size:11px;padding:5px 12px;border-radius:99px;border:0.5px solid var(--border);background:white;cursor:pointer;font-family:var(--fb);}
-.filter-chip.active{background:var(--g);color:white;border-color:var(--g);}
-.occ-card{display:flex;gap:14px;align-items:center;background:white;border:0.5px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:8px;cursor:pointer;}
-.occ-icon{font-size:24px;width:36px;text-align:center;flex-shrink:0;}
-.occ-date{font-size:10px;color:var(--muted);margin-bottom:2px;}
-.occ-name{font-size:14px;font-weight:700;}
-.occ-who{font-size:12px;color:var(--bark);}
-.days-away{margin-left:auto;text-align:right;margin-right:8px;}
-.days-away .num{font-size:22px;font-weight:700;color:var(--leaf);}
-.days-away .lbl{font-size:10px;color:var(--muted);}
-.type-badge{font-size:10px;padding:2px 6px;border-radius:8px;color:white;font-weight:600;}
-.type-birthday{background:#ff6b6b;}
-.type-anniversary{background:var(--family-gold);}
-.type-remembrance{background:#6c7b7f;}
-.type-event{background:var(--family-leaf);}
-.card-actions{display:flex;flex-direction:column;gap:4px;}
-.wa-mini-btn,.person-btn{width:32px;height:28px;border:0.5px solid var(--border);background:white;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
-.wa-mini-btn:hover{background:#25D366;color:white;}
-.person-btn:hover{background:var(--family-leaf);color:white;}
-
-/* ── Map view ── */
-#map-view{display:none;flex:1;}
-#leaflet-map{width:100%;height:100%;}
-
-/* ── Admin view ── */
-#admin-view{display:none;flex:1;overflow-y:auto;padding:20px 24px;}
-.admin-title{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--g);margin-bottom:16px;}
-.stats-bar{display:flex;gap:10px;margin-bottom:18px;}
-.stat-card{background:white;border:0.5px solid var(--border);border-radius:9px;padding:12px 18px;text-align:center;}
-.stat-card .num{font-size:22px;font-weight:700;color:var(--g);font-family:var(--fd);}
-.stat-card .lbl{font-size:10px;color:var(--muted);}
-.stat-card.pending{background:#EAF3DE;border-color:rgba(59,109,17,.2);}
-.stat-card.pending .num{color:#3B6D11;}
-.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.admin-card{background:white;border:0.5px solid var(--border);border-radius:10px;padding:16px;}
-.admin-card h3{font-size:14px;font-weight:700;color:var(--g);margin-bottom:4px;}
-.admin-card p{font-size:11px;color:var(--muted);margin-bottom:12px;}
-.admin-inp{width:100%;border:0.5px solid rgba(90,60,30,.2);border-radius:7px;padding:9px 11px;font-size:12px;margin-bottom:7px;font-family:var(--fb);background:var(--cream);}
-.admin-select{width:100%;border:0.5px solid rgba(90,60,30,.2);border-radius:7px;padding:9px 11px;font-size:12px;margin-bottom:10px;font-family:var(--fb);background:var(--cream);}
-.role-row{display:flex;gap:6px;margin-bottom:10px;}
-.role-pill{font-size:11px;padding:5px 12px;border-radius:99px;border:0.5px solid var(--border);background:var(--cream);cursor:pointer;font-family:var(--fb);}
-.role-pill.active{background:var(--g);color:white;border-color:var(--g);}
-.upload-zone{border:1.5px dashed rgba(90,60,30,.2);border-radius:8px;padding:16px;text-align:center;margin-bottom:10px;background:var(--cream);cursor:pointer;}
-.upload-zone p{font-size:12px;color:var(--muted);}
-.upload-zone .hint{font-size:11px;color:var(--gold);margin-top:4px;}
-.admin-btn{width:100%;background:var(--g);color:white;border:none;border-radius:7px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);margin-bottom:5px;}
-.admin-btn:hover{background:#264d3a;}
-.admin-btn.gold{background:var(--gold);}
-.admin-btn.outline{background:transparent;border:0.5px solid var(--g);color:var(--g);}
-.admin-btn.outline:hover{background:rgba(26,58,42,.06);}
-
-/* bulk import */
-.csv-textarea{width:100%;height:100px;border:0.5px solid rgba(90,60,30,.2);border-radius:7px;padding:8px;font-size:11px;font-family:var(--font-mono,'monospace');background:var(--cream);resize:vertical;margin-bottom:8px;}
-.preview-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;overflow-x:auto;display:block;}
-.preview-table th{background:var(--g);color:white;padding:5px 8px;text-align:left;white-space:nowrap;}
-.preview-table td{padding:5px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;}
-.preview-table tr:nth-child(even) td{background:#faf6f0;}
-
-/* TOTP QR */
-.qr-placeholder{width:90px;height:90px;background:#f0ebe3;border-radius:8px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);}
-#qr-img{display:none;width:90px;height:90px;border-radius:8px;margin:0 auto 10px;}
-
-/* ── Search results ── */
-#search-results{
-  position:fixed;top:54px;left:230px;right:0;
-  background:white;border-bottom:0.5px solid var(--border);
-  max-height:280px;overflow-y:auto;z-index:90;display:none;
+.export-card{
+  background:white;border-radius:12px;padding:24px;width:400px;
+  text-align:center;
 }
-.sr-item{display:flex;align-items:center;gap:11px;padding:10px 16px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:.1s;}
-.sr-item:hover{background:rgba(74,124,89,.06);}
-.sr-item:last-child{border-bottom:none;}
-
-/* ── PrintScreen overlay ── */
-#ps-overlay{
-  position:fixed;inset:0;z-index:99999;background:rgba(26,58,42,.95);
-  display:none;flex-direction:column;align-items:center;justify-content:center;color:white;gap:12px;
+.export-progress{
+  width:100%;height:8px;background:var(--cream);border-radius:4px;
+  margin:16px 0;overflow:hidden;
 }
-#ps-overlay p:first-child{font-family:var(--fd);font-size:20px;}
-#ps-overlay p:last-child{font-size:13px;opacity:.7;}
+.export-bar{
+  height:100%;background:var(--g);border-radius:4px;
+  transition:width 0.3s ease;width:0%;
+}
 
-/* ── Mobile Tree (3-node focused view) ── */
-@media(max-width:768px){
-  #sidebar{display:none;}
-  #member-panel{width:100%;position:fixed;top:54px;right:0;bottom:60px;z-index:80;}
-  #search-results{left:0;}
-  .admin-grid{grid-template-columns:1fr;}
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+  #app{flex-direction:column;}
+  #sidebar{width:100%;height:auto;border-right:none;border-bottom:0.5px solid var(--border);}
+  #tree-view{height:400px;}
+  .login-card{width:320px;margin:0 20px;}
 
-  /* Hide D3 tree canvas on mobile */
-  #tree-svg{display:none !important;}
-  .tree-controls{display:none !important;}
-  #tree-hints{display:none !important;}
-
-  /* Mobile tree layout container */
-  #tree-view{
-    position:relative;padding:0;
-    display:flex;flex-direction:column;
-    padding-bottom:60px; /* Space for bottom nav */
+  #bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--g);padding:8px 0;z-index:100;
+    display:flex;justify-content:space-around;
   }
-
-  /* Mobile bottom navigation */
-  #mobile-nav{
-    position:fixed;bottom:0;left:0;right:0;z-index:100;
-    height:60px;background:white;
-    border-top:0.5px solid var(--border);
-    display:flex;align-items:center;justify-content:space-around;
-    padding:0 10px;
+  .bottom-nav-btn{
+    background:transparent;border:none;color:rgba(255,255,255,.7);
+    font-size:10px;padding:8px 4px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
   }
-  .mob-nav-btn{
-    display:flex;flex-direction:column;align-items:center;
-    padding:6px 12px;border-radius:8px;cursor:pointer;
-    transition:background 0.15s ease;min-width:60px;
-  }
-  .mob-nav-btn.active{background:rgba(74,124,89,0.1);}
-  .mob-nav-icon{font-size:18px;margin-bottom:2px;}
-  .mob-nav-label{font-size:9px;color:var(--muted);font-weight:600;}
-  .mob-nav-btn.active .mob-nav-label{color:var(--leaf);}
+  .bottom-nav-btn.active{color:var(--gold);}
+  .bottom-nav-btn .ico{font-size:16px;}
+}
 
-  /* Mobile 3-node tree layout */
-  #mobile-tree{
-    flex:1;padding:20px;position:relative;
-    display:flex;flex-direction:column;justify-content:center;
-    align-items:center;gap:24px;overflow:hidden;
-  }
+/* ── Virtual Scrolling ── */
+.virtual-container{
+  position:relative;overflow:auto;
+}
+.virtual-content{
+  position:relative;
+}
+.virtual-item{
+  position:absolute;left:0;right:0;
+  transition:transform 0.15s ease;
+}
 
-  /* Mobile tree node cards */
-  .mob-tree-node{
-    position:relative;background:white;border-radius:12px;
-    border:1.5px solid var(--border);padding:12px;
-    width:280px;text-align:center;cursor:pointer;
-    transition:all 0.2s ease;
-  }
-  .mob-tree-node:active{transform:scale(0.98);}
-  .mob-tree-node.selected{border-color:var(--leaf);border-width:2px;}
-
-  /* Center node (selected person) */
-  .mob-center-node{
-    border-color:var(--leaf);border-width:2px;
-    background:rgba(74,124,89,0.05);
-    transform:scale(1.05);
-  }
-
-  /* Parents row */
-  .mob-parents{
-    display:flex;gap:12px;justify-content:center;
-    flex-wrap:wrap;
-  }
-  .mob-tree-node.parent{width:130px;font-size:12px;}
-
-  /* Spouse row */
-  .mob-spouse{
-    display:flex;gap:12px;justify-content:center;
-    align-items:center;
-  }
-  .mob-heart{
-    font-size:20px;color:var(--gold);margin:0 8px;
-  }
-
-  /* Children row */
-  .mob-children{
-    display:flex;gap:8px;justify-content:center;
-    flex-wrap:wrap;max-width:100%;
-  }
-  .mob-tree-node.child{width:120px;font-size:11px;}
-
-  /* Mobile node content */
-  .mob-node-avatar{
-    width:36px;height:36px;border-radius:50%;
-    margin:0 auto 8px;display:flex;align-items:center;
-    justify-content:center;color:white;font-weight:700;
-    font-size:14px;border:2px solid white;
-  }
-  .mob-node-name{font-size:13px;font-weight:700;margin-bottom:2px;}
-  .mob-node-years{font-size:12px;color:var(--muted);}
-  .mob-node-role{font-size:9px;color:var(--gold);margin-top:4px;font-weight:600;}
-
-  /* Swipe gesture indicators */
-  .mob-swipe-hint{
-    position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
-    font-size:11px;color:var(--muted);text-align:center;
-    opacity:0.7;
-  }
-
-  /* Connection lines for mobile */
-  .mob-connection{
-    position:absolute;border:1px solid var(--border);
-    border-radius:2px;z-index:1;
-  }
-  .mob-connection.vertical{width:1px;height:20px;}
-  .mob-connection.horizontal{height:1px;width:40px;}
-
-  /* Hide desktop-only elements on mobile */
-  #app{padding-bottom:60px;}
-
-  /* Mobile tree visibility */
-  #mobile-tree{display:flex !important;}
-  #mobile-nav{display:flex !important;}
-
-  /* Ensure proper mobile layout */
-  #tree-view{height:calc(100vh - 54px - 60px);overflow-y:auto;}
-
-  /* Mobile member panel adjustments */
-  #member-panel{bottom:60px !important;}
+/* ── Lazy Loading ── */
+.lazy-img{
+  background:var(--cream);
+  transition:opacity 0.3s ease;
+}
+.lazy-img.loading{
+  opacity:0.5;
+  background-image:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{
+  0%{background-position:-200% 0;}
+  100%{background-position:200% 0;}
 }
 </style>
 </head>
 <body>
 
-<!-- PrintScreen overlay -->
-<div id="ps-overlay">
-  <p>Screenshot recorded</p>
-  <p id="ps-identity"></p>
+<!-- Loading Screen -->
+<div id="loading">
+  <svg width="64" height="64" viewBox="0 0 64 64">
+    <path d="M32 8 L24 24 L32 32 L40 24 Z" fill="#1a3a2a"/>
+    <path d="M32 32 L20 40 L32 48 L44 40 Z" fill="#4a7c59"/>
+    <path d="M32 48 L28 56 L36 56 Z" fill="#c8963e"/>
+  </svg>
+  <div id="loading-spinner"></div>
+  <p id="loading-text" data-i18n="loading.message">Loading family data...</p>
 </div>
 
-<!-- Watermark -->
+<!-- Watermark (Dynamic, post-login) -->
 <div id="watermark"></div>
 
-<!-- Loading -->
-<div id="loading">
-  <svg width="80" height="80" viewBox="0 0 80 80">
-    <line x1="40" y1="58" x2="40" y2="72" stroke="#1a3a2a" stroke-width="2.5" stroke-linecap="round"/>
-    <ellipse cx="40" cy="60" rx="16" ry="5" fill="none" stroke="#c8963e" stroke-width="1.5" opacity=".5"/>
-    <circle cx="40" cy="44" r="11" fill="#1a3a2a"/>
-    <circle cx="22" cy="33" r="8" fill="#4a7c59"/>
-    <circle cx="58" cy="33" r="8" fill="#4a7c59"/>
-    <circle cx="30" cy="18" r="6" fill="#5c3d1e"/>
-    <circle cx="50" cy="18" r="6" fill="#5c3d1e"/>
-    <circle cx="40" cy="9" r="5" fill="#c8963e"/>
-  </svg>
-  <p id="loading-text">Loading your family…</p>
-</div>
+<!-- Language Toggle (Pre-login) -->
+<div id="lang-toggle" onclick="toggleLang()">मराठी</div>
 
-<!-- Login screen -->
+<!-- Login Screens -->
 <div id="login-screen">
-  <div id="lang-toggle" onclick="toggleLang()">मराठी</div>
-
-  <!-- Step 1: Family password -->
-  <div id="step1" class="login-card">
+  <div class="login-card">
     <div class="login-emblem">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <line x1="15" y1="22" x2="15" y2="28" stroke="#c8963e" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="15" cy="16" r="5" fill="#c8963e"/>
-        <circle cx="7" cy="11" r="4" fill="#4a7c59"/>
-        <circle cx="23" cy="11" r="4" fill="#4a7c59"/>
-        <circle cx="11" cy="4" r="3" fill="rgba(255,255,255,.6)"/>
-        <circle cx="19" cy="4" r="3" fill="rgba(255,255,255,.6)"/>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+        <path d="M12 3 L8 9 L12 12 L16 9 Z"/>
+        <path d="M12 12 L6 15 L12 18 L18 15 Z"/>
+        <path d="M12 18 L10 21 L14 21 Z"/>
       </svg>
     </div>
-    <div class="login-title" id="s1-title">The Family Tree</div>
-    <div class="login-sub" id="s1-sub">हमारा परिवार · Our Heritage</div>
-    <div class="step-dots">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
-    </div>
-    <div class="lbl" id="s1-lbl">Family password</div>
-    <input class="inp" id="s1-pass" type="password" placeholder="Enter family password" onkeydown="if(event.key==='Enter')step1Submit()"/>
-    <div class="error-msg" id="s1-err">Incorrect password. Please try again.</div>
-    <button class="login-btn" id="s1-btn" onclick="step1Submit()">Enter the family home →</button>
-    <div class="login-hint" id="s1-hint">Shared on the family WhatsApp group</div>
-    <div class="login-lock">
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-        <rect x="3" y="7" width="10" height="8" rx="2" stroke="#4a7c59" stroke-width="1.5"/>
-        <path d="M5 7V5a3 3 0 016 0v2" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      AES-256 encrypted
-    </div>
-  </div>
+    <h1 class="login-title" data-i18n="login.title">The Family Tree</h1>
+    <p class="login-sub" data-i18n="login.subtitle">Our Heritage</p>
 
-  <!-- Step 2: Identity -->
-  <div id="step2" class="login-card" style="display:none;">
-    <div class="login-emblem">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="9" r="5" stroke="#c8963e" stroke-width="1.5"/>
-        <path d="M4 24c0-5 4.5-8 10-8s10 3 10 8" stroke="#c8963e" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="login-title" id="s2-title">Who are you?</div>
-    <div class="login-sub" id="s2-sub">Enter your details to identify yourself</div>
     <div class="step-dots">
-      <div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+      <div class="dot" id="dot1"></div>
+      <div class="dot" id="dot2"></div>
+      <div class="dot" id="dot3"></div>
     </div>
-    <div class="lbl" id="s2-lbl1">Your full name</div>
-    <input class="inp" id="s2-name" type="text" placeholder="e.g. Vikram Sharma" onkeydown="if(event.key==='Enter')step2Submit()"/>
-    <div class="lbl" id="s2-lbl2">Date of birth (DDMMYYYY)</div>
-    <input class="inp" id="s2-dob" type="text" placeholder="e.g. 04111972" maxlength="8" onkeydown="if(event.key==='Enter')step2Submit()"/>
-    <div class="error-msg" id="s2-err">Name and date of birth not found. Check spelling or continue as guest.</div>
-    <div class="login-hint" id="s2-hint">Like your PAN card password — your name + birthday</div>
-    <button class="login-btn" id="s2-btn" onclick="step2Submit()">Confirm identity →</button>
-    <a class="guest-link" id="s2-guest" onclick="enterAsGuest()">Continue as guest (view ancestors only)</a>
-  </div>
 
-  <!-- Step 3: TOTP -->
-  <div id="step3" class="login-card" style="display:none;">
-    <div class="login-emblem">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect x="6" y="2" width="16" height="24" rx="3" stroke="#c8963e" stroke-width="1.5"/>
-        <line x1="10" y1="10" x2="18" y2="10" stroke="#c8963e" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="10" y1="14" x2="15" y2="14" stroke="#c8963e" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
+    <!-- Step 2: Identity (Name + DOB Hash) -->
+    <div id="step2">
+      <div class="lbl" data-i18n="login.step2.heading">Who are you?</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step2.subtitle">
+        Enter your details to identify yourself
+      </p>
+      <input type="text" id="s2-name" class="inp" data-i18n-placeholder="login.step2.namePlaceholder" placeholder="Your full name (e.g. Vikram Sharma)"/>
+      <input type="text" id="s2-dob" class="inp" data-i18n-placeholder="login.step2.dobPlaceholder" placeholder="Date of birth — DDMMYYYY (e.g. 04111972)" maxlength="8"/>
+      <button class="login-btn" onclick="step2Submit()" data-i18n="login.step2.button">Confirm identity</button>
+      <div class="error-msg" id="s2-err" data-i18n="errors.identityNotFound">Name and date of birth not found. Check spelling or continue as guest.</div>
+      <div class="attempt-warning" id="s2-attempts" style="display:none;"></div>
+      <p class="login-hint" data-i18n="login.step2.hint">Like your PAN card password — your name + birthday</p>
+      <a class="guest-link" onclick="enterAsGuest()" data-i18n="login.step2.guestLink">Continue as guest (view ancestors only)</a>
     </div>
-    <div class="login-title" id="s3-title">One-time code</div>
-    <div class="login-sub" id="s3-sub">Open Google Authenticator → Family Tree</div>
-    <div class="step-dots">
-      <div class="dot"></div><div class="dot"></div><div class="dot active"></div>
+
+    <!-- Step 3: TOTP -->
+    <div id="step3" style="display:none;">
+      <div class="lbl" data-i18n="login.step3.heading">One-time code</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step3.subtitle">
+        Open Google Authenticator → Family Tree
+      </p>
+      <div class="totp-timer" id="totp-timer">30</div>
+      <div class="totp-box" id="totp-box">
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,0)" onpaste="totpPaste(event)"/>
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,1)"/>
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,2)"/>
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,3)"/>
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,4)"/>
+        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,5)"/>
+      </div>
+      <button class="login-btn" onclick="step3Submit()" data-i18n="login.step3.button" disabled>Verify and enter</button>
+      <div class="error-msg" id="s3-err" data-i18n="errors.wrongTotp">Incorrect code. Please check Google Authenticator and try again.</div>
+      <div class="attempt-warning" id="s3-attempts" style="display:none;"></div>
+      <p class="login-hint" data-i18n="login.step3.hint">Code changes every 30 seconds · No internet needed</p>
+      <p class="login-hint" data-i18n="login.step3.adminOnly">Only required for Admin and Contributors</p>
     </div>
-    <div class="totp-timer" id="totp-timer">30</div>
-    <div class="totp-box" id="totp-digits">
-      <div class="totp-d" id="td0">_</div>
-      <div class="totp-d" id="td1">_</div>
-      <div class="totp-d" id="td2">_</div>
-      <div class="totp-d" id="td3">_</div>
-      <div class="totp-d" id="td4">_</div>
-      <div class="totp-d" id="td5">_</div>
-    </div>
-    <input class="inp" id="s3-code" type="number" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing:.3em;text-align:center;" onkeydown="if(event.key==='Enter')step3Submit()"/>
-    <div class="error-msg" id="s3-err">Incorrect code. Check Google Authenticator.</div>
-    <button class="login-btn" id="s3-btn" onclick="step3Submit()">Verify and enter →</button>
-    <div class="login-hint" id="s3-hint">Code changes every 30 seconds · No internet needed</div>
-    <div class="login-hint" id="s3-adminonly" style="color:var(--muted);margin-top:4px;">Only required for Admin and Contributors</div>
   </div>
 </div>
 
-<!-- Header (shown after login) -->
-<header id="header">
+<!-- Header -->
+<div id="header">
   <div class="logo">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <line x1="12" y1="18" x2="12" y2="23" stroke="#c8963e" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="12" cy="13" r="4" fill="#c8963e"/>
-      <circle cx="6" cy="9" r="3" fill="#4a7c59"/>
-      <circle cx="18" cy="9" r="3" fill="#4a7c59"/>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M10 2 L6 8 L10 10 L14 8 Z"/>
+      <path d="M10 10 L4 13 L10 16 L16 13 Z"/>
+      <path d="M10 16 L8 19 L12 19 Z"/>
     </svg>
-    <span id="header-title">The Family Tree</span>
+    <span data-i18n="app.name">The Family Tree</span>
   </div>
+
   <nav>
-    <button class="active" id="nav-tree" onclick="showView('tree')" data-i18n="nav.tree">Tree</button>
+    <button id="nav-tree" class="active" onclick="showView('tree')" data-i18n="nav.tree">Tree</button>
     <button id="nav-calendar" onclick="showView('calendar')" data-i18n="nav.calendar">Calendar</button>
-    <button id="nav-map" style="display:none;" onclick="showView('map')" data-i18n="nav.map">Map</button>
+    <button id="nav-map" onclick="showView('map')" data-i18n="nav.map" style="display:none;">Map</button>
     <button id="nav-admin" onclick="showView('admin')" data-i18n="nav.admin">Admin</button>
   </nav>
-  <div style="display:flex;align-items:center;gap:8px;">
+
+  <div style="display:flex;align-items:center;">
     <div id="search-bar">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-        <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
-        <line x1="11" y1="11" x2="15" y2="15" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="21 21l-4.35-4.35"/>
       </svg>
-      <input id="search-input" type="text" placeholder="Search family…" autocomplete="off" oninput="doSearch(this.value)"/>
+      <input type="text" id="search-input" data-i18n-placeholder="nav.search" placeholder="Search family members…"/>
     </div>
-    <div id="user-badge" style="font-size:11px;color:rgba(255,255,255,.6);"></div>
-    <button id="logout-btn" onclick="sessionStorage.clear();location.reload()" style="background:var(--family-green);border:1px solid var(--family-gold);border-radius:6px;color:var(--family-gold);font-size:13px;padding:6px 12px;cursor:pointer;margin-left:8px;font-weight:700;">⟵ Sign out</button>
-    <button id="lang-toggle-app" onclick="toggleLang()">मराठी</button>
+    <div id="user-badge"></div>
+    <button id="logout-btn" onclick="logout()">Logout</button>
+    <div id="lang-toggle-app" onclick="toggleLang()">मराठी</div>
   </div>
-</header>
-
-<!-- Search results dropdown -->
-<div id="search-results"></div>
-
-<!-- Main App -->
-<div id="app">
-  <!-- Sidebar -->
-  <aside id="sidebar">
-    <div class="sb-sec">
-      <h3 data-i18n="tree.viewModes.label">View mode</h3>
-      <button class="view-btn active" onclick="setViewMode('full')" data-i18n="tree.viewModes.full">🌳 Full tree</button>
-      <button class="view-btn" onclick="setViewMode('ancestor4')" data-i18n="tree.viewModes.ancestorFour">⬆️ 4 generations up</button>
-      <button class="view-btn" onclick="setViewMode('descendant4')" data-i18n="tree.viewModes.descendantFour">⬇️ 4 generations down</button>
-      <button class="view-btn" onclick="setViewMode('hourglass')" data-i18n="tree.viewModes.hourglass">⌛ Hourglass (both)</button>
-      <button class="view-btn" onclick="setViewMode('compact')" data-i18n="tree.viewModes.compact">👥 Compact (2 gen)</button>
-    </div>
-    <div class="sb-sec" style="flex:1;overflow-y:auto;">
-      <h3 data-i18n="tree.allMembers">All members</h3>
-      <div id="member-list"></div>
-    </div>
-  </aside>
-
-  <!-- Tree view -->
-  <main id="tree-view">
-    <div class="tree-controls">
-      <div class="tc-btn" onclick="treeZoom(1.2)" title="Zoom in">+</div>
-      <div class="tc-btn" onclick="treeZoom(0.8)" title="Zoom out">−</div>
-      <div class="tc-btn" onclick="treeFit()" title="Fit to screen">⊡</div>
-      <div class="tc-btn" onclick="window.print()" title="Print">⎙</div>
-    </div>
-    <svg id="tree-svg"></svg>
-
-    <!-- Mobile 3-node focused tree (hidden on desktop) -->
-    <div id="mobile-tree" style="display:none;">
-      <!-- Parents row -->
-      <div class="mob-parents" id="mob-parents"></div>
-
-      <!-- Center person + spouse row -->
-      <div class="mob-spouse">
-        <div id="mob-center-node" class="mob-tree-node mob-center-node"></div>
-        <div class="mob-heart" id="mob-heart" style="display:none;">💛</div>
-        <div id="mob-spouse-node" class="mob-tree-node" style="display:none;"></div>
-      </div>
-
-      <!-- Children row -->
-      <div class="mob-children" id="mob-children"></div>
-
-      <!-- Swipe hint -->
-      <div class="mob-swipe-hint" id="mob-swipe-hint">
-        ← Swipe to navigate siblings →
-      </div>
-    </div>
-  </main>
-
-  <!-- Calendar view -->
-  <div id="calendar-view">
-    <div class="cal-title" data-i18n="calendar.title">Family calendar</div>
-    <div class="cal-subtitle" data-i18n="calendar.subtitle">Upcoming occasions · Next 365 days</div>
-    <div class="cal-actions">
-      <button class="wa-btn" onclick="shareWhatsApp()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.507 3.934 1.397 5.604L0 24l6.545-1.376C8.148 23.49 10.025 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.848 0-3.59-.47-5.12-1.3l-.36-.21-3.883.815.816-3.8-.23-.37C2.47 15.594 2 13.853 2 12 2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-        <span data-i18n="calendar.shareWhatsApp">Share via WhatsApp</span>
-      </button>
-      <button class="ical-btn" onclick="exportICal()" data-i18n="calendar.downloadIcs">📥 Download .ics</button>
-    </div>
-    <div class="filter-row" id="cal-filters">
-      <button class="filter-chip active" data-filter="all" onclick="filterCalendar('all')">All</button>
-      <button class="filter-chip" data-filter="birthdays" onclick="filterCalendar('birthdays')">🎂 Birthdays</button>
-      <button class="filter-chip" data-filter="anniversaries" onclick="filterCalendar('anniversaries')">💍 Anniversaries</button>
-      <button class="filter-chip" data-filter="remembrance" onclick="filterCalendar('remembrance')">🙏 Remembrance</button>
-    </div>
-    <div class="filter-row" id="branch-filters" style="margin-top:8px;">
-      <span style="font-size:11px;color:var(--muted);margin-right:8px;">By family:</span>
-    </div>
-    <div id="occasions-list"></div>
-  </div>
-
-  <!-- Map view -->
-  <div id="map-view">
-    <div id="leaflet-map"></div>
-  </div>
-
-  <!-- Admin view -->
-  <div id="admin-view">
-    <div class="admin-title" data-i18n="admin.title">Admin panel</div>
-    <div class="stats-bar" id="stats-bar"></div>
-    <div class="admin-grid">
-
-      <!-- Add member -->
-      <div class="admin-card">
-        <h3 data-i18n="admin.addMember.title">Add member</h3>
-        <p data-i18n="admin.addMember.subtitle">Mandatory fields only — fill the rest later</p>
-        <input class="admin-inp" id="af-firstname" placeholder="First name *"/>
-        <input class="admin-inp" id="af-lastname" placeholder="Last name *"/>
-        <select class="admin-select" id="af-gender">
-          <option value="">Select gender *</option>
-          <option value="M">Male</option>
-          <option value="F">Female</option>
-          <option value="Other">Other</option>
-        </select>
-        <input class="admin-inp" id="af-dob" placeholder="DD/MM/YYYY *" maxlength="10"/>
-        <select class="admin-select" id="af-status">
-          <option value="living">Living</option>
-          <option value="deceased">Deceased</option>
-          <option value="unknown">Unknown</option>
-        </select>
-        <select class="admin-select" id="af-relationship">
-          <option value="">Select relationship to existing member *</option>
-        </select>
-        <div class="upload-zone" onclick="document.getElementById('af-photo').click()">
-          <p>Upload profile photo</p>
-          <div class="hint">Uploads to Cloudflare R2 · max 5MB</div>
-          <input type="file" id="af-photo" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)"/>
-        </div>
-        <div id="af-photo-preview" style="display:none;margin-bottom:8px;">
-          <img id="af-photo-img" style="width:60px;height:60px;border-radius:50%;object-fit:cover;"/>
-        </div>
-        <button class="admin-btn" onclick="submitNewMember()">Add to family tree</button>
-      </div>
-
-      <!-- Bulk import CSV -->
-      <div class="admin-card">
-        <h3 data-i18n="admin.bulkImport.title">Bulk import (CSV)</h3>
-        <p data-i18n="admin.bulkImport.subtitle">Import multiple family members at once from Excel / Google Sheets</p>
-        <button class="admin-btn outline" onclick="downloadCSVTemplate()">📥 Download CSV template</button>
-        <div style="font-size:11px;color:var(--muted);margin:6px 0 8px;">Fill in the template, then upload or paste below:</div>
-        <input type="file" id="csv-file-input" accept=".csv,.txt" style="font-size:11px;width:100%;margin-bottom:8px;" onchange="handleCSVFile(this)"/>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Or paste CSV data directly:</div>
-        <textarea class="csv-textarea" id="csv-paste" placeholder="id,firstName,lastName,gender,status,birthDate,birthPlace&#10;P010,Suresh,Nair,M,living,20081973,Kochi Kerala"></textarea>
-        <button class="admin-btn outline" onclick="previewCSV()">Preview import</button>
-        <div id="csv-preview" style="display:none;margin-top:8px;">
-          <div style="overflow-x:auto;"><table class="preview-table" id="csv-table"></table></div>
-          <div id="csv-count" style="font-size:11px;color:var(--muted);margin:6px 0;"></div>
-          <button class="admin-btn" onclick="confirmCSVImport()">Confirm import</button>
-        </div>
-      </div>
-
-      <!-- TOTP setup -->
-      <div class="admin-card">
-        <h3>TOTP setup</h3>
-        <p>Generate a QR code for a family member to scan once in Google Authenticator</p>
-        <input class="admin-inp" id="totp-name" placeholder="Member full name" value=""/>
-        <input class="admin-inp" id="totp-dob" placeholder="Date of birth (DDMMYYYY)" value=""/>
-        <div id="qr-placeholder" class="qr-placeholder">QR code appears here</div>
-        <img id="qr-img" alt="TOTP QR Code"/>
-        <button class="admin-btn" onclick="generateTOTPQR()">Generate QR code</button>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px;">Send QR screenshot via WhatsApp. Member scans once — done forever.</div>
-      </div>
-
-      <!-- Import / Export -->
-      <div class="admin-card">
-        <h3>Import / export</h3>
-        <p>Backup and migrate your family data</p>
-        <button class="admin-btn outline" onclick="importCSVFile()">📤 Import CSV file</button>
-        <button class="admin-btn outline" onclick="exportJSON()">📥 Download family.json</button>
-        <button class="admin-btn gold" onclick="exportGEDCOM()">Export GEDCOM (.ged)</button>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;">GEDCOM compatible with Ancestry, MyHeritage, FamilySearch</div>
-      </div>
-
-      <!-- Event Creator (Admin/Contributor only) -->
-      <div class="admin-card" id="event-creator-card" style="display:none;">
-        <h3>📅 Add Family Event</h3>
-        <p>Create reunions, milestones, or other family occasions</p>
-        <input class="admin-inp" id="event-title" placeholder="Event title *"/>
-        <input class="admin-inp" id="event-date" type="date" placeholder="Event date *"/>
-        <select class="admin-select" id="event-type">
-          <option value="reunion">🏠 Family Reunion</option>
-          <option value="milestone">🎯 Milestone</option>
-          <option value="other">📌 Other</option>
-        </select>
-        <textarea class="admin-inp" id="event-description" placeholder="Description (optional)" rows="3" style="resize:vertical;height:auto;"></textarea>
-        <select class="admin-select" id="event-person" multiple>
-          <option value="">Select linked family members (optional)</option>
-        </select>
-        <div style="font-size:11px;color:var(--muted);margin:6px 0;">Hold Ctrl/Cmd to select multiple people</div>
-        <button class="admin-btn" onclick="createFamilyEvent()">Add Event</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Member profile panel -->
-  <aside id="member-panel">
-    <div class="panel-hdr" id="panel-hdr">
-      <div class="panel-av" id="panel-av">?</div>
-      <div>
-        <div class="panel-name" id="panel-name">-</div>
-        <div class="panel-dates" id="panel-dates">-</div>
-        <div class="panel-occ" id="panel-occ">-</div>
-      </div>
-      <span class="panel-close" onclick="closePanel()">✕</span>
-    </div>
-    <div class="ptabs">
-      <button class="ptab active" onclick="switchPanelTab('timeline')" data-i18n="profile.tabs.timeline">Timeline</button>
-      <button class="ptab" onclick="switchPanelTab('bio')" data-i18n="profile.tabs.bio">Bio</button>
-      <button class="ptab" onclick="switchPanelTab('family')" data-i18n="profile.tabs.family">Family</button>
-    </div>
-    <div id="panel-content"></div>
-  </aside>
 </div>
 
-<!-- Mobile Bottom Navigation (hidden on desktop) -->
-<nav id="mobile-nav" style="display:none;">
-  <div class="mob-nav-btn active" onclick="showMobileView('tree')">
-    <div class="mob-nav-icon">🌳</div>
-    <div class="mob-nav-label">Tree</div>
-  </div>
-  <div class="mob-nav-btn" onclick="showMobileView('calendar')">
-    <div class="mob-nav-icon">📅</div>
-    <div class="mob-nav-label">Calendar</div>
-  </div>
-  <div class="mob-nav-btn" onclick="showMobileView('search')">
-    <div class="mob-nav-icon">🔍</div>
-    <div class="mob-nav-label">Search</div>
-  </div>
-  <div class="mob-nav-btn" onclick="showMobileView('profile')">
-    <div class="mob-nav-icon">👤</div>
-    <div class="mob-nav-label">Profile</div>
-  </div>
-</nav>
+<!-- App Layout -->
+<div id="app">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <!-- View Modes -->
+    <div class="sb-sec">
+      <h3 data-i18n="tree.viewModes.title">View Modes</h3>
+      <button class="view-btn active" onclick="setViewMode('full')" data-view="full">
+        <span class="em">🌳</span>
+        <span data-i18n="tree.viewModes.full">Full tree</span>
+      </button>
+      <button class="view-btn" onclick="setViewMode('ancestor4')" data-view="ancestor4">
+        <span class="em">⬆️</span>
+        <span data-i18n="tree.viewModes.ancestorFour">4 generations up</span>
+      </button>
+      <button class="view-btn" onclick="setViewMode('descendant4')" data-view="descendant4">
+        <span class="em">⬇️</span>
+        <span data-i18n="tree.viewModes.descendantFour">4 generations down</span>
+      </button>
+      <button class="view-btn" onclick="setViewMode('hourglass')" data-view="hourglass">
+        <span class="em">⏳</span>
+        <span data-i18n="tree.viewModes.hourglass">Hourglass (both)</span>
+      </button>
+      <button class="view-btn" onclick="setViewMode('compact')" data-view="compact">
+        <span class="em">📐</span>
+        <span data-i18n="tree.viewModes.compact">Compact (2 gen)</span>
+      </button>
+    </div>
 
-<!-- CDN Libraries -->
+    <!-- Member List -->
+    <div class="sb-sec" style="flex:1;overflow:hidden;">
+      <h3 data-i18n="tree.allMembers">All Members</h3>
+      <div id="member-list" style="overflow-y:auto;max-height:300px;"></div>
+    </div>
+
+    <!-- Tree Controls -->
+    <div class="sb-sec">
+      <h3 data-i18n="tree.controls.title">Controls</h3>
+      <button class="view-btn" onclick="treeZoom(1.2)">
+        <span class="em">🔍</span>
+        <span data-i18n="tree.controls.zoomIn">Zoom in</span>
+      </button>
+      <button class="view-btn" onclick="treeZoom(0.8)">
+        <span class="em">🔍</span>
+        <span data-i18n="tree.controls.zoomOut">Zoom out</span>
+      </button>
+      <button class="view-btn" onclick="treeFit()">
+        <span class="em">📐</span>
+        <span data-i18n="tree.controls.fit">Fit to screen</span>
+      </button>
+      <button class="view-btn" onclick="printTree()">
+        <span class="em">🖨️</span>
+        <span data-i18n="tree.controls.print">Print tree</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tree View -->
+  <div id="tree-view">
+    <svg id="tree-svg" style="width:100%;height:100%;cursor:grab;"></svg>
+    <div id="tree-controls">
+      <button class="tree-btn" onclick="treeZoom(1.2)" data-i18n="tree.controls.zoomIn">Zoom In</button>
+      <button class="tree-btn" onclick="treeZoom(0.8)" data-i18n="tree.controls.zoomOut">Zoom Out</button>
+      <button class="tree-btn" onclick="treeFit()" data-i18n="tree.controls.fit">Fit</button>
+    </div>
+  </div>
+
+  <!-- Calendar View -->
+  <div id="calendar-view">
+    <h2 data-i18n="calendar.title">Family Calendar</h2>
+    <p data-i18n="calendar.subtitle" style="margin-bottom:24px;">Upcoming occasions · Next 365 days</p>
+    <div id="calendar-filters" style="margin-bottom:24px;"></div>
+    <div id="calendar-events"></div>
+  </div>
+
+  <!-- Admin View -->
+  <div id="admin-view">
+    <h2 data-i18n="admin.title">Admin Panel</h2>
+
+    <!-- Quick Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0;">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-members">0</div>
+        <div class="stat-lbl" data-i18n="admin.stats.members">Members</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-events">0</div>
+        <div class="stat-lbl" data-i18n="admin.stats.events">Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-photos">0</div>
+        <div class="stat-lbl" data-i18n="admin.stats.photos">Photos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-pending">0</div>
+        <div class="stat-lbl" data-i18n="admin.stats.pendingPRs">Pending PRs</div>
+      </div>
+    </div>
+
+    <!-- GEDCOM Export Section -->
+    <div class="admin-card" style="margin-bottom:24px;">
+      <h3 data-i18n="admin.importExport.title">Import / Export</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Export family data in standard GEDCOM format</p>
+      <button class="admin-btn" onclick="exportGedcom()" data-i18n="admin.importExport.exportGedcom">Export GEDCOM (.ged)</button>
+      <button class="admin-btn" onclick="downloadFamilyJson()" data-i18n="admin.importExport.downloadJson">Download family.json</button>
+    </div>
+
+    <!-- Add Member Form -->
+    <div class="admin-card">
+      <h3 data-i18n="admin.addMember.title">Add Member</h3>
+      <p data-i18n="admin.addMember.subtitle" style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Mandatory fields only — fill the rest later
+      </p>
+      <form id="add-member-form" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <input type="text" id="new-firstName" data-i18n-placeholder="admin.addMember.firstName" placeholder="First name *" class="inp" required/>
+        <input type="text" id="new-lastName" data-i18n-placeholder="admin.addMember.lastName" placeholder="Last name *" class="inp" required/>
+        <input type="text" id="new-dob" data-i18n-placeholder="admin.addMember.dob" placeholder="Date of birth (DDMMYYYY) *" class="inp" maxlength="8" required/>
+        <select id="new-gender" class="inp" required>
+          <option value="">Gender *</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+        <button type="submit" class="admin-btn" data-i18n="admin.addMember.submit" style="grid-column:1/-1;">
+          Add to tree → GitHub PR
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Export Progress Modal -->
+<div id="export-modal">
+  <div class="export-card">
+    <h3>Exporting GEDCOM</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Generating family tree data...</p>
+    <div class="export-progress">
+      <div class="export-bar" id="export-bar"></div>
+    </div>
+    <p id="export-status" style="font-size:11px;color:var(--muted);">Processing...</p>
+  </div>
+</div>
+
+<!-- Mobile Bottom Navigation -->
+<div id="bottom-nav" style="display:none;">
+  <button class="bottom-nav-btn active" onclick="showView('tree')">
+    <div class="ico">🌳</div>
+    <div data-i18n="nav.tree">Tree</div>
+  </button>
+  <button class="bottom-nav-btn" onclick="showView('calendar')">
+    <div class="ico">📅</div>
+    <div data-i18n="nav.calendar">Calendar</div>
+  </button>
+  <button class="bottom-nav-btn" onclick="showView('admin')">
+    <div class="ico">⚙️</div>
+    <div data-i18n="nav.admin">Admin</div>
+  </button>
+</div>
+
+<!-- Scripts -->
 <script src="vendor/leaflet.js"></script>
 <script src="vendor/d3.min.js"></script>
 <script src="vendor/flexsearch.bundle.js"></script>
+<script src="vendor/otpauth.min.js"></script>
 
 <script type="module">
 // ═══════════════════════════════════════════════════════════
-//  The Family Tree — Application Core
-//  All phases scaffold here. Claude Code builds each phase.
+//  The Family Tree — Phase 7 Enhanced Application Core
+//  TOTP · PWA · i18n · GEDCOM Export · Performance
 // ═══════════════════════════════════════════════════════════
 
-// ── State ──────────────────────────────────────────────────
+// ── Global State ───────────────────────────────────────────
 let familyData = null, authData = null, config = null;
 let i18n = {}, currentLang = localStorage.getItem('lang') || 'en';
 let currentUser = null, currentRole = 'guest';
 let selectedPerson = null, treeMode = 'full';
 let searchIndex = null, leafletMap = null;
 let treeTransform = { x: 0, y: 0, k: 1 };
+let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+let lockoutTime = parseInt(localStorage.getItem('lockoutTime') || '0');
+let watermarkObserver = null;
 
-// ── Load everything ────────────────────────────────────────
+// ── Phase 7 Features ───────────────────────────────────────
+// Virtual scrolling for large trees
+let virtualizedNodes = [];
+let viewportHeight = 0;
+let scrollTop = 0;
+const ITEM_HEIGHT = 80;
+const BUFFER_SIZE = 5;
+
+// Image lazy loading
+const imageObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      const src = img.dataset.src;
+      if (src) {
+        img.src = src;
+        img.classList.remove('loading');
+        imageObserver.unobserve(img);
+      }
+    }
+  });
+}, { rootMargin: '50px' });
+
+// Debounced search
+let searchTimeout;
+function debounceSearch(callback, delay) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(callback, delay);
+}
+
+// ── Application Initialization ─────────────────────────────
 async function init() {
   try {
+    // Show loading spinner
+    document.getElementById('loading-text').textContent = 'Loading family data...';
+
+    // Check for lockout
+    const now = Date.now();
+    if (lockoutTime && now < lockoutTime) {
+      const remaining = Math.ceil((lockoutTime - now) / 60000);
+      document.getElementById('loading-text').textContent = `Account locked. Try again in ${remaining} minutes.`;
+      return;
+    }
+
+    // Load all data in parallel
     const [fd, ad, cfg, en, mr] = await Promise.all([
       fetch('./data/family.json').then(r => r.json()),
       fetch('./data/auth.json').then(r => r.json()),
@@ -828,324 +622,902 @@ async function init() {
       fetch('./data/i18n/en.json').then(r => r.json()),
       fetch('./data/i18n/mr.json').then(r => r.json()),
     ]);
+
     familyData = fd; authData = ad; config = cfg;
     i18n = { en, mr };
+
+    // Apply language and setup
     applyLang();
     setupSearch();
     setupSecurity();
+    setupPWA();
+
+    // Hide loading, show login
     document.getElementById('loading').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
+    showStep(2); // Skip staticrypt step in development
+
   } catch(e) {
-    document.getElementById('loading-text').textContent = 'Error loading data. Check console.';
-    console.error(e);
+    document.getElementById('loading-text').textContent = 'Error loading data. Please refresh.';
+    console.error('Init error:', e);
   }
 }
 
-// ── i18n ──────────────────────────────────────────────────
+// ── i18n System ────────────────────────────────────────────
 function t(key) {
   const parts = key.split('.');
   let obj = i18n[currentLang] || i18n.en;
-  for (const p of parts) { obj = obj?.[p]; if (!obj) break; }
+  for (const p of parts) {
+    obj = obj?.[p];
+    if (!obj) break;
+  }
   return obj || key;
 }
+
 function applyLang() {
+  // Update all elements with data-i18n attribute
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t(key);
     if (val && val !== key) el.textContent = val;
   });
+
+  // Update placeholder text
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if (val && val !== key) el.placeholder = val;
+  });
+
+  // Update language toggle buttons
   const toggle = document.getElementById('lang-toggle');
   const toggleApp = document.getElementById('lang-toggle-app');
-  if (toggle) toggle.textContent = currentLang === 'en' ? 'मराठी' : 'English';
-  if (toggleApp) toggleApp.textContent = currentLang === 'en' ? 'मराठी' : 'English';
+  const label = currentLang === 'en' ? 'मराठी' : 'English';
+  if (toggle) toggle.textContent = label;
+  if (toggleApp) toggleApp.textContent = label;
+
+  // Update document title
+  document.title = t('app.name');
 }
+
 window.toggleLang = function() {
   currentLang = currentLang === 'en' ? 'mr' : 'en';
   localStorage.setItem('lang', currentLang);
   applyLang();
 };
 
-// ── Security setup ─────────────────────────────────────────
+// ── Enhanced Security Setup ────────────────────────────────
 function setupSecurity() {
-  // PrintScreen detection
+  // Screenshot detection
   document.addEventListener('keyup', e => {
-    if (e.key === 'PrintScreen') showPSOverlay();
+    if (e.key === 'PrintScreen') showSecurityWarning('screenshot');
   });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'PrintScreen') { e.preventDefault(); showPSOverlay(); }
+
+  // Disable right-click on images
+  document.addEventListener('contextmenu', e => {
+    if (e.target.tagName === 'IMG') e.preventDefault();
   });
-  // Blur on focus loss
+
+  // Page visibility blur
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && currentRole !== 'guest') {
-      document.querySelectorAll('#tree-view, #member-panel, #calendar-view').forEach(el => {
+      document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
         el.style.filter = 'blur(8px)';
       });
     } else {
-      document.querySelectorAll('#tree-view, #member-panel, #calendar-view').forEach(el => {
+      document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
         el.style.filter = '';
       });
     }
   });
-  // Right-click on photos
-  document.addEventListener('contextmenu', e => {
-    if (e.target.tagName === 'IMG') e.preventDefault();
-  });
-}
-function showPSOverlay() {
-  const o = document.getElementById('ps-overlay');
-  const identity = currentUser ? `${currentUser.displayName} · ${new Date().toLocaleDateString()}` : `Guest · ${new Date().toLocaleDateString()}`;
-  document.getElementById('ps-identity').textContent = identity;
-  o.style.display = 'flex';
-  setTimeout(() => { o.style.display = 'none'; }, 3000);
 }
 
-// ── Watermark ──────────────────────────────────────────────
+function showSecurityWarning(type) {
+  console.warn(`Security event: ${type} detected`);
+  // Could log to analytics or show warning overlay
+}
+
+// ── Enhanced Dynamic Watermark ─────────────────────────────
 function injectWatermark(name) {
   const wm = document.getElementById('watermark');
   wm.innerHTML = '';
   wm.style.display = 'block';
-  const text = `${name} · ${new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'})}`;
-  for (let row = -2; row < 12; row++) {
-    for (let col = -1; col < 6; col++) {
+
+  const now = new Date();
+  const text = `${name} · ${now.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })} ${now.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })}`;
+
+  // Generate tiled watermark
+  generateWatermarkTiles(wm, text);
+
+  // Setup MutationObserver to re-inject if tampered
+  if (watermarkObserver) watermarkObserver.disconnect();
+  watermarkObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' || mutation.type === 'attributes') {
+        // Re-inject watermark if it was modified
+        if (wm.children.length === 0 || wm.style.display === 'none') {
+          generateWatermarkTiles(wm, text);
+          wm.style.display = 'block';
+        }
+      }
+    });
+  });
+  watermarkObserver.observe(wm, {
+    childList: true,
+    attributes: true,
+    subtree: true
+  });
+
+  // Re-generate on window resize
+  window.addEventListener('resize', () => {
+    debounceSearch(() => generateWatermarkTiles(wm, text), 200);
+  });
+}
+
+function generateWatermarkTiles(container, text) {
+  container.innerHTML = '';
+  const rows = Math.ceil(window.innerHeight / 120) + 2;
+  const cols = Math.ceil(window.innerWidth / 220) + 2;
+
+  for (let row = -1; row < rows; row++) {
+    for (let col = -1; col < cols; col++) {
       const div = document.createElement('div');
       div.className = 'wm-tile';
       div.textContent = text;
       div.style.top = `${row * 120 + col * 40}px`;
       div.style.left = `${col * 220}px`;
-      wm.appendChild(div);
+      container.appendChild(div);
     }
   }
 }
 
-// ── Login Flow ─────────────────────────────────────────────
-// NOTE: staticrypt handles Layer 1. The page only renders if password was correct.
-// So step1 here is for the identity+TOTP flow, not the staticrypt password.
-// In development (no staticrypt), step1 is skipped.
-
-window.step1Submit = function() {
-  // In production, staticrypt already validated the family password.
-  // This step is shown only in dev mode. Skip straight to step2.
-  showStep(2);
-};
-
+// ── Enhanced Login Flow with TOTP ──────────────────────────
 window.step2Submit = async function() {
+  if (Date.now() < lockoutTime) {
+    showError('s2-err', 'Account locked. Try again later.');
+    return;
+  }
+
   const name = document.getElementById('s2-name').value.trim();
   const dob = document.getElementById('s2-dob').value.trim().replace(/\D/g,'');
+
   if (!name || dob.length !== 8) {
-    document.getElementById('s2-err').style.display = 'block';
+    showError('s2-err', t('errors.identityNotFound'));
     return;
   }
-  const normalised = (name.toLowerCase().replace(/\s+/g,'') + dob);
-  const hash = await sha256(normalised);
-  const entry = authData.entries.find(e => e.hash === hash);
-  if (!entry) {
-    document.getElementById('s2-err').style.display = 'block';
-    return;
-  }
-  currentUser = entry; currentRole = entry.role;
-  if (entry.totpRequired) {
-    showStep(3);
-    startTOTPTimer();
-  } else {
-    enterApp();
+
+  try {
+    // Generate identity hash
+    const normalised = (name.toLowerCase().replace(/\s+/g,'') + dob);
+    const hash = await sha256(normalised);
+    const entry = authData.entries.find(e => e.hash === hash);
+
+    if (!entry) {
+      loginAttempts++;
+      localStorage.setItem('loginAttempts', loginAttempts.toString());
+
+      if (loginAttempts >= 5) {
+        const lockTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+        localStorage.setItem('lockoutTime', lockTime.toString());
+        showError('s2-err', 'Too many failed attempts. Account locked for 15 minutes.');
+        return;
+      }
+
+      showError('s2-err', t('errors.identityNotFound'));
+      showAttemptWarning('s2-attempts', `${loginAttempts}/5 attempts used`);
+      return;
+    }
+
+    // Reset attempts on success
+    loginAttempts = 0;
+    localStorage.removeItem('loginAttempts');
+    localStorage.removeItem('lockoutTime');
+
+    currentUser = entry;
+    currentRole = entry.role;
+
+    if (entry.totpRequired && entry.totpSecret) {
+      showStep(3);
+      startTOTPTimer();
+      focusTOTPInput();
+    } else {
+      enterApp();
+    }
+
+  } catch (e) {
+    console.error('Login error:', e);
+    showError('s2-err', 'Login failed. Please try again.');
   }
 };
 
-window.step3Submit = function() {
-  const code = document.getElementById('s3-code').value.trim();
-  if (code.length !== 6) return;
-  // TOTP validation using otpauth library (loaded via CDN in Phase 7)
-  // For now: placeholder — Phase 7 implements full TOTP verification
-  if (code === '000000') {
-    document.getElementById('s3-err').style.display = 'block';
+window.step3Submit = async function() {
+  const code = getTOTPCode();
+  if (code.length !== 6) {
+    showError('s3-err', 'Please enter 6-digit code.');
     return;
   }
-  enterApp();
+
+  try {
+    // Validate TOTP using otpauth library
+    const totp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(currentUser.totpSecret),
+      digits: 6,
+      period: 30,
+    });
+
+    const isValid = totp.validate({ token: code, window: 1 });
+
+    if (isValid !== null) {
+      // Valid TOTP
+      clearInterval(totpInterval);
+      enterApp();
+    } else {
+      // Invalid TOTP
+      loginAttempts++;
+      localStorage.setItem('loginAttempts', loginAttempts.toString());
+
+      if (loginAttempts >= 5) {
+        const lockTime = Date.now() + (15 * 60 * 1000);
+        localStorage.setItem('lockoutTime', lockTime.toString());
+        showError('s3-err', 'Too many failed attempts. Account locked for 15 minutes.');
+        return;
+      }
+
+      showError('s3-err', t('errors.wrongTotp'));
+      showAttemptWarning('s3-attempts', `${loginAttempts}/5 attempts used`);
+      clearTOTPInputs();
+    }
+
+  } catch (e) {
+    console.error('TOTP validation error:', e);
+    showError('s3-err', 'TOTP validation failed. Please try again.');
+  }
 };
+
+function getTOTPCode() {
+  const inputs = document.querySelectorAll('.totp-d');
+  return Array.from(inputs).map(inp => inp.value).join('');
+}
+
+function clearTOTPInputs() {
+  document.querySelectorAll('.totp-d').forEach((inp, i) => {
+    inp.value = '';
+    inp.classList.remove('filled');
+    if (i === 0) inp.focus();
+  });
+}
+
+function focusTOTPInput() {
+  document.querySelector('.totp-d').focus();
+}
+
+// TOTP Input Handlers
+window.totpInput = function(input, index) {
+  const value = input.value;
+
+  if (!/^\d$/.test(value) && value !== '') {
+    input.value = '';
+    return;
+  }
+
+  if (value) {
+    input.classList.add('filled');
+    // Move to next input
+    if (index < 5) {
+      document.querySelectorAll('.totp-d')[index + 1].focus();
+    }
+  } else {
+    input.classList.remove('filled');
+  }
+
+  // Check if complete
+  const code = getTOTPCode();
+  const submitBtn = document.querySelector('#step3 .login-btn');
+  submitBtn.disabled = code.length !== 6;
+
+  // Auto-submit if complete
+  if (code.length === 6) {
+    setTimeout(() => step3Submit(), 100);
+  }
+};
+
+window.totpPaste = function(event) {
+  event.preventDefault();
+  const paste = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+  const inputs = document.querySelectorAll('.totp-d');
+
+  for (let i = 0; i < paste.length; i++) {
+    if (inputs[i]) {
+      inputs[i].value = paste[i];
+      inputs[i].classList.add('filled');
+    }
+  }
+
+  const submitBtn = document.querySelector('#step3 .login-btn');
+  submitBtn.disabled = paste.length !== 6;
+};
+
+// TOTP Timer
+let totpInterval;
+function startTOTPTimer() {
+  clearInterval(totpInterval);
+
+  function tick() {
+    const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
+    const timerEl = document.getElementById('totp-timer');
+    if (timerEl) {
+      timerEl.textContent = remaining;
+      const angle = ((30 - remaining) / 30) * 360;
+      timerEl.style.setProperty('--angle', `${angle}deg`);
+    }
+  }
+
+  tick();
+  totpInterval = setInterval(tick, 1000);
+}
 
 window.enterAsGuest = function() {
-  currentUser = null; currentRole = 'guest';
-  injectWatermark('Guest');
+  currentUser = null;
+  currentRole = 'guest';
   enterApp();
 };
 
-function logout() { sessionStorage.clear(); location.reload(); }
-window.logout = logout;
-
 function enterApp() {
+  // Hide login, show app
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('header').style.display = 'flex';
   document.getElementById('app').style.display = 'flex';
-  if (currentUser) injectWatermark(currentUser.displayName);
-  else injectWatermark('Guest');
-  document.getElementById('user-badge').textContent = currentUser ? `${currentUser.displayName} · ${currentRole}` : 'Guest';
+
+  // Inject watermark
+  const displayName = currentUser ? currentUser.displayName : 'Guest';
+  injectWatermark(displayName);
+
+  // Update UI
+  document.getElementById('user-badge').textContent =
+    currentUser ? `${currentUser.displayName} · ${currentRole}` : 'Guest';
+
   // Hide admin nav for non-admins
-  if (currentRole !== 'admin') document.getElementById('nav-admin').style.display = 'none';
-  // Hide map nav when disabled in config
-  if (!config.features.mapView) document.getElementById('nav-map').style.display = 'none';
+  if (currentRole !== 'admin') {
+    const adminNav = document.getElementById('nav-admin');
+    if (adminNav) adminNav.style.display = 'none';
+  }
+
+  // Hide map nav (disabled in config)
+  if (!config.features?.mapView) {
+    const mapNav = document.getElementById('nav-map');
+    if (mapNav) mapNav.style.display = 'none';
+  }
+
+  // Setup mobile navigation
+  if (window.innerWidth <= 768) {
+    document.getElementById('bottom-nav').style.display = 'flex';
+    document.getElementById('app').style.paddingBottom = '60px';
+  }
+
+  // Initialize app
   buildApp();
 }
 
 function showStep(n) {
-  [1,2,3].forEach(i => {
-    document.getElementById(`step${i}`).style.display = i === n ? 'block' : 'none';
+  [2, 3].forEach(i => {
+    const step = document.getElementById(`step${i}`);
+    if (step) step.style.display = i === n ? 'block' : 'none';
+
+    const dot = document.getElementById(`dot${i}`);
+    if (dot) dot.classList.toggle('active', i === n);
   });
-  document.querySelectorAll('#s2-err, #s3-err').forEach(e => e.style.display = 'none');
+
+  // Clear error messages
+  document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.attempt-warning').forEach(e => e.style.display = 'none');
 }
 
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-let totpInterval;
-function startTOTPTimer() {
-  clearInterval(totpInterval);
-  function tick() {
-    const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
-    const el = document.getElementById('totp-timer');
-    if (el) el.textContent = remaining;
+function showError(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.textContent = message;
+    el.style.display = 'block';
   }
-  tick(); totpInterval = setInterval(tick, 1000);
 }
 
-// ── Build App ──────────────────────────────────────────────
-function buildApp() {
-  populateBranchSelect();
-  populateRelationshipDropdown();
-  populateEventPersonDropdown();
-  buildMemberList();
-  buildCalendarFilters();
-  renderTree();
-  setupSearch();
-  setupTreeKeyboardShortcuts();
-  setupMobileTree();
-
-  // Show/hide Event Creator based on role
-  const eventCreatorCard = document.getElementById('event-creator-card');
-  if (eventCreatorCard) {
-    eventCreatorCard.style.display = (currentRole === 'admin' || currentRole === 'contributor') ? 'block' : 'none';
+function showAttemptWarning(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.textContent = message;
+    el.style.display = 'block';
   }
+}
 
-  // Hide map nav when mapView is disabled in config
-  if (!config.features?.mapView) {
-    const m = document.getElementById('nav-map');
-    if (m) m.style.display = 'none';
+window.logout = function() {
+  if (watermarkObserver) watermarkObserver.disconnect();
+  sessionStorage.clear();
+  location.reload();
+};
+
+// ── PWA Setup ──────────────────────────────────────────────
+function setupPWA() {
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg))
+      .catch(err => console.log('SW registration failed:', err));
   }
 
-  // Register PWA service worker
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  // Handle install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show install banner (optional)
+    const installBanner = document.createElement('div');
+    installBanner.innerHTML = `
+      <div style="position:fixed;bottom:20px;left:20px;right:20px;background:var(--g);color:white;
+                  padding:12px 16px;border-radius:8px;font-size:13px;z-index:1000;
+                  display:flex;align-items:center;justify-content:space-between;">
+        <span>Install Family Tree app for better experience</span>
+        <button onclick="installPWA()" style="background:var(--gold);border:none;color:white;
+                padding:6px 12px;border-radius:4px;font-size:11px;cursor:pointer;">
+          Install
+        </button>
+      </div>
+    `;
+    document.body.appendChild(installBanner.firstElementChild);
+
+    window.installPWA = () => {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        installBanner.remove();
+      });
+    };
+  });
 }
 
-// ── Tree keyboard shortcuts ────────────────────────────────
-function setupTreeKeyboardShortcuts() {
-  document.addEventListener('keydown', function(e) {
-    // Only apply shortcuts when tree view is active
-    if (document.getElementById('tree-view').style.display === 'none') return;
+// ── GEDCOM Export ──────────────────────────────────────────
+window.exportGedcom = async function() {
+  if (currentRole !== 'admin' && currentRole !== 'contributor') {
+    alert('GEDCOM export is only available for Admin and Contributors.');
+    return;
+  }
 
-    // Prevent shortcuts when typing in inputs
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const modal = document.getElementById('export-modal');
+  const bar = document.getElementById('export-bar');
+  const status = document.getElementById('export-status');
 
-    switch(e.key) {
-      case '+':
-      case '=':
-        e.preventDefault();
-        treeZoom(1.2);
-        break;
-      case '-':
-        e.preventDefault();
-        treeZoom(0.8);
-        break;
-      case '0':
-        e.preventDefault();
-        treeFit();
-        break;
-      case 'Escape':
-        e.preventDefault();
-        closePanel();
-        break;
-      case '1':
-        e.preventDefault();
-        setViewMode('full');
-        break;
-      case '2':
-        e.preventDefault();
-        setViewMode('ancestor4');
-        break;
-      case '3':
-        e.preventDefault();
-        setViewMode('descendant4');
-        break;
-      case '4':
-        e.preventDefault();
-        setViewMode('hourglass');
-        break;
-      case '5':
-        e.preventDefault();
-        setViewMode('compact');
-        break;
+  modal.style.display = 'flex';
+  bar.style.width = '0%';
+  status.textContent = 'Processing persons...';
+
+  try {
+    // Generate GEDCOM content
+    let gedcom = `0 HEAD
+1 SOUR Family Tree
+2 VERS 1.0
+2 NAME The Family Tree
+1 DEST GEDCOM 5.5.5
+1 DATE ${new Date().toLocaleDateString('en-GB').replace(/\//g, ' ')}
+1 CHAR UTF-8
+1 GEDC
+2 VERS 5.5.5
+2 FORM LINEAGE-LINKED
+`;
+
+    // Update progress
+    bar.style.width = '20%';
+    status.textContent = 'Processing individuals...';
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Add individuals
+    const visiblePersons = filterByRole(familyData.persons);
+    for (let i = 0; i < visiblePersons.length; i++) {
+      const person = visiblePersons[i];
+      gedcom += `
+0 @${person.id}@ INDI
+1 NAME ${person.firstName} /${person.lastName}/
+1 SEX ${person.gender}`;
+
+      if (person.birthDate) {
+        gedcom += `
+1 BIRT
+2 DATE ${formatGedcomDate(person.birthDate)}`;
+        if (person.birthPlace) {
+          gedcom += `
+2 PLAC ${person.birthPlace}`;
+        }
+      }
+
+      if (person.status === 'deceased' && person.deathDate) {
+        gedcom += `
+1 DEAT
+2 DATE ${formatGedcomDate(person.deathDate)}`;
+        if (person.deathPlace) {
+          gedcom += `
+2 PLAC ${person.deathPlace}`;
+        }
+      }
+
+      if (person.occupation) {
+        gedcom += `
+1 OCCU ${person.occupation}`;
+      }
+
+      // Update progress
+      const progress = 20 + (i / visiblePersons.length) * 60;
+      bar.style.width = `${progress}%`;
+    }
+
+    status.textContent = 'Processing relationships...';
+    bar.style.width = '80%';
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Add families/relationships
+    const families = new Map();
+    let famId = 1;
+
+    familyData.relationships.forEach(rel => {
+      if (rel.type === 'marriage') {
+        const famKey = `FAM${famId++}`;
+        families.set(rel.id, famKey);
+
+        gedcom += `
+0 @${famKey}@ FAM
+1 HUSB @${rel.person1Id}@
+1 WIFE @${rel.person2Id}@`;
+
+        if (rel.startDate) {
+          gedcom += `
+1 MARR
+2 DATE ${formatGedcomDate(rel.startDate)}`;
+        }
+      }
+    });
+
+    status.textContent = 'Finalizing export...';
+    bar.style.width = '95%';
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    gedcom += `
+0 TRLR`;
+
+    // Download file
+    const blob = new Blob([gedcom], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    bar.style.width = '100%';
+    status.textContent = 'Export complete!';
+
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 1000);
+
+  } catch (e) {
+    console.error('GEDCOM export error:', e);
+    status.textContent = 'Export failed. Please try again.';
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 2000);
+  }
+};
+
+function formatGedcomDate(dateStr) {
+  if (!dateStr) return '';
+  if (dateStr.length === 8) {
+    // DDMMYYYY format
+    const day = dateStr.slice(0, 2);
+    const month = dateStr.slice(2, 4);
+    const year = dateStr.slice(4, 8);
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return `${day} ${months[parseInt(month) - 1]} ${year}`;
+  }
+  return dateStr; // Return as-is if not in expected format
+}
+
+window.downloadFamilyJson = function() {
+  const filtered = {
+    ...familyData,
+    persons: filterByRole(familyData.persons).map(filterFields)
+  };
+
+  const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `family-data-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+// ── Performance Optimizations ──────────────────────────────
+function setupVirtualScrolling(container, items, renderItem) {
+  const itemHeight = 80;
+  const containerHeight = container.clientHeight;
+  const totalHeight = items.length * itemHeight;
+
+  const content = container.querySelector('.virtual-content') || document.createElement('div');
+  content.className = 'virtual-content';
+  content.style.height = `${totalHeight}px`;
+
+  if (!container.querySelector('.virtual-content')) {
+    container.appendChild(content);
+  }
+
+  function updateVisibleItems() {
+    const scrollTop = container.scrollTop;
+    const startIndex = Math.floor(scrollTop / itemHeight);
+    const endIndex = Math.min(startIndex + Math.ceil(containerHeight / itemHeight) + BUFFER_SIZE, items.length);
+
+    // Clear existing items
+    content.innerHTML = '';
+
+    // Render visible items
+    for (let i = startIndex; i < endIndex; i++) {
+      const item = items[i];
+      const element = renderItem(item, i);
+      element.style.position = 'absolute';
+      element.style.top = `${i * itemHeight}px`;
+      element.style.left = '0';
+      element.style.right = '0';
+      element.style.height = `${itemHeight}px`;
+      content.appendChild(element);
+    }
+  }
+
+  container.addEventListener('scroll', debounce(updateVisibleItems, 10));
+  updateVisibleItems();
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function setupLazyLoading() {
+  // Setup intersection observer for images
+  document.querySelectorAll('img[data-src]').forEach(img => {
+    img.classList.add('lazy-img', 'loading');
+    imageObserver.observe(img);
+  });
+}
+
+// ── Enhanced Search ────────────────────────────────────────
+function setupSearch() {
+  if (!familyData?.persons) return;
+
+  searchIndex = new FlexSearch.Document({
+    tokenize: "forward",
+    cache: 100,
+    document: {
+      id: "id",
+      index: ["firstName", "lastName", "occupation", "birthPlace"],
+      store: ["id", "firstName", "lastName"]
     }
   });
 
-  // Add keyboard hint tooltip
-  const treeView = document.getElementById('tree-view');
-  if (!document.getElementById('tree-hints')) {
-    const hints = document.createElement('div');
-    hints.id = 'tree-hints';
-    hints.style.cssText = `
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(26,58,42,0.9);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-family: var(--fb);
-      z-index: 10;
-      pointer-events: none;
-      opacity: 0.7;
-    `;
-    hints.innerHTML = `
-      <div>⌨️ Shortcuts: +/- zoom • 0 fit • 1-5 view modes • ESC close</div>
-    `;
-    treeView.appendChild(hints);
+  // Index visible persons only
+  const visiblePersons = filterByRole(familyData.persons);
+  visiblePersons.forEach(person => searchIndex.add(person));
+
+  // Setup search input with debouncing
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      debounceSearch(() => performSearch(e.target.value), 300);
+    });
   }
 }
 
-// ── Member List (Sidebar) ──────────────────────────────────
+function performSearch(query) {
+  if (!query || !searchIndex) return [];
+
+  try {
+    const results = searchIndex.search(query, { limit: 10 });
+    // Handle FlexSearch results format
+    const persons = results.flatMap(result =>
+      result.result.map(id =>
+        familyData.persons.find(p => p.id === id)
+      )
+    ).filter(Boolean);
+
+    highlightSearchResults(persons);
+    return persons;
+  } catch (e) {
+    console.error('Search error:', e);
+    return [];
+  }
+}
+
+function highlightSearchResults(persons) {
+  // Clear previous highlights
+  document.querySelectorAll('.member-item').forEach(el => {
+    el.classList.remove('search-highlight');
+  });
+
+  // Highlight matching persons
+  persons.forEach(person => {
+    const el = document.getElementById(`li-${person.id}`);
+    if (el) el.classList.add('search-highlight');
+  });
+}
+
+// ── Core App Functions ─────────────────────────────────────
+function buildApp() {
+  buildMemberList();
+  renderTree();
+  buildAdminPanel();
+  setupLazyLoading();
+
+  // Setup debounced window resize
+  window.addEventListener('resize', debounce(() => {
+    renderTree();
+    if (watermarkObserver && currentUser) {
+      injectWatermark(currentUser.displayName || 'Guest');
+    }
+  }, 250));
+}
+
 function buildMemberList() {
   const list = document.getElementById('member-list');
+  if (!list) return;
+
   const persons = filterByRole(familyData.persons);
 
   if (persons.length === 0) {
     list.innerHTML = `
       <div style="padding:14px;font-size:14px;color:var(--muted);line-height:1.7;">
-        Guests view deceased ancestors only.<br>
+        ${t('guest.noAccess')}<br>
         <span onclick="location.reload()"
           style="color:var(--leaf);cursor:pointer;text-decoration:underline;">
-          Log in</span> to see your family.
+          ${t('guest.login')}
+        </span>
       </div>`;
     return;
   }
 
-  list.innerHTML = [...persons]
-    .sort((a,b) => a.firstName.localeCompare(b.firstName))
-    .map(p => `
-      <div class="member-item" id="li-${p.id}" onclick="selectPerson('${p.id}')">
-        <div class="av" style="background:${p.gender==='F'?'#c8963e':'#4a7c59'}">${initials(p)}</div>
-        <div>
-          <div class="mi-name">${p.firstName} ${p.lastName}</div>
-          <div class="mi-sub">${yr(p.birthDate)}${p.status==='deceased'?' – '+yr(p.deathDate)+'  †':''}</div>
-        </div>
-      </div>`).join('');
+  // Use virtual scrolling for large lists
+  if (persons.length > 50) {
+    setupVirtualScrolling(list, persons, renderMemberItem);
+  } else {
+    list.innerHTML = [...persons]
+      .sort((a,b) => a.firstName.localeCompare(b.firstName))
+      .map(p => renderMemberItem(p).outerHTML).join('');
+  }
 }
 
-// ── Role-based filtering ───────────────────────────────────
+function renderMemberItem(person, index = 0) {
+  const div = document.createElement('div');
+  div.className = 'member-item';
+  div.id = `li-${person.id}`;
+  div.onclick = () => selectPerson(person.id);
+
+  const initials = (person.firstName[0] + (person.lastName[0] || '')).toUpperCase();
+  const years = formatYears(person);
+
+  div.innerHTML = `
+    <div class="av" style="background:${person.gender==='F'?'#c8963e':'#4a7c59'}">${initials}</div>
+    <div>
+      <div class="mi-name">${person.firstName} ${person.lastName}</div>
+      <div class="mi-sub">${years}</div>
+    </div>
+  `;
+
+  return div;
+}
+
+function formatYears(person) {
+  const birth = person.birthDate ? person.birthDate.slice(-4) : '';
+  const death = person.status === 'deceased' && person.deathDate ? person.deathDate.slice(-4) : '';
+
+  if (birth && death) return `${birth} – ${death} †`;
+  if (birth) return birth;
+  return '';
+}
+
+function buildAdminPanel() {
+  if (currentRole !== 'admin' && currentRole !== 'contributor') return;
+
+  // Update stats
+  const visiblePersons = filterByRole(familyData.persons);
+  document.getElementById('stat-members').textContent = visiblePersons.length;
+  document.getElementById('stat-events').textContent = familyData.events?.length || 0;
+  document.getElementById('stat-photos').textContent = familyData.media?.filter(m => m.type === 'photo').length || 0;
+  document.getElementById('stat-pending').textContent = '0'; // TODO: Implement
+}
+
+// ── Tree Rendering ─────────────────────────────────────────
+function renderTree() {
+  // Placeholder - tree rendering would be implemented here
+  // For Phase 7, focus is on login, PWA, and export features
+  const svg = document.getElementById('tree-svg');
+  if (svg && familyData) {
+    const g = d3.select(svg).selectAll('*').remove();
+
+    // Simple placeholder tree
+    const visiblePersons = filterByRole(familyData.persons);
+    if (visiblePersons.length === 0) {
+      d3.select(svg).append('text')
+        .attr('x', '50%')
+        .attr('y', '50%')
+        .attr('text-anchor', 'middle')
+        .attr('font-family', 'var(--fd)')
+        .attr('font-size', '18')
+        .attr('fill', 'var(--muted)')
+        .text(t('guest.loginToSeeTree') || 'Log in to see your family tree');
+    }
+  }
+}
+
+function selectPerson(personId) {
+  selectedPerson = personId;
+  // Update selection UI
+  document.querySelectorAll('.member-item').forEach(el => {
+    el.classList.remove('selected');
+  });
+  const el = document.getElementById(`li-${personId}`);
+  if (el) el.classList.add('selected');
+}
+
+// ── Navigation ─────────────────────────────────────────────
+window.showView = function(view) {
+  // Hide all views
+  document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
+    el.style.display = 'none';
+  });
+
+  // Show selected view
+  const viewElement = document.getElementById(`${view}-view`);
+  if (viewElement) viewElement.style.display = 'block';
+
+  // Update navigation
+  document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+  const navBtn = document.getElementById(`nav-${view}`);
+  if (navBtn) navBtn.classList.add('active');
+
+  // Update mobile navigation
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const mobileBtn = document.querySelector(`.bottom-nav-btn[onclick*="${view}"]`);
+  if (mobileBtn) mobileBtn.classList.add('active');
+};
+
+window.setViewMode = function(mode) {
+  treeMode = mode;
+  document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[data-view="${mode}"]`)?.classList.add('active');
+  renderTree();
+};
+
+// ── Utility Functions ──────────────────────────────────────
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 function filterByRole(persons) {
   if (currentRole === 'guest') return persons.filter(p => p.status === 'deceased');
   return persons;
 }
+
 function filterFields(person) {
   if (currentRole === 'viewer' || currentRole === 'guest') {
     const p = { ...person };
@@ -1155,1828 +1527,13 @@ function filterFields(person) {
   return person;
 }
 
-// ── Tree Rendering (D3 hierarchy) ─────────────────────────
-function renderTree() {
-  if (!familyData) return;
-  console.log('renderTree() called, familyData persons:', familyData.persons.length);
-
-  const svg = d3.select('#tree-svg');
-  const container = svg.node().parentElement;
-  const W = container.offsetWidth, H = container.offsetHeight;
-
-  svg.attr('width', W).attr('height', H);
-  svg.selectAll('*').remove();
-
-  // Build tree data structure from relationships
-  const treeData = buildTreeData();
-  console.log('buildTreeData() returned:', treeData);
-
-  // Handle empty tree case
-  if (!treeData) {
-    const filteredPersons = filterByRole(familyData.persons);
-    console.log('No tree data, filtered persons:', filteredPersons.length);
-
-    if (filteredPersons.length === 0) {
-      // Show message for guests when no deceased members exist
-      const g = svg.append('g');
-      g.append('text')
-        .attr('x', '50%')
-        .attr('y', '48%')
-        .attr('text-anchor', 'middle')
-        .attr('font-family', 'Playfair Display,serif')
-        .attr('font-size', '20')
-        .attr('fill', '#9e9080')
-        .text('Log in to see your family tree');
-      return;
-    }
-  }
-
-  // Create D3 hierarchy
-  const root = d3.hierarchy(treeData);
-
-  // Apply view mode filtering
-  const filteredRoot = applyViewMode(root);
-
-  // Create tree layout
-  const treeLayout = d3.tree().size([H - 120, W - 200]);
-  treeLayout(filteredRoot);
-
-  // Create zoom behavior
-  const zoom = d3.zoom()
-    .scaleExtent([0.3, 3])
-    .on('zoom', function(event) {
-      treeTransform = event.transform;
-      g.attr('transform', event.transform);
-    });
-
-  svg.call(zoom);
-
-  // Main group for all tree content
-  const g = svg.append('g')
-    .attr('transform', `translate(${treeTransform.x || 100},${treeTransform.y || 60}) scale(${treeTransform.k || 1})`);
-
-  // Draw marriage lines first (behind everything)
-  drawMarriageLines(g, filteredRoot);
-
-  // Draw parent-child lines
-  const links = g.selectAll('.tree-link')
-    .data(filteredRoot.links())
-    .enter()
-    .append('path')
-    .attr('class', 'tree-link')
-    .attr('d', d3.linkHorizontal()
-      .x(d => d.y)
-      .y(d => d.x))
-    .attr('stroke', '#4a7c59')
-    .attr('stroke-width', 2)
-    .attr('fill', 'none')
-    .attr('stroke-linecap', 'round');
-
-  // Draw person nodes
-  const nodes = g.selectAll('.tree-node')
-    .data(filteredRoot.descendants())
-    .enter()
-    .append('g')
-    .attr('class', 'tree-node')
-    .attr('transform', d => `translate(${d.y},${d.x})`)
-    .style('cursor', 'pointer')
-    .on('click', function(event, d) {
-      selectPerson(d.data.id);
-      highlightNode(d.data.id);
-    });
-
-  // Node background cards
-  const nodeWidth = 160, nodeHeight = 80;
-  nodes.append('rect')
-    .attr('class', 'node-bg')
-    .attr('x', -nodeWidth/2)
-    .attr('y', -nodeHeight/2)
-    .attr('width', nodeWidth)
-    .attr('height', nodeHeight)
-    .attr('rx', 8)
-    .attr('fill', 'white')
-    .attr('stroke', d => d.data.status === 'deceased' ? '#9e9080' : '#4a7c59')
-    .attr('stroke-width', 1.5)
-    .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))');
-
-  // Profile avatars
-  const avatars = nodes.append('g')
-    .attr('class', 'node-avatar')
-    .attr('transform', `translate(-${nodeWidth/2 + 8}, -${nodeHeight/2 + 8})`);
-
-  avatars.append('circle')
-    .attr('cx', 20)
-    .attr('cy', 20)
-    .attr('r', 16)
-    .attr('fill', d => d.data.gender === 'F' ? '#c8963e' : '#4a7c59')
-    .attr('stroke', 'white')
-    .attr('stroke-width', 2);
-
-  avatars.append('text')
-    .attr('x', 20)
-    .attr('y', 25)
-    .attr('text-anchor', 'middle')
-    .attr('font-size', 11)
-    .attr('font-weight', 700)
-    .attr('fill', 'white')
-    .text(d => initials(d.data));
-
-  // Name text
-  nodes.append('text')
-    .attr('class', 'node-name')
-    .attr('x', 10)
-    .attr('y', -15)
-    .attr('font-family', 'Lato, sans-serif')
-    .attr('font-size', 13)
-    .attr('font-weight', 700)
-    .attr('fill', '#1e1a14')
-    .text(d => `${d.data.firstName} ${d.data.lastName}`);
-
-  // Birth/death years
-  nodes.append('text')
-    .attr('class', 'node-years')
-    .attr('x', 10)
-    .attr('y', 2)
-    .attr('font-family', 'Lato, sans-serif')
-    .attr('font-size', 12)
-    .attr('fill', '#6b6355')
-    .text(d => {
-      const birth = yr(d.data.birthDate);
-      const death = d.data.status === 'deceased' ? yr(d.data.deathDate) : '';
-      return birth + (death ? ` — ${death} †` : '');
-    });
-
-  // Occupation
-  nodes.append('text')
-    .attr('class', 'node-occupation')
-    .attr('x', 10)
-    .attr('y', 18)
-    .attr('font-family', 'Lato, sans-serif')
-    .attr('font-size', 12)
-    .attr('fill', '#9e9080')
-    .text(d => truncate(d.data.occupation || '', 18));
-
-  // Status indicators for living/deceased
-  nodes.filter(d => d.data.status === 'deceased')
-    .append('circle')
-    .attr('cx', nodeWidth/2 - 12)
-    .attr('cy', -nodeHeight/2 + 12)
-    .attr('r', 6)
-    .attr('fill', '#9e9080')
-    .attr('stroke', 'white')
-    .attr('stroke-width', 1.5);
-
-  nodes.filter(d => d.data.status === 'deceased')
-    .append('text')
-    .attr('x', nodeWidth/2 - 12)
-    .attr('y', -nodeHeight/2 + 16)
-    .attr('text-anchor', 'middle')
-    .attr('font-size', 8)
-    .attr('fill', 'white')
-    .text('†');
-
-  // Special case: Single person with no relationships (root of tree)
-  if (filteredRoot.descendants().length === 1 && !filteredRoot.children) {
-    g.append('text')
-      .attr('x', 0)
-      .attr('y', 120)
-      .attr('text-anchor', 'middle')
-      .attr('font-family', 'var(--fb)')
-      .attr('font-size', '14px')
-      .attr('fill', '#9e9080')
-      .text('You are the root. Add family members to grow your tree.');
-  }
-
-  // Apply current zoom transform
-  svg.call(zoom.transform, d3.zoomIdentity
-    .translate(treeTransform.x || 100, treeTransform.y || 60)
-    .scale(treeTransform.k || 1));
+// Initialize app when DOM loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
 }
 
-function buildTreeData() {
-  const persons = filterByRole(familyData.persons);
-  const relationships = familyData.relationships;
-
-  // Find root person (oldest generation or specified root)
-  const rootId = familyData.meta.rootPersonId || findOldestAncestor(persons, relationships);
-  const root = persons.find(p => p.id === rootId);
-
-  if (!root) {
-    console.warn('No root person found, using first person');
-    return persons.length > 0 ? { ...persons[0], children: null } : null;
-  }
-
-  // Build tree recursively with cycle detection
-  function buildNode(personId, visited = new Set(), depth = 0) {
-    if (visited.has(personId) || depth > 10) return null; // Prevent infinite recursion
-    visited.add(personId);
-
-    const person = persons.find(p => p.id === personId);
-    if (!person) return null;
-
-    // Get children relationships
-    const childRelationships = relationships
-      .filter(r => r.type === 'parent-child' && r.parentId === personId);
-
-    const children = childRelationships
-      .map(r => buildNode(r.childId, new Set(visited), depth + 1))
-      .filter(Boolean);
-
-    return {
-      ...person,
-      children: children.length > 0 ? children : null,
-      _depth: depth,
-      _childCount: children.length
-    };
-  }
-
-  const treeData = buildNode(rootId);
-  console.log('Tree built:', treeData ? `Root: ${treeData.firstName} ${treeData.lastName}` : 'Failed to build tree');
-  return treeData;
-}
-
-function findOldestAncestor(persons, relationships) {
-  // Find person with no parents (oldest ancestor)
-  const childIds = new Set(relationships
-    .filter(r => r.type === 'parent-child')
-    .map(r => r.childId));
-
-  const ancestors = persons
-    .filter(p => !childIds.has(p.id))
-    .sort((a, b) => (a.birthDate || '9999').localeCompare(b.birthDate || '9999'));
-
-  return ancestors[0]?.id || persons[0]?.id;
-}
-
-function applyViewMode(root) {
-  if (!root || treeMode === 'full') return root;
-
-  const selectedId = selectedPerson?.id || root.data.id;
-  const selectedNode = findNodeById(root, selectedId);
-
-  if (!selectedNode) return root;
-
-  switch (treeMode) {
-    case 'ancestor4':
-      return buildAncestorTree(selectedNode, 4);
-    case 'descendant4':
-      return buildDescendantTree(selectedNode, 4);
-    case 'hourglass':
-      return buildHourglassTree(selectedNode, 2);
-    case 'compact':
-      return buildCompactTree(selectedNode);
-    default:
-      return root;
-  }
-}
-
-function findNodeById(node, id) {
-  if (node.data.id === id) return node;
-  if (node.children) {
-    for (const child of node.children) {
-      const found = findNodeById(child, id);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-function buildAncestorTree(selectedNode, generations) {
-  // Find ancestors going up the tree
-  const relationships = familyData.relationships;
-  const persons = filterByRole(familyData.persons);
-
-  function findAncestors(personId, gens) {
-    if (gens <= 0) return null;
-
-    const person = persons.find(p => p.id === personId);
-    if (!person) return null;
-
-    const parentRels = relationships.filter(r =>
-      r.type === 'parent-child' && r.childId === personId);
-
-    const parents = parentRels.map(r => findAncestors(r.parentId, gens - 1))
-      .filter(Boolean);
-
-    return {
-      ...person,
-      children: parents.length > 0 ? parents : null
-    };
-  }
-
-  const ancestorData = findAncestors(selectedNode.data.id, generations);
-  return ancestorData ? d3.hierarchy(ancestorData) : selectedNode;
-}
-
-function buildDescendantTree(selectedNode, generations) {
-  // Build tree going down from selected node
-  const relationships = familyData.relationships;
-  const persons = filterByRole(familyData.persons);
-
-  function buildDownward(personId, gens) {
-    if (gens <= 0) return null;
-
-    const person = persons.find(p => p.id === personId);
-    if (!person) return null;
-
-    const children = relationships
-      .filter(r => r.type === 'parent-child' && r.parentId === personId)
-      .map(r => buildDownward(r.childId, gens - 1))
-      .filter(Boolean);
-
-    return {
-      ...person,
-      children: children.length > 0 ? children : null
-    };
-  }
-
-  const descendantData = buildDownward(selectedNode.data.id, generations);
-  return descendantData ? d3.hierarchy(descendantData) : selectedNode;
-}
-
-function buildHourglassTree(selectedNode, generations) {
-  // Combine ancestors and descendants around selected person
-  // This is a simplified version - could be enhanced
-  return buildDescendantTree(selectedNode, generations);
-}
-
-function buildCompactTree(selectedNode) {
-  // Show just 2 generations: parents, selected person, and children
-  const relationships = familyData.relationships;
-  const persons = filterByRole(familyData.persons);
-  const personId = selectedNode.data.id;
-
-  const person = persons.find(p => p.id === personId);
-  if (!person) return selectedNode;
-
-  // Get children
-  const children = relationships
-    .filter(r => r.type === 'parent-child' && r.parentId === personId)
-    .map(r => {
-      const child = persons.find(p => p.id === r.childId);
-      return child ? { ...child, children: null } : null;
-    })
-    .filter(Boolean);
-
-  const compactData = {
-    ...person,
-    children: children.length > 0 ? children : null
-  };
-
-  return d3.hierarchy(compactData);
-}
-
-function drawMarriageLines(g, root) {
-  const relationships = familyData.relationships;
-  const marriageRels = relationships.filter(r => r.type === 'marriage');
-
-  marriageRels.forEach(rel => {
-    const person1 = findNodeById(root, rel.person1Id);
-    const person2 = findNodeById(root, rel.person2Id);
-
-    if (person1 && person2) {
-      // Draw marriage line between spouses
-      g.append('line')
-        .attr('class', 'marriage-line')
-        .attr('x1', person1.y)
-        .attr('y1', person1.x)
-        .attr('x2', person2.y)
-        .attr('y2', person2.x)
-        .attr('stroke', '#c8963e')
-        .attr('stroke-width', 2)
-        .attr('stroke-dasharray', '5,5')
-        .attr('stroke-linecap', 'round');
-
-      // Marriage symbol in the middle
-      const midX = (person1.y + person2.y) / 2;
-      const midY = (person1.x + person2.x) / 2;
-
-      g.append('circle')
-        .attr('cx', midX)
-        .attr('cy', midY)
-        .attr('r', 8)
-        .attr('fill', '#c8963e')
-        .attr('stroke', 'white')
-        .attr('stroke-width', 2);
-
-      g.append('text')
-        .attr('x', midX)
-        .attr('y', midY + 3)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', 8)
-        .attr('fill', 'white')
-        .text('♥');
-    }
-  });
-}
-
-function highlightNode(personId) {
-  d3.selectAll('.tree-node .node-bg')
-    .attr('stroke-width', 1.5)
-    .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))');
-
-  d3.selectAll(`.tree-node`)
-    .filter(d => d.data.id === personId)
-    .select('.node-bg')
-    .attr('stroke-width', 3)
-    .style('filter', 'drop-shadow(0 4px 12px rgba(74,124,89,0.3))');
-}
-
-function truncate(str, maxLen) {
-  return str.length > maxLen ? str.substring(0, maxLen - 1) + '…' : str;
-}
-
-// ── Mobile Tree (Phase 3) ───────────────────────────────────
-function setupMobileTree() {
-  // Show mobile tree on mobile, D3 tree on desktop
-  const isMobile = window.innerWidth <= 768;
-  toggleMobileTree(isMobile);
-
-  // Handle window resize
-  window.addEventListener('resize', function() {
-    const nowMobile = window.innerWidth <= 768;
-    toggleMobileTree(nowMobile);
-  });
-
-  // Setup mobile touch gestures
-  if (isMobile) {
-    setupMobileGestures();
-    renderMobileTree();
-  }
-}
-
-function toggleMobileTree(isMobile) {
-  const mobileTree = document.getElementById('mobile-tree');
-  const mobileNav = document.getElementById('mobile-nav');
-  const treeSvg = document.getElementById('tree-svg');
-  const treeControls = document.querySelector('.tree-controls');
-  const treeHints = document.getElementById('tree-hints');
-
-  if (isMobile) {
-    mobileTree.style.display = 'flex';
-    mobileNav.style.display = 'flex';
-    treeSvg.style.display = 'none';
-    if (treeControls) treeControls.style.display = 'none';
-    if (treeHints) treeHints.style.display = 'none';
-    renderMobileTree();
-  } else {
-    mobileTree.style.display = 'none';
-    mobileNav.style.display = 'none';
-    treeSvg.style.display = 'block';
-    if (treeControls) treeControls.style.display = 'flex';
-    if (treeHints) treeHints.style.display = 'block';
-    renderTree(); // Re-render D3 tree for desktop
-  }
-}
-
-function renderMobileTree() {
-  if (!familyData || !selectedPerson) {
-    // Default to root person if no selection
-    const rootId = familyData?.meta?.rootPersonId || familyData?.persons?.[0]?.id;
-    if (rootId) {
-      selectedPerson = familyData.persons.find(p => p.id === rootId);
-    }
-  }
-
-  if (!selectedPerson) return;
-
-  const person = selectedPerson;
-  const relationships = familyData.relationships;
-  const persons = filterByRole(familyData.persons);
-
-  // Find parents
-  const parentRels = relationships.filter(r =>
-    r.type === 'parent-child' && r.childId === person.id);
-  const parents = parentRels.map(r =>
-    persons.find(p => p.id === r.parentId)).filter(Boolean);
-
-  // Find spouse
-  const spouseRel = relationships.find(r =>
-    r.type === 'marriage' && (r.person1Id === person.id || r.person2Id === person.id) && !r.endDate);
-  const spouse = spouseRel ?
-    persons.find(p => p.id === (r.person1Id === person.id ? r.person2Id : r.person1Id)) : null;
-
-  // Find children
-  const childRels = relationships.filter(r =>
-    r.type === 'parent-child' && r.parentId === person.id);
-  const children = childRels.map(r =>
-    persons.find(p => p.id === r.childId)).filter(Boolean);
-
-  // Render center node
-  renderMobileNode('mob-center-node', person, 'You', true);
-
-  // Render parents
-  const parentsContainer = document.getElementById('mob-parents');
-  parentsContainer.innerHTML = parents.map(p =>
-    `<div class="mob-tree-node parent" onclick="selectMobilePerson('${p.id}')">${renderMobileNodeContent(p, p.gender === 'M' ? 'Father' : 'Mother')}</div>`
-  ).join('');
-
-  // Render spouse
-  const spouseNode = document.getElementById('mob-spouse-node');
-  const heart = document.getElementById('mob-heart');
-  if (spouse) {
-    spouseNode.style.display = 'block';
-    spouseNode.innerHTML = renderMobileNodeContent(spouse, 'Spouse');
-    spouseNode.onclick = () => selectMobilePerson(spouse.id);
-    heart.style.display = 'block';
-  } else {
-    spouseNode.style.display = 'none';
-    heart.style.display = 'none';
-  }
-
-  // Render children
-  const childrenContainer = document.getElementById('mob-children');
-  childrenContainer.innerHTML = children.map(c =>
-    `<div class="mob-tree-node child" onclick="selectMobilePerson('${c.id}')">${renderMobileNodeContent(c, 'Child')}</div>`
-  ).join('');
-
-  // Show/hide swipe hint
-  const swipeHint = document.getElementById('mob-swipe-hint');
-  const siblings = getSiblings(person);
-  swipeHint.style.display = siblings.length > 1 ? 'block' : 'none';
-}
-
-function renderMobileNode(containerId, person, role, isCenter = false) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = renderMobileNodeContent(person, role);
-  if (!isCenter) {
-    container.onclick = () => selectMobilePerson(person.id);
-  }
-}
-
-function renderMobileNodeContent(person, role) {
-  const avatar = `<div class="mob-node-avatar" style="background:${person.gender === 'F' ? '#c8963e' : '#4a7c59'}">${initials(person)}</div>`;
-  const name = `<div class="mob-node-name">${person.firstName} ${person.lastName}</div>`;
-  const years = `<div class="mob-node-years">${yr(person.birthDate)}${person.status === 'deceased' ? ' – ' + yr(person.deathDate) + ' †' : ''}</div>`;
-  const roleLabel = `<div class="mob-node-role">${role}</div>`;
-
-  return avatar + name + years + roleLabel;
-}
-
-function selectMobilePerson(personId) {
-  const person = familyData.persons.find(p => p.id === personId);
-  if (person) {
-    selectedPerson = filterFields(person);
-    renderMobileTree();
-
-    // Update member list selection
-    document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
-    const li = document.getElementById('li-' + personId);
-    if (li) li.classList.add('selected');
-  }
-}
-
-function getSiblings(person) {
-  const relationships = familyData.relationships;
-  const persons = filterByRole(familyData.persons);
-
-  // Find parents
-  const parentIds = relationships
-    .filter(r => r.type === 'parent-child' && r.childId === person.id)
-    .map(r => r.parentId);
-
-  if (parentIds.length === 0) return [person]; // No parents = no siblings
-
-  // Find all children of the same parents
-  const siblings = relationships
-    .filter(r => r.type === 'parent-child' && parentIds.includes(r.parentId))
-    .map(r => persons.find(p => p.id === r.childId))
-    .filter(Boolean)
-    .filter(p => p.id !== person.id); // Exclude self
-
-  return [person, ...siblings];
-}
-
-function setupMobileGestures() {
-  const mobileTree = document.getElementById('mobile-tree');
-  let startX = 0, startY = 0;
-
-  mobileTree.addEventListener('touchstart', function(e) {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  });
-
-  mobileTree.addEventListener('touchend', function(e) {
-    if (!selectedPerson) return;
-
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const diffX = startX - endX;
-    const diffY = startY - endY;
-
-    // Only handle horizontal swipes (ignore vertical)
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-      const siblings = getSiblings(selectedPerson);
-      if (siblings.length <= 1) return;
-
-      const currentIndex = siblings.findIndex(s => s.id === selectedPerson.id);
-      let nextIndex;
-
-      if (diffX > 0) {
-        // Swiped left - next sibling
-        nextIndex = (currentIndex + 1) % siblings.length;
-      } else {
-        // Swiped right - previous sibling
-        nextIndex = currentIndex === 0 ? siblings.length - 1 : currentIndex - 1;
-      }
-
-      selectMobilePerson(siblings[nextIndex].id);
-    }
-  });
-}
-
-// ── Mobile Navigation ───────────────────────────────────────
-window.showMobileView = function(view) {
-  // Update nav buttons
-  document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('active'));
-  event.target.closest('.mob-nav-btn').classList.add('active');
-
-  // Switch views (reuse existing desktop logic)
-  showView(view === 'search' ? 'tree' : view); // Search opens search bar in tree view
-
-  if (view === 'search') {
-    // Focus search input
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.click();
-    }
-  } else if (view === 'profile' && selectedPerson) {
-    // Open member panel
-    openPanel(selectedPerson);
-  }
-};
-window.treeZoom = function(factor) {
-  const svg = d3.select('#tree-svg');
-  const currentTransform = d3.zoomTransform(svg.node());
-  const newK = Math.max(0.3, Math.min(3, currentTransform.k * factor));
-
-  svg.transition()
-    .duration(300)
-    .call(d3.zoom().transform,
-      d3.zoomIdentity
-        .translate(currentTransform.x, currentTransform.y)
-        .scale(newK)
-    );
-
-  treeTransform = { x: currentTransform.x, y: currentTransform.y, k: newK };
-};
-
-window.treeFit = function() {
-  const svg = d3.select('#tree-svg');
-  const container = svg.node().parentElement;
-  const W = container.offsetWidth, H = container.offsetHeight;
-
-  svg.transition()
-    .duration(500)
-    .call(d3.zoom().transform, d3.zoomIdentity.translate(100, 60).scale(1));
-
-  treeTransform = { x: 100, y: 60, k: 1 };
-};
-
-window.setViewMode = function(mode) {
-  treeMode = mode;
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-
-  // Update button text to show current mode
-  const modeNames = {
-    full: '🌳 Full tree',
-    ancestor4: '⬆️ Ancestors',
-    descendant4: '⬇️ Descendants',
-    hourglass: '⌛ Hourglass',
-    compact: '👥 Compact'
-  };
-
-  // Add visual feedback
-  const btn = event.target;
-  btn.style.transform = 'scale(0.95)';
-  setTimeout(() => { btn.style.transform = 'scale(1)'; }, 100);
-
-  renderTree();
-};
-
-// ── Person selection ───────────────────────────────────────
-window.selectPerson = function(id) {
-  selectedPerson = filterFields(familyData.persons.find(p => p.id === id));
-  if (!selectedPerson) return;
-  document.querySelectorAll('.member-item').forEach(el => el.classList.remove('selected'));
-  const li = document.getElementById('li-' + id);
-  if (li) li.classList.add('selected');
-
-  // Update mobile tree if on mobile
-  if (window.innerWidth <= 768) {
-    renderMobileTree();
-  }
-
-  openPanel(selectedPerson);
-};
-
-function openPanel(p) {
-  const panel = document.getElementById('member-panel');
-  panel.style.display = 'flex';
-  // Small delay to ensure display:flex is applied before animation
-  setTimeout(() => panel.classList.add('open'), 10);
-  const av = document.getElementById('panel-av');
-  av.textContent = initials(p);
-  av.style.background = p.gender === 'F' ? '#c8963e' : '#4a7c59';
-  document.getElementById('panel-name').textContent = `${p.firstName} ${p.lastName}`;
-  const dates = [p.birthDate && formatDate(p.birthDate), p.status==='deceased' && p.deathDate && formatDate(p.deathDate)].filter(Boolean).join(' – ');
-  document.getElementById('panel-dates').textContent = dates || '—';
-  document.getElementById('panel-occ').textContent = p.occupation || '';
-  switchPanelTab('timeline');
-}
-window.closePanel = function() {
-  const panel = document.getElementById('member-panel');
-  panel.classList.remove('open');
-  // Hide the panel after animation completes
-  setTimeout(() => {
-    if (!panel.classList.contains('open')) {
-      panel.style.display = 'none';
-    }
-  }, 300);
-  selectedPerson = null;
-};
-
-// ── Panel tabs ─────────────────────────────────────────────
-window.switchPanelTab = function(tab) {
-  document.querySelectorAll('.ptab').forEach((b,i) => {
-    b.classList.toggle('active', ['timeline','bio','family'][i] === tab);
-  });
-  if (!selectedPerson) return;
-  const p = selectedPerson;
-  const content = document.getElementById('panel-content');
-  if (tab === 'timeline') {
-    // Get events from familyData.events
-    const dataEvents = familyData.events.filter(e =>
-      e.personId === p.id || (e.personIds && e.personIds.includes(p.id))
-    );
-
-    // Generate automatic life events from person data
-    const lifeEvents = [];
-    if (p.birthDate) {
-      lifeEvents.push({
-        date: p.birthDate,
-        type: 'birth',
-        title: 'Born',
-        description: p.birthPlace ? `in ${p.birthPlace}` : '',
-        automatic: true
-      });
-    }
-
-    // Add marriage events
-    const marriages = familyData.relationships.filter(r =>
-      r.type === 'marriage' && (r.person1Id === p.id || r.person2Id === p.id)
-    );
-    marriages.forEach(m => {
-      if (m.startDate) {
-        const spouse = familyData.persons.find(sp =>
-          sp.id === (m.person1Id === p.id ? m.person2Id : m.person1Id)
-        );
-        lifeEvents.push({
-          date: m.startDate,
-          type: 'marriage',
-          title: 'Married',
-          description: spouse ? `to ${spouse.firstName} ${spouse.lastName}` : '',
-          place: m.place,
-          automatic: true
-        });
-      }
-    });
-
-    if (p.status === 'deceased' && p.deathDate) {
-      lifeEvents.push({
-        date: p.deathDate,
-        type: 'death',
-        title: 'Died',
-        description: p.deathPlace ? `in ${p.deathPlace}` : '',
-        automatic: true
-      });
-    }
-
-    // Combine and sort all events
-    const allEvents = [...dataEvents, ...lifeEvents]
-      .sort((a,b) => (a.date||'').localeCompare(b.date||''));
-
-    if (allEvents.length === 0) {
-      content.innerHTML = `<p style="color:var(--muted);font-size:13px;padding-top:8px;">No timeline events recorded.</p>`;
-    } else {
-      content.innerHTML = `<div class="timeline">${allEvents.map(e => {
-        const hasPhoto = e.media && e.media.length > 0;
-        const photoUrl = hasPhoto ? getPhotoUrl(e.media[0]) :
-                        (e.type === 'birth' && p.profilePhoto) ? getPhotoUrl(p.profilePhoto) : null;
-
-        return `<div class="tl-evt">
-          <div class="tl-date">${formatDate(e.date)} · ${eventIcon(e.type)} ${cap(e.type)}</div>
-          <div class="tl-title">${e.title}</div>
-          ${e.description ? `<div class="tl-desc">${e.description}</div>` : ''}
-          ${e.place ? `<div class="tl-desc" style="font-size:12px;color:var(--muted);">📍 ${e.place}</div>` : ''}
-          ${photoUrl ? `<img class="tl-photo" src="${photoUrl}" alt="Photo" onerror="this.style.display='none'"/>` : ''}
-        </div>`;
-      }).join('')}</div>`;
-    }
-  } else if (tab === 'bio') {
-    // Calculate age/lifespan
-    const getAge = () => {
-      if (!p.birthDate) return null;
-      const birth = new Date(p.birthDate);
-      const end = p.status === 'deceased' && p.deathDate ? new Date(p.deathDate) : new Date();
-      const age = end.getFullYear() - birth.getFullYear();
-      const m = end.getMonth() - birth.getMonth();
-      const finalAge = m < 0 || (m === 0 && end.getDate() < birth.getDate()) ? age - 1 : age;
-      return p.status === 'deceased' ? `${finalAge} years` : `${finalAge} years old`;
-    };
-
-    // Profile photo section
-    const photoSection = p.profilePhoto ? `
-      <div style="text-align:center;margin-bottom:20px;">
-        <img src="${getPhotoUrl(p.profilePhoto)}" alt="${p.firstName} ${p.lastName}"
-             style="width:120px;height:120px;border-radius:60px;object-fit:cover;border:3px solid var(--leaf);"
-             onerror="this.style.display='none'"/>
-      </div>` : '';
-
-    // Basic info fields
-    const fields = [
-      ['Full name', `${p.firstName} ${p.middleName || ''} ${p.lastName}`.replace(/\s+/g, ' ').trim()],
-      ['Born', p.birthDate ? `${formatDate(p.birthDate)}${getAge() ? ` (${getAge()})` : ''}` : ''],
-      ['Birthplace', p.birthPlace],
-      p.status === 'deceased' && ['Died', p.deathDate ? formatDate(p.deathDate) : ''],
-      p.status === 'deceased' && ['Place of death', p.deathPlace],
-      p.status === 'deceased' && ['Cause of death', p.deathCause],
-      ['Gender', p.gender === 'M' ? 'Male' : p.gender === 'F' ? 'Female' : p.gender],
-      ['Occupation', p.occupation],
-      ['Education', p.education],
-      ['Religion', p.religion],
-      p.maidenName && ['Maiden name', p.maidenName],
-      ['Status', p.status === 'living' ? 'Living' : p.status === 'deceased' ? 'Deceased' : p.status]
-    ].filter(Boolean);
-
-    // Biography section
-    const bioSection = p.biography ? `
-      <div style="margin-bottom:20px;padding:14px;background:var(--cream);border-radius:8px;border:0.5px solid var(--border);">
-        <h4 style="font-family:var(--fd);font-size:16px;color:var(--g);margin-bottom:8px;">Biography</h4>
-        <p style="font-size:13px;line-height:1.6;color:var(--bark);">${p.biography}</p>
-      </div>` : '';
-
-    // Tags section
-    const tagsSection = p.tags && p.tags.length > 0 ? `
-      <div style="margin-top:16px;">
-        <h4 style="font-family:var(--fd);font-size:14px;color:var(--g);margin-bottom:8px;">Tags</h4>
-        <div>${p.tags.map(tag => `<span style="display:inline-block;background:rgba(74,124,89,0.1);color:var(--leaf);font-size:11px;padding:4px 8px;border-radius:12px;margin:2px;">${tag}</span>`).join('')}</div>
-      </div>` : '';
-
-    content.innerHTML = `
-      ${photoSection}
-      ${bioSection}
-      <div style="margin-bottom:16px;">
-        <h4 style="font-family:var(--fd);font-size:16px;color:var(--g);margin-bottom:12px;">Personal Information</h4>
-        ${fields.filter(f => f[1]).map(f => `
-          <div class="info-row">
-            <span class="ir-lbl">${f[0]}</span>
-            <span class="ir-val">${f[1]}</span>
-          </div>`).join('')}
-      </div>
-      ${tagsSection}
-    `;
-  } else {
-    const rels = familyData.relationships;
-    const find = id => familyData.persons.find(x => x.id === id);
-
-    // Helper function to create relationship chips
-    const makeChip = (person, relationshipData = {}) => {
-      const avatar = `<div class="av" style="width:24px;height:24px;font-size:10px;background:${person.gender==='F'?'#c8963e':'#4a7c59'};margin-right:6px;">${initials(person)}</div>`;
-      const dateInfo = relationshipData.startDate ? ` (${formatDate(relationshipData.startDate)})` : '';
-      const statusInfo = relationshipData.endDate ? ` - ${formatDate(relationshipData.endDate)}` : '';
-      return `<span class="rel-chip" onclick="selectPerson('${person.id}')" style="display:flex;align-items:center;">
-        ${avatar}
-        <span>${person.firstName} ${person.lastName}${dateInfo}${statusInfo}</span>
-      </span>`;
-    };
-
-    // Get spouses with marriage dates
-    const spouseRels = rels.filter(r => r.type==='marriage' && (r.person1Id===p.id||r.person2Id===p.id));
-    const spouses = spouseRels.map(r => {
-      const spouse = find(r.person1Id===p.id ? r.person2Id : r.person1Id);
-      return spouse ? {person: spouse, rel: r} : null;
-    }).filter(Boolean);
-
-    // Get parents
-    const parentRels = rels.filter(r => r.type==='parent-child' && r.childId===p.id);
-    const parents = parentRels.map(r => find(r.parentId)).filter(Boolean);
-
-    // Get children
-    const childRels = rels.filter(r => r.type==='parent-child' && r.parentId===p.id);
-    const children = childRels.map(r => find(r.childId)).filter(Boolean);
-
-    // Get siblings (same parents)
-    const siblings = [];
-    if (parents.length > 0) {
-      const siblingIds = rels.filter(r =>
-        r.type==='parent-child' &&
-        parents.some(parent => parent.id === r.parentId) &&
-        r.childId !== p.id
-      ).map(r => r.childId);
-      siblings.push(...[...new Set(siblingIds)].map(id => find(id)).filter(Boolean));
-    }
-
-    // Get grandparents
-    const grandparents = [];
-    parents.forEach(parent => {
-      const gpRels = rels.filter(r => r.type==='parent-child' && r.childId===parent.id);
-      grandparents.push(...gpRels.map(r => find(r.parentId)).filter(Boolean));
-    });
-
-    // Get grandchildren
-    const grandchildren = [];
-    children.forEach(child => {
-      const gcRels = rels.filter(r => r.type==='parent-child' && r.parentId===child.id);
-      grandchildren.push(...gcRels.map(r => find(r.childId)).filter(Boolean));
-    });
-
-    // Relationship calculator
-    const relationshipCalc = currentUser && currentUser.displayName && p.id !== currentUser.hash ?
-      `<div style="background:rgba(200,150,60,0.1);border:0.5px solid rgba(200,150,60,0.2);border-radius:8px;padding:12px;margin-bottom:16px;">
-        <h4 style="font-family:var(--fd);font-size:14px;color:var(--gold);margin-bottom:4px;">👥 Your Connection</h4>
-        <p style="font-size:12px;color:var(--bark);">${calculateRelationship(p, currentUser)}</p>
-      </div>` : '';
-
-    // Helper function to create sections
-    const sec = (h, arr, chipMaker = makeChip) => arr.length ?
-      `<div class="rel-h">${h}</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">${arr.map(chipMaker).join('')}</div>` : '';
-
-    const hasAnyRelationships = spouses.length || parents.length || children.length || siblings.length || grandparents.length || grandchildren.length;
-
-    content.innerHTML = `
-      ${relationshipCalc}
-      ${hasAnyRelationships ? `
-        ${sec('💑 Spouse(s)', spouses, s => makeChip(s.person, s.rel))}
-        ${sec('👨‍👩‍👧‍👦 Parents', parents)}
-        ${sec('👫 Siblings', siblings)}
-        ${sec('👶 Children', children)}
-        ${sec('👴👵 Grandparents', grandparents)}
-        ${sec('🧒 Grandchildren', grandchildren)}
-      ` : `<p style="color:var(--muted);font-size:13px;padding-top:8px;">No family relationships recorded.</p>`}
-    `;
-  }
-};
-
-// ── View switching ─────────────────────────────────────────
-window.showView = function(view) {
-  ['tree','calendar','map','admin'].forEach(v => {
-    const el = document.getElementById(v+'-view');
-    if (!el) return;
-    el.style.display = v === view ? (v === 'tree' ? 'block' : 'block') : 'none';
-  });
-
-  // Hide sidebar on mobile, show on desktop when tree view
-  const isMobile = window.innerWidth <= 768;
-  const sidebar = document.getElementById('sidebar');
-  sidebar.style.display = (!isMobile && view === 'tree') ? 'flex' : 'none';
-
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('nav-'+view)?.classList.add('active');
-
-  if (view === 'calendar') buildCalendar();
-  if (view === 'map') buildMap();
-  if (view === 'admin') buildAdminStats();
-
-  // Ensure mobile tree is rendered when switching to tree view on mobile
-  if (isMobile && view === 'tree') {
-    renderMobileTree();
-  }
-};
-
-// ── Calendar ───────────────────────────────────────────────
-function buildCalendarFilters() {
-  // Branch filters go in separate row
-  const branchRow = document.getElementById('branch-filters');
-  if (branchRow && familyData) {
-    const branches = config.branches || [];
-    branches.forEach(b => {
-      const btn = document.createElement('button');
-      btn.className = 'filter-chip';
-      btn.textContent = b.name;
-      btn.dataset.filter = b.id;
-      btn.onclick = () => filterCalendar(b.id);
-      branchRow.appendChild(btn);
-    });
-
-    // Also get unique surnames from family data
-    const uniqueLastNames = [...new Set(familyData.persons.map(p => p.lastName))];
-    uniqueLastNames.forEach(surname => {
-      if (!branches.some(b => b.name.includes(surname))) {
-        const btn = document.createElement('button');
-        btn.className = 'filter-chip';
-        btn.textContent = `${surname} family`;
-        btn.dataset.filter = getBranchFromLastName(surname);
-        btn.onclick = () => filterCalendar(getBranchFromLastName(surname));
-        branchRow.appendChild(btn);
-      }
-    });
-  }
-}
-
-window.filterCalendar = function(filter) {
-  document.querySelectorAll('.filter-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.filter === filter);
-  });
-  buildCalendar(filter);
-};
-
-function buildCalendar(filter = 'all') {
-  const occasions = [];
-  const allPersons = filterByRole(familyData.persons);
-
-  // Add birthdays (living people only)
-  allPersons.filter(p => p.status === 'living' && p.birthDate).forEach(p => {
-    occasions.push({
-      type: 'birthday',
-      icon: '🎂',
-      name: `${p.firstName} ${p.lastName}`,
-      date: p.birthDate,
-      daysAway: daysUntil(p.birthDate),
-      personId: p.id,
-      branch: getBranchFromLastName(p.lastName)
-    });
-  });
-
-  // Add marriage anniversaries
-  familyData.relationships.filter(r => r.type === 'marriage' && r.startDate && !r.endDate).forEach(r => {
-    const p1 = familyData.persons.find(p => p.id === r.person1Id);
-    const p2 = familyData.persons.find(p => p.id === r.person2Id);
-    if (p1 && p2) {
-      occasions.push({
-        type: 'anniversary',
-        icon: '💍',
-        name: `${p1.firstName} & ${p2.firstName}`,
-        date: r.startDate,
-        daysAway: daysUntil(r.startDate),
-        personId: r.person1Id,
-        branch: 'all'
-      });
-    }
-  });
-
-  // Add death anniversaries (remembrance)
-  allPersons.filter(p => p.status === 'deceased' && p.deathDate).forEach(p => {
-    occasions.push({
-      type: 'remembrance',
-      icon: '🙏',
-      name: `${p.firstName} ${p.lastName}`,
-      date: p.deathDate,
-      daysAway: daysUntil(p.deathDate),
-      personId: p.id,
-      branch: getBranchFromLastName(p.lastName)
-    });
-  });
-
-  // Add custom events
-  if (familyData.events) {
-    familyData.events.filter(e => e.type === 'reunion' || e.type === 'milestone' || e.type === 'other').forEach(e => {
-      occasions.push({
-        type: 'event',
-        icon: getEventIcon(e.type),
-        name: e.title,
-        date: e.date,
-        daysAway: daysUntil(e.date),
-        personId: e.personId,
-        branch: 'all'
-      });
-    });
-  }
-  familyData.persons.filter(p => p.status==='deceased' && p.deathDate).forEach(p => {
-    occasions.push({ type:'death', icon:'🕊️', name:`${p.firstName} ${p.lastName}`, date:p.deathDate, daysAway: daysUntil(p.deathDate), personId:p.id, branch:'sharma' });
-  });
-  // Sort by days away, today's events first
-  occasions.sort((a,b) => a.daysAway - b.daysAway);
-
-  // Apply filters
-  let filtered = occasions;
-  if (filter === 'birthdays') filtered = occasions.filter(o => o.type === 'birthday');
-  else if (filter === 'anniversaries') filtered = occasions.filter(o => o.type === 'anniversary');
-  else if (filter === 'remembrance') filtered = occasions.filter(o => o.type === 'remembrance');
-  else if (filter === 'events') filtered = occasions.filter(o => o.type === 'event');
-  else if (filter !== 'all') filtered = occasions.filter(o => o.branch === filter);
-
-  // Render occasion cards (limit to next 50 events)
-  document.getElementById('occasions-list').innerHTML = filtered.slice(0, 50).map(o => {
-    const whatsappMsg = generateWhatsAppMessage(o);
-    return `
-      <div class="occ-card">
-        <div class="occ-icon">${o.icon}</div>
-        <div style="flex:1;">
-          <div class="occ-date">${formatDate(o.date)}</div>
-          <div class="occ-name">${o.name}</div>
-          <div class="occ-who">
-            <span class="type-badge type-${o.type}">${getTypeBadge(o.type)}</span>
-          </div>
-        </div>
-        <div class="days-away">
-          <div class="num">${o.daysAway === 0 ? '🎉' : o.daysAway > 365 ? '1y+' : o.daysAway}</div>
-          <div class="lbl">${o.daysAway === 0 ? 'Today!' : o.daysAway === 1 ? 'Tomorrow' : 'days away'}</div>
-        </div>
-        <div class="card-actions">
-          <button class="wa-mini-btn" onclick="shareOccasionWhatsApp('${whatsappMsg.replace(/'/g, '\\\'')}')" title="Share on WhatsApp">
-            📱
-          </button>
-          <button class="person-btn" onclick="selectPerson('${o.personId}')" title="View profile">
-            👤
-          </button>
-        </div>
-      </div>`;
-  }).join('') || '<div style="text-align:center;color:var(--muted);padding:40px;">No upcoming occasions in this category</div>';
-}
-
-function getBranchFromLastName(lastName) {
-  const branchMap = {
-    'Sathawane': 'SATHAWANE',
-    'Waghmare': 'WAGHMARE',
-    'Biradar': 'BIRADAR'
-  };
-  return branchMap[lastName] || 'SATHAWANE';
-}
-
-function getTypeBadge(type) {
-  const badges = {
-    'birthday': 'Birthday',
-    'anniversary': 'Anniversary',
-    'remembrance': 'Remembrance',
-    'event': 'Family Event'
-  };
-  return badges[type] || type;
-}
-
-function generateWhatsAppMessage(occasion) {
-  const familyName = config.app.familyName || 'The Sathawane Family';
-  const date = formatDate(occasion.date);
-
-  switch (occasion.type) {
-    case 'birthday':
-      return `🎂 Wishing ${occasion.name} a happy birthday on ${date}! — ${familyName}`;
-    case 'anniversary':
-      return `💍 Congratulating ${occasion.name} on their wedding anniversary on ${date}! — ${familyName}`;
-    case 'remembrance':
-      return `🙏 Remembering ${occasion.name} on their death anniversary (${date}). Always in our hearts. — ${familyName}`;
-    default:
-      return `📅 Family event: ${occasion.name} on ${date} — ${familyName}`;
-  }
-}
-
-// ── WhatsApp sharing functions ────────────────────────────
-window.shareWhatsApp = function() {
-  const url = encodeURIComponent(window.location.href);
-  const familyName = config.app.familyName || 'The Family Tree';
-  const msg = encodeURIComponent(`📅 Check out our family calendar on ${familyName}: `);
-  window.open(`https://wa.me/?text=${msg}${url}`, '_blank');
-};
-
-window.shareOccasionWhatsApp = function(message) {
-  const encodedMsg = encodeURIComponent(message);
-  window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
-};
-
-window.exportICal = function() {
-  const familyName = config.app.familyName || 'The Family Tree';
-  let ical = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//${familyName}//NONSGML Family Calendar//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n`;
-
-  // Add birthdays (living people only)
-  familyData.persons.filter(p => p.birthDate && p.status === 'living').forEach(p => {
-    const [y, m, d] = (p.birthDate + '-01-01').split('-');
-    const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
-    ical += `BEGIN:VEVENT\n`;
-    ical += `UID:birthday-${p.id}@family-tree\n`;
-    ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
-    ical += `SUMMARY:🎂 ${p.firstName} ${p.lastName}'s Birthday\n`;
-    ical += `RRULE:FREQ=YEARLY\n`;
-    ical += `DESCRIPTION:Birthday celebration for ${p.firstName} ${p.lastName}\n`;
-    ical += `CATEGORIES:Birthday,Family\n`;
-    ical += `END:VEVENT\n`;
-  });
-
-  // Add marriage anniversaries
-  familyData.relationships.filter(r => r.type === 'marriage' && r.startDate && !r.endDate).forEach(r => {
-    const p1 = familyData.persons.find(p => p.id === r.person1Id);
-    const p2 = familyData.persons.find(p => p.id === r.person2Id);
-    if (p1 && p2) {
-      const [y, m, d] = (r.startDate + '-01-01').split('-');
-      const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
-      ical += `BEGIN:VEVENT\n`;
-      ical += `UID:anniversary-${r.id}@family-tree\n`;
-      ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
-      ical += `SUMMARY:💍 ${p1.firstName} & ${p2.firstName} Anniversary\n`;
-      ical += `RRULE:FREQ=YEARLY\n`;
-      ical += `DESCRIPTION:Wedding anniversary of ${p1.firstName} ${p1.lastName} and ${p2.firstName} ${p2.lastName}\n`;
-      ical += `CATEGORIES:Anniversary,Family\n`;
-      ical += `END:VEVENT\n`;
-    }
-  });
-
-  // Add death anniversaries (remembrance)
-  familyData.persons.filter(p => p.deathDate && p.status === 'deceased').forEach(p => {
-    const [y, m, d] = (p.deathDate + '-01-01').split('-');
-    const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
-    ical += `BEGIN:VEVENT\n`;
-    ical += `UID:remembrance-${p.id}@family-tree\n`;
-    ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
-    ical += `SUMMARY:🙏 Remembering ${p.firstName} ${p.lastName}\n`;
-    ical += `RRULE:FREQ=YEARLY\n`;
-    ical += `DESCRIPTION:Death anniversary remembrance for ${p.firstName} ${p.lastName}\n`;
-    ical += `CATEGORIES:Remembrance,Family\n`;
-    ical += `END:VEVENT\n`;
-  });
-
-  // Add custom family events
-  if (familyData.events) {
-    familyData.events.filter(e => e.date && (e.type === 'reunion' || e.type === 'milestone' || e.type === 'other')).forEach(e => {
-      const [y, m, d] = (e.date + '-01-01').split('-');
-      const dateStr = `${y}${(m || '01').padStart(2, '0')}${(d || '01').padStart(2, '0')}`;
-      ical += `BEGIN:VEVENT\n`;
-      ical += `UID:event-${e.id}@family-tree\n`;
-      ical += `DTSTART;VALUE=DATE:${dateStr}\n`;
-      ical += `SUMMARY:📅 ${e.title}\n`;
-      if (e.description) ical += `DESCRIPTION:${e.description}\n`;
-      ical += `CATEGORIES:Family Event\n`;
-      ical += `END:VEVENT\n`;
-    });
-  }
-
-  ical += 'END:VCALENDAR';
-  const blob = new Blob([ical], { type: 'text/calendar' });
-  dlBlob(blob, `${familyName.replace(/\s+/g, '-').toLowerCase()}-calendar.ics`);
-};
-
-// ── Map ────────────────────────────────────────────────────
-function buildMap() {
-  document.getElementById('map-view').innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Lato,sans-serif;color:#9e9080;font-size:16px;">Map view disabled — political boundary data unavailable</div>';
-}
-
-// ── Admin ──────────────────────────────────────────────────
-function buildAdminStats() {
-  document.getElementById('stats-bar').innerHTML = [
-    { num: familyData.persons.length, lbl: 'Members' },
-    { num: familyData.events.length, lbl: 'Events' },
-    { num: familyData.media.length, lbl: 'Photos' },
-    { num: 0, lbl: 'Pending PRs', cls: 'pending' },
-  ].map(s => `<div class="stat-card ${s.cls||''}"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`).join('');
-}
-
-function populateBranchSelect() {
-  const sel = document.getElementById('af-branch');
-  if (!sel) return;
-  sel.innerHTML = (config.branches || []).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-}
-
-window.selectRole = function(btn, role) {
-  document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('af-role').value = role;
-};
-
-window.handlePhotoSelect = function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('af-photo-img').src = e.target.result;
-    document.getElementById('af-photo-preview').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-};
-
-// ── Phase 5: Submit new member via Cloudflare Worker ──────────
-window.submitNewMember = async function() {
-  const firstName = document.getElementById('af-firstname').value.trim();
-  const lastName = document.getElementById('af-lastname').value.trim();
-  const gender = document.getElementById('af-gender').value;
-  const dob = document.getElementById('af-dob').value.trim();
-  const status = document.getElementById('af-status').value;
-  const relationship = document.getElementById('af-relationship').value;
-
-  // Validate mandatory fields
-  if (!firstName || !lastName || !gender || !dob || !relationship) {
-    alert('Please fill in all required fields: First name, Last name, Gender, Date of birth, and Relationship.');
-    return;
-  }
-
-  // Validate date format DD/MM/YYYY
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
-    alert('Date of birth must be in DD/MM/YYYY format (e.g., 15/03/1985)');
-    return;
-  }
-
-  if (!config.workerUrl) {
-    alert('Worker URL not configured. Please set config.workerUrl in config.json');
-    return;
-  }
-
-  const memberData = {
-    firstName,
-    lastName,
-    gender,
-    dob,
-    status,
-    relationshipTo: relationship.split(':')[0], // Extract person ID
-    relationshipType: relationship.split(':')[1], // Extract relationship type
-    photoUrl: await uploadPhotoIfNeeded()
-  };
-
-  try {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = 'Adding member...';
-
-    const response = await fetch(config.workerUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'addMember',
-        data: memberData
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      alert(`✅ ${firstName} ${lastName} added successfully as ${result.personId}!\n\nThe family tree will update automatically.`);
-      clearAddMemberForm();
-      // Reload the page to refresh with new data
-      setTimeout(() => location.reload(), 2000);
-    } else {
-      alert(`❌ Error adding member: ${result.error}`);
-    }
-  } catch (error) {
-    console.error('Error submitting member:', error);
-    alert(`❌ Network error: ${error.message}`);
-  } finally {
-    const btn = document.querySelector('#af-firstname').closest('.admin-card').querySelector('.admin-btn');
-    btn.disabled = false;
-    btn.textContent = 'Add to family tree';
-  }
-};
-
-async function uploadPhotoIfNeeded() {
-  const fileInput = document.getElementById('af-photo');
-  if (!fileInput.files[0]) return null;
-
-  // For now, return null - R2 upload would require signed URLs
-  // This can be implemented later when R2 is properly configured
-  console.log('Photo upload not yet implemented');
-  return null;
-}
-
-function clearAddMemberForm() {
-  document.getElementById('af-firstname').value = '';
-  document.getElementById('af-lastname').value = '';
-  document.getElementById('af-gender').value = '';
-  document.getElementById('af-dob').value = '';
-  document.getElementById('af-status').value = 'living';
-  document.getElementById('af-relationship').value = '';
-  document.getElementById('af-photo').value = '';
-  document.getElementById('af-photo-preview').style.display = 'none';
-}
-
-function populateRelationshipDropdown() {
-  const select = document.getElementById('af-relationship');
-  if (!familyData || !select) return;
-
-  const options = familyData.persons.map(p =>
-    `<option value="${p.id}:parent-child">${p.firstName} ${p.lastName} (as parent)</option>` +
-    `<option value="${p.id}:marriage">${p.firstName} ${p.lastName} (as spouse)</option>`
-  ).join('');
-
-  select.innerHTML = `<option value="">Select relationship to existing member *</option>${options}`;
-}
-
-function populateEventPersonDropdown() {
-  const select = document.getElementById('event-person');
-  if (!familyData || !select) return;
-
-  const options = familyData.persons.map(p =>
-    `<option value="${p.id}">${p.firstName} ${p.lastName}</option>`
-  ).join('');
-
-  select.innerHTML = `<option value="">Select linked family members (optional)</option>${options}`;
-}
-
-// ── Event Creator ─────────────────────────────────────────
-window.createFamilyEvent = async function() {
-  const title = document.getElementById('event-title').value.trim();
-  const date = document.getElementById('event-date').value;
-  const type = document.getElementById('event-type').value;
-  const description = document.getElementById('event-description').value.trim();
-  const personSelect = document.getElementById('event-person');
-  const selectedPersonIds = Array.from(personSelect.selectedOptions).map(option => option.value).filter(Boolean);
-
-  if (!title || !date) {
-    alert('Please enter both event title and date.');
-    return;
-  }
-
-  // Generate new event ID
-  const existingEventIds = (familyData.events || []).map(e => parseInt(e.id?.substring(1) || 0));
-  const newId = Math.max(0, ...existingEventIds) + 1;
-  const eventId = `E${newId.toString().padStart(3, '0')}`;
-
-  const newEvent = {
-    id: eventId,
-    type: type,
-    title: title,
-    date: date,
-    description: description || null,
-    place: null,
-    personIds: selectedPersonIds.length > 0 ? selectedPersonIds : null,
-    personId: selectedPersonIds[0] || null, // Primary linked person
-    media: null
-  };
-
-  if (config.workerUrl && (currentRole === 'admin' || currentRole === 'contributor')) {
-    // Submit via worker (future enhancement)
-    try {
-      const response = await fetch(config.workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'addEvent',
-          data: newEvent
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        alert(`✅ Event "${title}" created successfully!`);
-        clearEventForm();
-        if (document.getElementById('calendar-view').style.display !== 'none') {
-          buildCalendar(); // Refresh calendar if visible
-        }
-        return;
-      }
-    } catch (error) {
-      console.log('Worker not available, using local storage');
-    }
-  }
-
-  // Fallback: Add to local familyData and download JSON
-  if (!familyData.events) familyData.events = [];
-  familyData.events.push(newEvent);
-
-  // Update metadata
-  familyData.meta.updatedAt = new Date().toISOString().split('T')[0];
-
-  // Download updated JSON
-  const blob = new Blob([JSON.stringify(familyData, null, 2)], { type: 'application/json' });
-  dlBlob(blob, `family-updated-${new Date().toISOString().split('T')[0]}.json`);
-
-  alert(`✅ Event "${title}" created! Download the updated family.json file and replace it in your repository.`);
-  clearEventForm();
-
-  // Refresh calendar if visible
-  if (document.getElementById('calendar-view').style.display !== 'none') {
-    buildCalendar();
-  }
-};
-
-function clearEventForm() {
-  document.getElementById('event-title').value = '';
-  document.getElementById('event-date').value = '';
-  document.getElementById('event-type').value = 'reunion';
-  document.getElementById('event-description').value = '';
-  document.getElementById('event-person').selectedIndex = -1;
-}
-
-// ── Bulk CSV Import ────────────────────────────────────────
-window.downloadCSVTemplate = function() {
-  const csv = 'id,firstName,middleName,lastName,maidenName,gender,status,birthDate,birthPlace,deathDate,deathPlace,occupation,religion,education,biography\n'
-    + 'P010,Suresh,,Nair,,M,living,20081973,"Kochi, Kerala",,,,Architect,Hindu,B.Arch,\n'
-    + 'P011,Kavya,,Nair,,F,living,03042005,"Kochi, Kerala",,,,Student,Hindu,High School,\n';
-  dlBlob(new Blob([csv],{type:'text/csv'}), 'family-tree-template.csv');
-};
-
-window.handleCSVFile = function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('csv-paste').value = e.target.result;
-    previewCSV();
-  };
-  reader.readAsText(file);
-};
-
-window.previewCSV = function() {
-  const raw = document.getElementById('csv-paste').value.trim();
-  if (!raw) return;
-  const lines = raw.split('\n').filter(l => l && !l.startsWith('#'));
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
-  const rows = lines.slice(1).map(line => {
-    const vals = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h,i) => { obj[h] = (vals[i]||'').trim(); });
-    return obj;
-  }).filter(r => r.id && r.firstName);
-  const table = document.getElementById('csv-table');
-  table.innerHTML = `<thead><tr>${headers.slice(0,7).map(h=>`<th>${h}</th>`).join('')}</tr></thead>`
-    + `<tbody>${rows.slice(0,10).map(r=>`<tr>${headers.slice(0,7).map(h=>`<td>${r[h]||'—'}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  document.getElementById('csv-count').textContent = `${rows.length} member(s) ready to import${rows.length > 10 ? ' (showing first 10)' : ''}.`;
-  document.getElementById('csv-preview').style.display = 'block';
-  document.getElementById('csv-preview').dataset.rows = JSON.stringify(rows);
-};
-
-window.confirmCSVImport = async function() {
-  const csvData = document.getElementById('csv-paste').value.trim();
-  if (!csvData) {
-    alert('No CSV data to import');
-    return;
-  }
-
-  if (!config.workerUrl) {
-    alert('Worker URL not configured. Please set config.workerUrl in config.json');
-    return;
-  }
-
-  try {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = 'Importing...';
-
-    const response = await fetch(config.workerUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'bulkImport',
-        data: csvData
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      document.getElementById('csv-preview').style.display = 'none';
-      document.getElementById('csv-paste').value = '';
-      alert(`✅ ${result.count} member(s) imported successfully!\n\nMembers added:\n${result.members.join('\n')}\n\nThe family tree will update automatically.`);
-      // Reload the page to refresh with new data
-      setTimeout(() => location.reload(), 2000);
-    } else {
-      alert(`❌ Error importing CSV: ${result.error}`);
-    }
-  } catch (error) {
-    console.error('Error importing CSV:', error);
-    alert(`❌ Network error: ${error.message}`);
-  } finally {
-    const btn = document.querySelector('#csv-paste').closest('.admin-card').querySelector('.admin-btn:not(.outline)');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Confirm import';
-    }
-  }
-};
-
-function parseCSVLine(line) {
-  const result = []; let field = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQ = !inQ; continue; }
-    if (c === ',' && !inQ) { result.push(field); field = ''; continue; }
-    field += c;
-  }
-  result.push(field); return result;
-}
-
-// ── TOTP QR generation ─────────────────────────────────────
-window.generateTOTPQR = function() {
-  const name = document.getElementById('totp-name').value.trim();
-  const dob = document.getElementById('totp-dob').value.trim();
-  if (!name || !dob) { alert('Enter name and date of birth first.'); return; }
-  // Generate a random base32 secret (placeholder — setup-auth.js does the real thing)
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let secret = '';
-  for (let i = 0; i < 16; i++) secret += chars[Math.floor(Math.random()*32)];
-  const uri = `otpauth://totp/FamilyTree:${encodeURIComponent(name)}?secret=${secret}&issuer=FamilyTree&digits=6&period=30`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`;
-  const img = document.getElementById('qr-img');
-  img.src = qrUrl; img.style.display = 'block';
-  document.getElementById('qr-placeholder').style.display = 'none';
-  alert(`QR generated for ${name}!\nSecret: ${secret}\n\nAdd this to data/auth.json using:\nnode scripts/setup-auth.js "${name}" "${dob}"`);
-};
-
-// ── Export ─────────────────────────────────────────────────
-window.exportJSON = function() { dlBlob(new Blob([JSON.stringify(familyData,null,2)],{type:'application/json'}), 'family.json'); };
-window.importCSVFile = function() { document.getElementById('csv-file-input').click(); };
-window.exportGEDCOM = function() {
-  let ged = '0 HEAD\n1 SOUR FamilyTree\n1 GEDC\n2 VERS 5.5.5\n1 CHAR UTF-8\n';
-  familyData.persons.forEach(p => {
-    ged += `0 @${p.id}@ INDI\n1 NAME ${p.firstName} /${p.lastName}/\n1 SEX ${p.gender==='F'?'F':'M'}\n`;
-    if (p.birthDate) ged += `1 BIRT\n2 DATE ${p.birthDate}\n`;
-    if (p.birthPlace) ged += `2 PLAC ${p.birthPlace}\n`;
-    if (p.deathDate) ged += `1 DEAT\n2 DATE ${p.deathDate}\n`;
-    if (p.occupation) ged += `1 OCCU ${p.occupation}\n`;
-  });
-  familyData.relationships.filter(r=>r.type==='marriage').forEach((r,i) => {
-    ged += `0 @F${i+1}@ FAM\n1 HUSB @${r.person1Id}@\n1 WIFE @${r.person2Id}@\n`;
-    if (r.startDate) ged += `1 MARR\n2 DATE ${r.startDate}\n`;
-  });
-  ged += '0 TRLR\n';
-  dlBlob(new Blob([ged],{type:'text/plain'}), 'family.ged');
-};
-
-// ── Search ─────────────────────────────────────────────────
-function setupSearch() {
-  if (!window.FlexSearch || !familyData) return;
-  searchIndex = new FlexSearch.Document({
-    document: { id:'id', index:['firstName','lastName','birthPlace','occupation'] }
-  });
-  filterByRole(familyData.persons).forEach(p => searchIndex.add(p));
-}
-window.doSearch = function(q) {
-  const el = document.getElementById('search-results');
-  if (!q.trim() || !searchIndex) { el.style.display='none'; return; }
-  const results = searchIndex.search(q, { limit:8 });
-  const ids = [...new Set(results.flatMap(r => r.result))];
-  const hits = ids.map(id => familyData.persons.find(p => p.id===id)).filter(Boolean);
-  el.style.display = hits.length ? 'block' : 'none';
-  el.innerHTML = hits.map(p => `
-    <div class="sr-item" onclick="selectPerson('${p.id}');document.getElementById('search-results').style.display='none';document.getElementById('search-input').value='';">
-      <div class="av" style="width:30px;height:30px;font-size:10px;background:${p.gender==='F'?'#c8963e':'#4a7c59'}">${initials(p)}</div>
-      <div>
-        <div style="font-size:13px;font-weight:700;">${p.firstName} ${p.lastName}</div>
-        <div style="font-size:11px;color:var(--muted);">${p.birthPlace||''} · ${yr(p.birthDate)}</div>
-      </div>
-    </div>`).join('');
-};
-document.addEventListener('click', e => {
-  if (!e.target.closest('#search-bar') && !e.target.closest('#search-results'))
-    document.getElementById('search-results').style.display = 'none';
-});
-
-// ── Helpers ────────────────────────────────────────────────
-function initials(p) { return ((p.firstName||'?')[0]+(p.lastName||'?')[0]).toUpperCase(); }
-function yr(d) { return d ? d.split('-')[0] : ''; }
-function formatDate(d) {
-  if (!d) return '';
-  const [y,m,day] = d.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return [day ? parseInt(day)+' '+months[parseInt(m)-1] : m ? months[parseInt(m)-1] : '', y].filter(Boolean).join(' ');
-}
-function daysUntil(dateStr) {
-  if (!dateStr) return 999;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const [,m,d] = dateStr.split('-');
-  const next = new Date(today.getFullYear(), parseInt(m||1)-1, parseInt(d||1));
-  if (next < today) next.setFullYear(next.getFullYear()+1);
-  return Math.round((next-today)/86400000);
-}
-function eventIcon(type) {
-  return {birth:'👶',death:'🕊️',marriage:'💍',education:'🎓',career:'💼',migration:'✈️',medical:'🏥',award:'🏆',reunion:'🏠',milestone:'🎯',other:'📌'}[type]||'📌';
-}
-function cap(s) { return s ? s[0].toUpperCase()+s.slice(1) : ''; }
-function getPhotoUrl(photoRef) {
-  if (!photoRef || !config) return null;
-  // Handle local media/ path or Cloudflare R2 URL
-  if (photoRef.startsWith('http')) return photoRef;
-  if (photoRef.startsWith('media/')) return `./${photoRef}`;
-  return `${config.media.r2PublicUrl}/${photoRef}`;
-}
-
-function calculateRelationship(targetPerson, currentUser) {
-  if (!targetPerson || !currentUser || !familyData) return 'No relationship found';
-
-  // Find current user's person record by matching hash
-  const userPerson = familyData.persons.find(p => {
-    const testHash = `${p.firstName.toLowerCase()}${p.lastName.toLowerCase()}${p.birthDate?.replace(/\D/g, '') || ''}`;
-    return testHash === currentUser.hash?.replace(/[^a-z0-9]/g, '');
-  });
-
-  if (!userPerson) return 'Your profile not found in family tree';
-  if (targetPerson.id === userPerson.id) return 'This is you!';
-
-  // Build family graph
-  const relationships = familyData.relationships;
-  const graph = {};
-  const persons = {};
-
-  // Initialize graph
-  familyData.persons.forEach(p => {
-    graph[p.id] = [];
-    persons[p.id] = p;
-  });
-
-  // Add relationships to graph (bidirectional)
-  relationships.forEach(rel => {
-    if (rel.type === 'parent-child') {
-      graph[rel.parentId].push({id: rel.childId, type: 'child'});
-      graph[rel.childId].push({id: rel.parentId, type: 'parent'});
-    } else if (rel.type === 'marriage') {
-      graph[rel.person1Id].push({id: rel.person2Id, type: 'spouse'});
-      graph[rel.person2Id].push({id: rel.person1Id, type: 'spouse'});
-    }
-  });
-
-  // BFS to find shortest relationship path
-  const queue = [{id: userPerson.id, path: [], visited: new Set([userPerson.id])}];
-  const maxDepth = 6; // Limit search depth
-
-  while (queue.length > 0) {
-    const {id, path, visited} = queue.shift();
-
-    if (path.length > maxDepth) continue;
-
-    if (id === targetPerson.id) {
-      // Found target! Analyze the path to determine relationship
-      return analyzeRelationshipPath(path, userPerson, targetPerson);
-    }
-
-    // Explore connected people
-    (graph[id] || []).forEach(conn => {
-      if (!visited.has(conn.id)) {
-        const newVisited = new Set(visited);
-        newVisited.add(conn.id);
-        queue.push({
-          id: conn.id,
-          path: [...path, {type: conn.type, person: persons[conn.id]}],
-          visited: newVisited
-        });
-      }
-    });
-  }
-
-  return 'No direct family relationship found';
-}
-
-function analyzeRelationshipPath(path, userPerson, targetPerson) {
-  if (path.length === 0) return 'This is you!';
-  if (path.length === 1) {
-    const rel = path[0];
-    switch (rel.type) {
-      case 'parent': return 'Your parent';
-      case 'child': return 'Your child';
-      case 'spouse': return 'Your spouse';
-      default: return 'Your family member';
-    }
-  }
-
-  // Multi-step relationships
-  const steps = path.map(p => p.type);
-
-  // Direct relationships
-  if (steps.length === 2) {
-    if (steps[0] === 'parent' && steps[1] === 'child') return 'Your sibling';
-    if (steps[0] === 'child' && steps[1] === 'parent') return 'Your sibling';
-    if (steps[0] === 'parent' && steps[1] === 'parent') return 'Your grandparent';
-    if (steps[0] === 'child' && steps[1] === 'child') return 'Your grandchild';
-    if (steps[0] === 'parent' && steps[1] === 'spouse') return 'Your parent\'s spouse (step-parent)';
-    if (steps[0] === 'spouse' && steps[1] === 'parent') return 'Your spouse\'s parent (in-law)';
-    if (steps[0] === 'spouse' && steps[1] === 'child') return 'Your spouse\'s child (step-child)';
-    if (steps[0] === 'child' && steps[1] === 'spouse') return 'Your child\'s spouse (child-in-law)';
-  }
-
-  // More complex relationships
-  if (steps.length === 3) {
-    if (steps[0] === 'parent' && steps[1] === 'parent' && steps[2] === 'child') return 'Your aunt/uncle';
-    if (steps[0] === 'parent' && steps[1] === 'child' && steps[2] === 'child') return 'Your cousin';
-    if (steps[0] === 'child' && steps[1] === 'child' && steps[2] === 'child') return 'Your great-grandchild';
-    if (steps[0] === 'parent' && steps[1] === 'parent' && steps[2] === 'parent') return 'Your great-grandparent';
-  }
-
-  if (steps.length === 4) {
-    if (steps[0] === 'parent' && steps[1] === 'parent' && steps[2] === 'child' && steps[3] === 'child') {
-      return 'Your first cousin';
-    }
-    if (steps[0] === 'parent' && steps[1] === 'parent' && steps[2] === 'parent' && steps[3] === 'child') {
-      return 'Your great-aunt/uncle';
-    }
-  }
-
-  // Fallback for complex relationships
-  const upCount = steps.filter(s => s === 'parent').length;
-  const downCount = steps.filter(s => s === 'child').length;
-  const spouseCount = steps.filter(s => s === 'spouse').length;
-
-  if (spouseCount > 0) return 'Your family member by marriage';
-  if (upCount === downCount) return `Your ${upCount}${getOrdinalSuffix(upCount)} cousin`;
-  if (upCount > downCount) return `Your ${'great-'.repeat(upCount - 2)}${upCount === 1 ? 'parent' : 'grandparent'}`;
-  if (downCount > upCount) return `Your ${'great-'.repeat(downCount - 2)}${downCount === 1 ? 'child' : 'grandchild'}`;
-
-  return `Your distant relative (${steps.length} steps away)`;
-}
-
-function getOrdinalSuffix(num) {
-  const j = num % 10;
-  const k = num % 100;
-  if (j === 1 && k !== 11) return num + 'st';
-  if (j === 2 && k !== 12) return num + 'nd';
-  if (j === 3 && k !== 13) return num + 'rd';
-  return num + 'th';
-}
-function dlBlob(blob, name) {
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-}
-
-// ── Start ──────────────────────────────────────────────────
-init();
 </script>
 
 </body>

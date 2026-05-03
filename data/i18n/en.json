@@ -152,5 +152,18 @@
     "identityNotFound": "Name and date of birth not found. Check spelling or continue as guest.",
     "wrongTotp": "Incorrect code. Please check Google Authenticator and try again.",
     "dataLoadFailed": "Could not load family data. Please refresh."
+  },
+  "loading": {
+    "message": "Loading family data..."
+  },
+  "guest": {
+    "noAccess": "Guests can view deceased ancestors only.",
+    "login": "Log in",
+    "loginToSeeTree": "Log in to see your family tree"
+  },
+  "export": {
+    "processing": "Processing...",
+    "complete": "Export complete!",
+    "failed": "Export failed. Please try again."
   }
 }
