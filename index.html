@@ -3,13 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title data-i18n="app.name">The Family Tree</title>
   <meta name="description" content="Our family genealogy" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <meta name="theme-color" content="#1a3a2a" />
-  <link rel="stylesheet" href="vendor/leaflet.css" />
   <link rel="stylesheet" href="vendor/fonts.css" />
 
   <style>
@@ -46,11 +46,21 @@
       margin: 0;
       padding: 0;
     }
+    
+    input, textarea, select {
+      -webkit-appearance: none;
+      appearance: none;
+      color: #1a3a2a !important;
+      background-color: #faf6f0 !important;
+      border: 1px solid #c8963e !important;
+    }
 
     html,
     body {
       height: 100%;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       background: var(--cream);
       color: var(--text);
       overflow: hidden;
@@ -79,6 +89,8 @@
       position: absolute;
       white-space: nowrap;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 13px;
       font-weight: 500;
       color: #1a3a2a;
@@ -93,6 +105,8 @@
       inset: 0;
       z-index: 1000;
       background: var(--cream);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -102,6 +116,8 @@
 
     #loading p {
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 18px;
       color: var(--g-text);
     }
@@ -143,6 +159,8 @@
       inset: 0;
       z-index: 500;
       background: var(--cream);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -163,6 +181,8 @@
       margin: 0 auto 18px;
       background: var(--g);
       border-radius: 50%;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -170,6 +190,8 @@
 
     .login-title {
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 22px;
       font-weight: 700;
       color: var(--g-text);
@@ -183,6 +205,8 @@
     }
 
     .step-dots {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       gap: 6px;
       justify-content: center;
@@ -217,6 +241,8 @@
       padding: 11px 13px;
       font-size: 13px;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       background: var(--cream);
       color: var(--text);
       margin-bottom: 14px;
@@ -238,6 +264,8 @@
       font-weight: 700;
       cursor: pointer;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
     }
 
     .login-btn:hover {
@@ -259,6 +287,8 @@
       font-size: 11px;
       color: var(--leaf);
       margin-top: 10px;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -266,6 +296,8 @@
     }
 
     .totp-box {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       gap: 8px;
       justify-content: center;
@@ -282,6 +314,8 @@
       font-weight: 700;
       text-align: center;
       color: var(--g-text);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -297,6 +331,8 @@
       height: 48px;
       border-radius: 50%;
       border: 3px solid var(--leaf);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -313,6 +349,7 @@
       inset: 3px;
       border-radius: 50%;
       background: conic-gradient(transparent var(--angle), var(--leaf) 0);
+      -webkit-transition: --angle 0.1s linear;
       transition: --angle 0.1s linear;
     }
 
@@ -350,6 +387,8 @@
       font-size: 11px;
       cursor: pointer;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-weight: 700;
       color: var(--g-text);
     }
@@ -363,6 +402,8 @@
       z-index: 100;
       height: 54px;
       background: var(--g);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -372,15 +413,21 @@
 
     .logo {
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 18px;
       font-weight: 700;
       color: var(--gold);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     nav {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       gap: 3px;
     }
@@ -390,10 +437,13 @@
       border: 1px solid transparent;
       color: rgba(255, 255, 255, .6);
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 15px;
       padding: 6px 13px;
       border-radius: 6px;
       cursor: pointer;
+      -webkit-transition: .15s;
       transition: .15s;
     }
 
@@ -405,6 +455,8 @@
     }
 
     #search-bar {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       background: rgba(255, 255, 255, .1);
@@ -422,6 +474,8 @@
       font-size: 15px;
       width: 160px;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
     }
 
     #search-input::placeholder {
@@ -437,6 +491,8 @@
       cursor: pointer;
       color: rgba(255, 255, 255, .7);
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-weight: 700;
       margin-left: 8px;
     }
@@ -449,6 +505,8 @@
       font-size: 11px;
       color: rgba(255, 255, 255, .9);
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       margin-right: 8px;
     }
 
@@ -460,6 +518,8 @@
       font-size: 10px;
       color: rgba(255, 255, 255, .7);
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       cursor: pointer;
       margin-left: 8px;
     }
@@ -470,6 +530,8 @@
 
     /* ── App layout ── */
     #app {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       height: 100vh;
       padding-top: 54px;
@@ -482,7 +544,10 @@
       background: var(--card-bg);
       border-right: 0.5px solid var(--border);
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       flex-shrink: 0;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       flex-direction: column;
     }
@@ -502,6 +567,8 @@
     }
 
     .view-btn {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       gap: 7px;
@@ -514,8 +581,11 @@
       color: var(--text);
       cursor: pointer;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       margin-bottom: 3px;
       text-align: left;
+      -webkit-transition: .15s;
       transition: .15s;
     }
 
@@ -540,12 +610,15 @@
     }
 
     .member-item {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 6px;
       border-radius: 6px;
       cursor: pointer;
+      -webkit-transition: .15s;
       transition: .15s;
       margin-bottom: 2px;
     }
@@ -563,6 +636,8 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -586,8 +661,11 @@
     #tree-view {
       flex: 1;
       position: relative;
-      background: var(--cream);
+      background-color: #faf6f0 !important;
       overflow: hidden;
+    }
+    #tree-svg {
+      background-color: #faf6f0 !important;
     }
 
     /* ── Admin Panel Styles ── */
@@ -601,6 +679,8 @@
 
     .admin-card h3 {
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 16px;
       font-weight: 700;
       color: var(--g-text);
@@ -617,6 +697,8 @@
       font-weight: 600;
       cursor: pointer;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       margin-right: 8px;
       margin-bottom: 8px;
     }
@@ -640,6 +722,8 @@
 
     .stat-num {
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 24px;
       font-weight: 700;
       color: var(--g-text);
@@ -659,6 +743,8 @@
       top: 12px;
       left: 12px;
       z-index: 20;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       gap: 6px;
     }
@@ -671,6 +757,9 @@
       font-size: 11px;
       cursor: pointer;
       font-family: var(--fb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+      -webkit-transition: .15s;
       transition: .15s;
     }
 
@@ -682,6 +771,7 @@
     #admin-view {
       flex: 1;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 24px;
       background: var(--cream);
       display: none;
@@ -719,6 +809,7 @@
       height: 100%;
       background: var(--g);
       border-radius: 4px;
+      -webkit-transition: width 0.3s ease;
       transition: width 0.3s ease;
       width: 0%;
     }
@@ -753,6 +844,8 @@
         background: var(--g);
         padding: 8px 0;
         z-index: 100;
+        display: -webkit-box;
+        display: -webkit-flex;
         display: flex;
         justify-content: space-around;
       }
@@ -764,6 +857,8 @@
         font-size: 10px;
         padding: 8px 4px;
         cursor: pointer;
+        display: -webkit-box;
+        display: -webkit-flex;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -793,12 +888,14 @@
       position: absolute;
       left: 0;
       right: 0;
+      -webkit-transition: transform 0.15s ease;
       transition: transform 0.15s ease;
     }
 
     /* ── Lazy Loading ── */
     .lazy-img {
       background: var(--cream);
+      -webkit-transition: opacity 0.3s ease;
       transition: opacity 0.3s ease;
     }
 
@@ -829,8 +926,11 @@
       background: var(--card-bg);
       border-left: 1px solid var(--border);
       z-index: 200;
+      -webkit-transition: right 0.3s ease;
       transition: right 0.3s ease;
       box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       flex-direction: column;
     }
@@ -840,6 +940,8 @@
     }
 
     .profile-header {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -852,6 +954,8 @@
     .profile-header h3 {
       margin: 0;
       font-family: var(--fd);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
       font-size: 18px;
     }
 
@@ -865,6 +969,8 @@
       width: 30px;
       height: 30px;
       border-radius: 50%;
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -875,6 +981,8 @@
     }
 
     .profile-tabs {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       background: var(--cream);
       border-bottom: 1px solid var(--border);
@@ -905,6 +1013,7 @@
     .profile-content {
       flex: 1;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 20px;
     }
 
@@ -944,6 +1053,8 @@
     }
 
     .relationship-chips {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -956,6 +1067,7 @@
       padding: 6px 12px;
       font-size: 12px;
       cursor: pointer;
+      -webkit-transition: all 0.2s ease;
       transition: all 0.2s ease;
     }
 
@@ -990,6 +1102,7 @@
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 12px;
+      -webkit-transition: all 0.2s ease;
       transition: all 0.2s ease;
     }
 
@@ -999,6 +1112,8 @@
     }
 
     .calendar-card-header {
+      display: -webkit-box;
+      display: -webkit-flex;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -1039,6 +1154,7 @@
       margin-top: 8px;
       text-decoration: none;
       display: inline-block;
+      -webkit-transition: background 0.2s ease;
       transition: background 0.2s ease;
     }
 
@@ -1103,7 +1219,7 @@
           Enter your details to identify yourself
         </p>
         <input type="text" id="s2-name" class="inp" data-i18n-placeholder="login.step2.namePlaceholder"
-          placeholder="Your full name (e.g. Vikram Sharma)" />
+          placeholder="Your full name (e.g. John Doe)" />
         <input type="text" id="s2-dob" class="inp" data-i18n-placeholder="login.step2.dobPlaceholder"
           placeholder="Date of birth — DDMMYYYY (e.g. 04111972)" maxlength="8" />
         <button class="login-btn" onclick="step2Submit()" data-i18n="login.step2.button">Confirm identity</button>
@@ -1155,7 +1271,6 @@
     <nav>
       <button id="nav-tree" class="active" onclick="showView('tree')" data-i18n="nav.tree">Tree</button>
       <button id="nav-calendar" onclick="showView('calendar')" data-i18n="nav.calendar">Calendar</button>
-      <button id="nav-map" onclick="showView('map')" data-i18n="nav.map" style="display:none;">Map</button>
       <button id="nav-admin" onclick="showView('admin')" data-i18n="nav.admin">Admin</button>
     </nav>
 
@@ -1205,7 +1320,8 @@
       <!-- Member List -->
       <div class="sb-sec" style="flex:1;overflow:hidden;">
         <h3 data-i18n="tree.allMembers">All Members</h3>
-        <div id="member-list" style="overflow-y:auto;max-height:300px;"></div>
+        <div id="member-list" style="overflow-y:auto;
+      -webkit-overflow-scrolling: touch;max-height:300px;"></div>
       </div>
 
       <!-- Tree Controls -->
@@ -1232,7 +1348,7 @@
 
     <!-- Tree View -->
     <div id="tree-view">
-      <svg id="tree-svg" style="width:100%;height:100%;cursor:grab;"></svg>
+      <svg id="tree-svg" viewBox="0 0 1000 1000" style="width:100%;height:100%;cursor:grab;"></svg>
       <div id="tree-controls">
         <button class="tree-btn" onclick="treeZoom(1.2)" data-i18n="tree.controls.zoomIn">Zoom In</button>
         <button class="tree-btn" onclick="treeZoom(0.8)" data-i18n="tree.controls.zoomOut">Zoom Out</button>
@@ -1424,7 +1540,6 @@
   </div>
 
   <!-- Scripts -->
-  <script src="vendor/leaflet.js"></script>
   <script src="vendor/d3.min.js"></script>
   <script src="vendor/flexsearch.bundle.js"></script>
   <script src="vendor/otpauth.min.js"></script>
@@ -1440,7 +1555,7 @@
     let i18n = {}, currentLang = localStorage.getItem('lang') || 'en';
     let currentUser = null, currentRole = 'guest';
     let selectedPerson = null, treeMode = 'full';
-    let searchIndex = null, leafletMap = null;
+    let searchIndex = null;
     let treeTransform = { x: 0, y: 0, k: 1 };
     let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
     let lockoutTime = parseInt(localStorage.getItem('lockoutTime') || '0');
@@ -1865,11 +1980,6 @@
         if (adminNav) adminNav.style.display = 'none';
       }
 
-      // Hide map nav (disabled in config)
-      if (!config.features?.mapView) {
-        const mapNav = document.getElementById('nav-map');
-        if (mapNav) mapNav.style.display = 'none';
-      }
 
       // Setup mobile navigation
       if (window.innerWidth <= 768) {
@@ -1937,7 +2047,9 @@
         installBanner.innerHTML = `
       <div style="position:fixed;bottom:20px;left:20px;right:20px;background:var(--g);color:white;
                   padding:12px 16px;border-radius:8px;font-size:13px;z-index:1000;
-                  display:flex;align-items:center;justify-content:space-between;">
+                  display: -webkit-box;
+                  display: -webkit-flex;
+                  display: flex;align-items:center;justify-content:space-between;">
         <span>Install Family Tree app for better experience</span>
         <button onclick="installPWA()" style="background:var(--gold);border:none;color:white;
                 padding:6px 12px;border-radius:4px;font-size:11px;cursor:pointer;">
@@ -2201,7 +2313,8 @@ P010,Bob,Johnson,M,25121980,living,Pune,Teacher,Christian,Master of Arts`;
           <p style="font-size:13px;color:var(--g-text);margin-bottom:8px;">
             <strong>${persons.length} persons</strong> ready to import:
           </p>
-          <div style="max-height:150px;overflow-y:auto;font-size:12px;">
+          <div style="max-height:150px;overflow-y:auto;
+      -webkit-overflow-scrolling: touch;font-size:12px;">
             ${persons.map(p => `
               <div style="padding:4px 8px;border-bottom:1px solid var(--border);">
                 <strong>${p.firstName} ${p.lastName}</strong> (${p.id}) - ${p.gender}, ${p.birthDate || 'No DOB'}, ${p.status || 'living'}
@@ -2495,6 +2608,17 @@ P010,Bob,Johnson,M,25121980,living,Pune,Teacher,Christian,Master of Arts`;
     function buildCalendarView() {
       const container = document.getElementById('calendar-events');
       if (!container || !familyData) return;
+
+      // Populate dynamic branch filters
+      const filterContainer = document.getElementById('calendar-filters');
+      if (filterContainer) {
+        const surnames = [...new Set(familyData.persons.map(p => p.lastName).filter(Boolean))];
+        let filterHtml = '<button class="filter-chip active" style="margin-right:8px;padding:6px 12px;border-radius:16px;border:1px solid var(--border);background:var(--g);color:white;font-size:12px;cursor:pointer;">All Branches</button>';
+        surnames.forEach(surname => {
+          filterHtml += `<button class="filter-chip" style="margin-right:8px;padding:6px 12px;border-radius:16px;border:1px solid var(--border);background:var(--cream);color:var(--text);font-size:12px;cursor:pointer;">${surname}</button>`;
+        });
+        filterContainer.innerHTML = filterHtml;
+      }
 
       const events = calculateUpcomingEvents();
 
@@ -2963,6 +3087,7 @@ P010,Bob,Johnson,M,25121980,living,Pune,Teacher,Christian,Master of Arts`;
     }
 
     function filterByRole(persons) {
+      if (currentRole === 'admin') return persons;
       if (currentRole === 'guest') return persons.filter(p => p.status === 'deceased');
       return persons;
     }

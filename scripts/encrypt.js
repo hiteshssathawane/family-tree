@@ -38,7 +38,7 @@ console.log('🔐 Encrypting with staticrypt...');
 
 try {
   execSync(
-    `npx staticrypt "${srcHtml}" --password "${password}" --output "${distHtml}" --remember 1 --short`,
+    `npx staticrypt "${srcHtml}" --password "${password}" --output "${distHtml}" --remember 1 --short --template "scripts/password_template.html"`,
     { stdio: 'inherit' }
   );
 
