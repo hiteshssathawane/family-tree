@@ -1,1074 +1,1642 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title data-i18n="app.name">The Family Tree</title>
-<meta name="description" content="Our family genealogy"/>
-<link rel="manifest" href="/manifest.json"/>
-<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
-<meta name="theme-color" content="#1a3a2a"/>
-<link rel="stylesheet" href="vendor/leaflet.css"/>
-<link rel="stylesheet" href="vendor/fonts.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="app.name">The Family Tree</title>
+  <meta name="description" content="Our family genealogy" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="theme-color" content="#1a3a2a" />
+  <link rel="stylesheet" href="vendor/leaflet.css" />
+  <link rel="stylesheet" href="vendor/fonts.css" />
 
-<style>
-:root {
-  --g: #1a3a2a; --gold: #c8963e; --cream: #faf6f0;
-  --leaf: #4a7c59; --muted: #9e9080; --bark: #6b6355;
-  --border: rgba(90,60,30,.15);
-  --fd: 'Playfair Display',Georgia,serif;
-  --fb: 'Lato','Helvetica Neue',sans-serif;
-}
-@media (prefers-color-scheme:dark){
-  :root{ --g:#0e2018; --cream:#141210; --muted:#888; --border:rgba(200,150,60,.12); }
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:var(--fb);background:var(--cream);color:#1e1a14;overflow:hidden;}
+  <style>
+    :root {
+      --g: #1a3a2a;
+      --g-text: #1a3a2a;
+      --gold: #c8963e;
+      --cream: #faf6f0;
+      --leaf: #4a7c59;
+      --muted: #9e9080;
+      --bark: #6b6355;
+      --border: rgba(90, 60, 30, .15);
+      --fd: 'Playfair Display', Georgia, serif;
+      --fb: 'Lato', 'Helvetica Neue', sans-serif;
+      --text: #1e1a14;
+      --card-bg: #ffffff;
+    }
 
-/* ── Print block ── */
-@media print{html,body{display:none !important;}}
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --g: #0e2018;
+        --g-text: #76a888;
+        --cream: #141210;
+        --muted: #888;
+        --border: rgba(200, 150, 60, .12);
+        --text: #faf6f0;
+        --card-bg: #1a1a1a;
+        --bark: #c5bcac;
+      }
+    }
 
-/* ── Watermark ── */
-#watermark{
-  position:fixed;inset:0;pointer-events:none;z-index:9999;
-  overflow:hidden;display:none;
-}
-.wm-tile{
-  position:absolute;white-space:nowrap;
-  font-family:var(--fb);font-size:13px;font-weight:500;
-  color:#1a3a2a;opacity:.07;
-  transform:rotate(-25deg);user-select:none;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* ── Loading ── */
-#loading{
-  position:fixed;inset:0;z-index:1000;background:var(--cream);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-}
-#loading p{font-family:var(--fd);font-size:18px;color:var(--g);}
-#loading-spinner{
-  width:48px;height:48px;border:4px solid rgba(26,58,42,0.2);
-  border-left-color:var(--g);border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
-@keyframes sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
-#loading svg{animation:sway 3s ease-in-out infinite;}
+    html,
+    body {
+      height: 100%;
+      font-family: var(--fb);
+      background: var(--cream);
+      color: var(--text);
+      overflow: hidden;
+    }
 
-/* ── Login ── */
-#login-screen{
-  position:fixed;inset:0;z-index:500;background:var(--cream);
-  display:flex;align-items:center;justify-content:center;
-}
-.login-card{
-  background:white;border-radius:14px;border:0.5px solid var(--border);
-  padding:36px 30px;width:360px;text-align:center;
-}
-.login-emblem{
-  width:60px;height:60px;margin:0 auto 18px;background:var(--g);
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-}
-.login-title{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--g);margin-bottom:4px;}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
-.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px;}
-.dot{width:8px;height:8px;border-radius:50%;background:rgba(26,58,42,.15);}
-.dot.active{background:var(--g);width:22px;border-radius:4px;}
-.lbl{font-size:11px;color:var(--bark);text-align:left;margin-bottom:5px;font-weight:500;}
-.inp{
-  width:100%;border:0.5px solid rgba(90,60,30,.25);border-radius:8px;
-  padding:11px 13px;font-size:13px;font-family:var(--fb);background:var(--cream);
-  color:#1e1a14;margin-bottom:14px;outline:none;
-}
-.inp:focus{border-color:var(--g);}
-.login-btn{
-  width:100%;background:var(--g);color:white;border:none;border-radius:8px;
-  padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);
-}
-.login-btn:hover{background:#264d3a;}
-.login-btn:disabled{background:#9e9080;cursor:not-allowed;}
-.login-hint{font-size:11px;color:var(--muted);margin-top:12px;}
-.login-lock{font-size:11px;color:var(--leaf);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:5px;}
-.totp-box{display:flex;gap:8px;justify-content:center;margin-bottom:14px;}
-.totp-d{
-  width:40px;height:48px;border:0.5px solid rgba(90,60,30,.25);border-radius:8px;
-  background:var(--cream);font-size:22px;font-weight:700;text-align:center;
-  color:var(--g);display:flex;align-items:center;justify-content:center;
-}
-.totp-d.filled{border-color:var(--g);background:white;}
-.totp-timer{
-  width:48px;height:48px;border-radius:50%;border:3px solid var(--leaf);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:700;color:var(--leaf);margin:0 auto 16px;
-  position:relative;
-}
-.totp-timer::after{
-  content:'';position:absolute;inset:3px;border-radius:50%;
-  background:conic-gradient(transparent var(--angle), var(--leaf) 0);
-  transition:--angle 0.1s linear;
-}
-.guest-link{font-size:11px;color:var(--leaf);text-decoration:underline;cursor:pointer;margin-top:12px;display:block;}
-.error-msg{font-size:15px;color:#a32d2d;margin-top:8px;display:none;}
-.attempt-warning{font-size:11px;color:#d67c00;margin-top:8px;}
+    /* ── Print block ── */
+    @media print {
 
-/* ── Language toggle ── */
-#lang-toggle{
-  position:absolute;top:16px;right:16px;
-  background:rgba(255,255,255,.8);border:0.5px solid var(--border);
-  border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;
-  font-family:var(--fb);font-weight:700;color:var(--g);
-}
+      html,
+      body {
+        display: none !important;
+      }
+    }
 
-/* ── Header ── */
-#header{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  height:54px;background:var(--g);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 18px;display:none;
-}
-.logo{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:8px;}
-nav{display:flex;gap:3px;}
-nav button{
-  background:transparent;border:1px solid transparent;
-  color:rgba(255,255,255,.6);font-family:var(--fb);font-size:15px;
-  padding:6px 13px;border-radius:6px;cursor:pointer;transition:.15s;
-}
-nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:rgba(200,150,60,.35);color:var(--gold);}
-#search-bar{
-  display:flex;align-items:center;background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:0 10px;gap:7px;
-}
-#search-input{
-  background:transparent;border:none;outline:none;color:white;font-size:15px;width:160px;
-  font-family:var(--fb);
-}
-#search-input::placeholder{color:rgba(255,255,255,.35);}
-#lang-toggle-app{
-  background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);
-  border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer;color:rgba(255,255,255,.7);
-  font-family:var(--fb);font-weight:700;margin-left:8px;
-}
-#user-badge{
-  background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);
-  border-radius:12px;padding:5px 12px;font-size:11px;color:rgba(255,255,255,.9);
-  font-family:var(--fb);margin-right:8px;
-}
-#logout-btn{
-  background:rgba(255,255,255,.1);border:0.5px solid rgba(255,255,255,.2);
-  border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.7);
-  font-family:var(--fb);cursor:pointer;margin-left:8px;
-}
-#logout-btn:hover{background:rgba(255,255,255,.2);}
+    /* ── Watermark ── */
+    #watermark {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+      display: none;
+    }
 
-/* ── App layout ── */
-#app{display:flex;height:100vh;padding-top:54px;display:none;}
-#sidebar{
-  width:230px;height:100%;background:white;border-right:0.5px solid var(--border);
-  overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;
-}
-.sb-sec{padding:13px 14px;border-bottom:0.5px solid var(--border);}
-.sb-sec h3{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.view-btn{
-  display:flex;align-items:center;gap:7px;width:100%;
-  background:transparent;border:0.5px solid var(--border);border-radius:6px;
-  padding:7px 10px;font-size:15px;color:#1e1a14;cursor:pointer;
-  font-family:var(--fb);margin-bottom:3px;text-align:left;transition:.15s;
-}
-.view-btn:hover{background:var(--cream);}
-.view-btn.active{background:var(--leaf);color:white;border-color:var(--leaf);}
-.view-btn .em{font-size:12px;opacity:.6;margin-right:4px;}
-.view-btn.active .em{opacity:1;}
+    .wm-tile {
+      position: absolute;
+      white-space: nowrap;
+      font-family: var(--fb);
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a3a2a;
+      opacity: .07;
+      transform: rotate(-25deg);
+      user-select: none;
+    }
 
-.member-item{
-  display:flex;align-items:center;gap:8px;padding:6px;
-  border-radius:6px;cursor:pointer;transition:.15s;margin-bottom:2px;
-}
-.member-item:hover{background:var(--cream);}
-.member-item.selected{background:var(--leaf);color:white;}
-.member-item .av{
-  width:28px;height:28px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:white;
-}
-.mi-name{font-size:11px;font-weight:700;line-height:1.2;}
-.mi-sub{font-size:9px;opacity:.6;line-height:1.2;}
+    /* ── Loading ── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
 
-#tree-view{
-  flex:1;position:relative;background:var(--cream);
-  overflow:hidden;
-}
-#tree-controls{
-  position:absolute;top:12px;left:12px;z-index:20;
-  display:flex;gap:6px;
-}
-.tree-btn{
-  background:rgba(255,255,255,.9);border:0.5px solid var(--border);
-  border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;
-  font-family:var(--fb);transition:.15s;
-}
-.tree-btn:hover{background:white;}
+    #loading p {
+      font-family: var(--fd);
+      font-size: 18px;
+      color: var(--g-text);
+    }
 
-#calendar-view, #admin-view{
-  flex:1;overflow-y:auto;padding:24px;background:var(--cream);
-  display:none;
-}
+    #loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(26, 58, 42, 0.2);
+      border-left-color: var(--g-text);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
 
-/* ── Export Modal ── */
-#export-modal{
-  position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);
-  display:none;align-items:center;justify-content:center;
-}
-.export-card{
-  background:white;border-radius:12px;padding:24px;width:400px;
-  text-align:center;
-}
-.export-progress{
-  width:100%;height:8px;background:var(--cream);border-radius:4px;
-  margin:16px 0;overflow:hidden;
-}
-.export-bar{
-  height:100%;background:var(--g);border-radius:4px;
-  transition:width 0.3s ease;width:0%;
-}
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
-/* ── Mobile Responsive ── */
-@media (max-width: 768px) {
-  #app{flex-direction:column;}
-  #sidebar{width:100%;height:auto;border-right:none;border-bottom:0.5px solid var(--border);}
-  #tree-view{height:400px;}
-  .login-card{width:320px;margin:0 20px;}
+    @keyframes sway {
 
-  #bottom-nav{
-    position:fixed;bottom:0;left:0;right:0;
-    background:var(--g);padding:8px 0;z-index:100;
-    display:flex;justify-content:space-around;
-  }
-  .bottom-nav-btn{
-    background:transparent;border:none;color:rgba(255,255,255,.7);
-    font-size:10px;padding:8px 4px;cursor:pointer;
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-  }
-  .bottom-nav-btn.active{color:var(--gold);}
-  .bottom-nav-btn .ico{font-size:16px;}
-}
+      0%,
+      100% {
+        transform: rotate(-2deg)
+      }
 
-/* ── Virtual Scrolling ── */
-.virtual-container{
-  position:relative;overflow:auto;
-}
-.virtual-content{
-  position:relative;
-}
-.virtual-item{
-  position:absolute;left:0;right:0;
-  transition:transform 0.15s ease;
-}
+      50% {
+        transform: rotate(2deg)
+      }
+    }
 
-/* ── Lazy Loading ── */
-.lazy-img{
-  background:var(--cream);
-  transition:opacity 0.3s ease;
-}
-.lazy-img.loading{
-  opacity:0.5;
-  background-image:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  background-size:200% 100%;
-  animation:shimmer 1.5s infinite;
-}
-@keyframes shimmer{
-  0%{background-position:-200% 0;}
-  100%{background-position:200% 0;}
-}
-</style>
+    #loading svg {
+      animation: sway 3s ease-in-out infinite;
+    }
+
+    /* ── Login ── */
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      padding: 36px 30px;
+      width: 360px;
+      text-align: center;
+    }
+
+    .login-emblem {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 18px;
+      background: var(--g);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-title {
+      font-family: var(--fd);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--g-text);
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+
+    .step-dots {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(26, 58, 42, .15);
+    }
+
+    .dot.active {
+      background: var(--g-text);
+      width: 22px;
+      border-radius: 4px;
+    }
+
+    .lbl {
+      font-size: 11px;
+      color: var(--bark);
+      text-align: left;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .inp {
+      width: 100%;
+      border: 0.5px solid rgba(90, 60, 30, .25);
+      border-radius: 8px;
+      padding: 11px 13px;
+      font-size: 13px;
+      font-family: var(--fb);
+      background: var(--cream);
+      color: var(--text);
+      margin-bottom: 14px;
+      outline: none;
+    }
+
+    .inp:focus {
+      border-color: var(--g-text);
+    }
+
+    .login-btn {
+      width: 100%;
+      background: var(--g);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--fb);
+    }
+
+    .login-btn:hover {
+      background: #264d3a;
+    }
+
+    .login-btn:disabled {
+      background: #9e9080;
+      cursor: not-allowed;
+    }
+
+    .login-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .login-lock {
+      font-size: 11px;
+      color: var(--leaf);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .totp-box {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .totp-d {
+      width: 40px;
+      height: 48px;
+      border: 0.5px solid rgba(90, 60, 30, .25);
+      border-radius: 8px;
+      background: var(--cream);
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--g-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .totp-d.filled {
+      border-color: var(--g-text);
+      background: var(--card-bg);
+    }
+
+    .totp-timer {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid var(--leaf);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--leaf);
+      margin: 0 auto 16px;
+      position: relative;
+    }
+
+    .totp-timer::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: conic-gradient(transparent var(--angle), var(--leaf) 0);
+      transition: --angle 0.1s linear;
+    }
+
+    .guest-link {
+      font-size: 11px;
+      color: var(--leaf);
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 12px;
+      display: block;
+    }
+
+    .error-msg {
+      font-size: 15px;
+      color: #a32d2d;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .attempt-warning {
+      font-size: 11px;
+      color: #d67c00;
+      margin-top: 8px;
+    }
+
+    /* ── Language toggle ── */
+    #lang-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, .8);
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--fb);
+      font-weight: 700;
+      color: var(--g-text);
+    }
+
+    /* ── Header ── */
+    #header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 54px;
+      background: var(--g);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      display: none;
+    }
+
+    .logo {
+      font-family: var(--fd);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav {
+      display: flex;
+      gap: 3px;
+    }
+
+    nav button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: rgba(255, 255, 255, .6);
+      font-family: var(--fb);
+      font-size: 15px;
+      padding: 6px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    nav button:hover,
+    nav button.active {
+      background: rgba(200, 150, 60, .2);
+      border-color: rgba(200, 150, 60, .35);
+      color: var(--gold);
+    }
+
+    #search-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 6px;
+      padding: 0 10px;
+      gap: 7px;
+    }
+
+    #search-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-size: 15px;
+      width: 160px;
+      font-family: var(--fb);
+    }
+
+    #search-input::placeholder {
+      color: rgba(255, 255, 255, .35);
+    }
+
+    #lang-toggle-app {
+      background: rgba(255, 255, 255, .1);
+      border: 0.5px solid rgba(255, 255, 255, .2);
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      color: rgba(255, 255, 255, .7);
+      font-family: var(--fb);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    #user-badge {
+      background: rgba(255, 255, 255, .1);
+      border: 0.5px solid rgba(255, 255, 255, .2);
+      border-radius: 12px;
+      padding: 5px 12px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, .9);
+      font-family: var(--fb);
+      margin-right: 8px;
+    }
+
+    #logout-btn {
+      background: rgba(255, 255, 255, .1);
+      border: 0.5px solid rgba(255, 255, 255, .2);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: rgba(255, 255, 255, .7);
+      font-family: var(--fb);
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    #logout-btn:hover {
+      background: rgba(255, 255, 255, .2);
+    }
+
+    /* ── App layout ── */
+    #app {
+      display: flex;
+      height: 100vh;
+      padding-top: 54px;
+      display: none;
+    }
+
+    #sidebar {
+      width: 230px;
+      height: 100%;
+      background: var(--card-bg);
+      border-right: 0.5px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sb-sec {
+      padding: 13px 14px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .sb-sec h3 {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .view-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+      background: transparent;
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--fb);
+      margin-bottom: 3px;
+      text-align: left;
+      transition: .15s;
+    }
+
+    .view-btn:hover {
+      background: var(--cream);
+    }
+
+    .view-btn.active {
+      background: var(--leaf);
+      color: white;
+      border-color: var(--leaf);
+    }
+
+    .view-btn .em {
+      font-size: 12px;
+      opacity: .6;
+      margin-right: 4px;
+    }
+
+    .view-btn.active .em {
+      opacity: 1;
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: .15s;
+      margin-bottom: 2px;
+    }
+
+    .member-item:hover {
+      background: var(--cream);
+    }
+
+    .member-item.selected {
+      background: var(--leaf);
+      color: white;
+    }
+
+    .member-item .av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .mi-name {
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .mi-sub {
+      font-size: 9px;
+      opacity: .6;
+      line-height: 1.2;
+    }
+
+    #tree-view {
+      flex: 1;
+      position: relative;
+      background: var(--cream);
+      overflow: hidden;
+    }
+
+    /* ── Admin Panel Styles ── */
+    .admin-card {
+      background: var(--card-bg);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .admin-card h3 {
+      font-family: var(--fd);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--g-text);
+      margin-bottom: 8px;
+    }
+
+    .admin-btn {
+      background: var(--g);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--fb);
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .admin-btn:hover {
+      background: #264d3a;
+    }
+
+    .admin-btn:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--fd);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--g-text);
+      margin-bottom: 4px;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #tree-controls {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+    }
+
+    .tree-btn {
+      background: rgba(255, 255, 255, .9);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--fb);
+      transition: .15s;
+    }
+
+    .tree-btn:hover {
+      background: var(--card-bg);
+    }
+
+    #calendar-view,
+    #admin-view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: var(--cream);
+      display: none;
+    }
+
+    /* ── Export Modal ── */
+    #export-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .export-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      width: 400px;
+      text-align: center;
+    }
+
+    .export-progress {
+      width: 100%;
+      height: 8px;
+      background: var(--cream);
+      border-radius: 4px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+
+    .export-bar {
+      height: 100%;
+      background: var(--g);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      #app {
+        flex-direction: column;
+      }
+
+      #sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 0.5px solid var(--border);
+      }
+
+      #tree-view {
+        height: 400px;
+      }
+
+      .login-card {
+        width: 320px;
+        margin: 0 20px;
+      }
+
+      #bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--g);
+        padding: 8px 0;
+        z-index: 100;
+        display: flex;
+        justify-content: space-around;
+      }
+
+      .bottom-nav-btn {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, .7);
+        font-size: 10px;
+        padding: 8px 4px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .bottom-nav-btn.active {
+        color: var(--gold);
+      }
+
+      .bottom-nav-btn .ico {
+        font-size: 16px;
+      }
+    }
+
+    /* ── Virtual Scrolling ── */
+    .virtual-container {
+      position: relative;
+      overflow: auto;
+    }
+
+    .virtual-content {
+      position: relative;
+    }
+
+    .virtual-item {
+      position: absolute;
+      left: 0;
+      right: 0;
+      transition: transform 0.15s ease;
+    }
+
+    /* ── Lazy Loading ── */
+    .lazy-img {
+      background: var(--cream);
+      transition: opacity 0.3s ease;
+    }
+
+    .lazy-img.loading {
+      opacity: 0.5;
+      background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- Loading Screen -->
-<div id="loading">
-  <svg width="64" height="64" viewBox="0 0 64 64">
-    <path d="M32 8 L24 24 L32 32 L40 24 Z" fill="#1a3a2a"/>
-    <path d="M32 32 L20 40 L32 48 L44 40 Z" fill="#4a7c59"/>
-    <path d="M32 48 L28 56 L36 56 Z" fill="#c8963e"/>
-  </svg>
-  <div id="loading-spinner"></div>
-  <p id="loading-text" data-i18n="loading.message">Loading family data...</p>
-</div>
-
-<!-- Watermark (Dynamic, post-login) -->
-<div id="watermark"></div>
-
-<!-- Language Toggle (Pre-login) -->
-<div id="lang-toggle" onclick="toggleLang()">मराठी</div>
-
-<!-- Login Screens -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-emblem">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-        <path d="M12 3 L8 9 L12 12 L16 9 Z"/>
-        <path d="M12 12 L6 15 L12 18 L18 15 Z"/>
-        <path d="M12 18 L10 21 L14 21 Z"/>
-      </svg>
-    </div>
-    <h1 class="login-title" data-i18n="login.title">The Family Tree</h1>
-    <p class="login-sub" data-i18n="login.subtitle">Our Heritage</p>
-
-    <div class="step-dots">
-      <div class="dot" id="dot1"></div>
-      <div class="dot" id="dot2"></div>
-      <div class="dot" id="dot3"></div>
-    </div>
-
-    <!-- Step 2: Identity (Name + DOB Hash) -->
-    <div id="step2">
-      <div class="lbl" data-i18n="login.step2.heading">Who are you?</div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step2.subtitle">
-        Enter your details to identify yourself
-      </p>
-      <input type="text" id="s2-name" class="inp" data-i18n-placeholder="login.step2.namePlaceholder" placeholder="Your full name (e.g. Vikram Sharma)"/>
-      <input type="text" id="s2-dob" class="inp" data-i18n-placeholder="login.step2.dobPlaceholder" placeholder="Date of birth — DDMMYYYY (e.g. 04111972)" maxlength="8"/>
-      <button class="login-btn" onclick="step2Submit()" data-i18n="login.step2.button">Confirm identity</button>
-      <div class="error-msg" id="s2-err" data-i18n="errors.identityNotFound">Name and date of birth not found. Check spelling or continue as guest.</div>
-      <div class="attempt-warning" id="s2-attempts" style="display:none;"></div>
-      <p class="login-hint" data-i18n="login.step2.hint">Like your PAN card password — your name + birthday</p>
-      <a class="guest-link" onclick="enterAsGuest()" data-i18n="login.step2.guestLink">Continue as guest (view ancestors only)</a>
-    </div>
-
-    <!-- Step 3: TOTP -->
-    <div id="step3" style="display:none;">
-      <div class="lbl" data-i18n="login.step3.heading">One-time code</div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step3.subtitle">
-        Open Google Authenticator → Family Tree
-      </p>
-      <div class="totp-timer" id="totp-timer">30</div>
-      <div class="totp-box" id="totp-box">
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,0)" onpaste="totpPaste(event)"/>
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,1)"/>
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,2)"/>
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,3)"/>
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,4)"/>
-        <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,5)"/>
-      </div>
-      <button class="login-btn" onclick="step3Submit()" data-i18n="login.step3.button" disabled>Verify and enter</button>
-      <div class="error-msg" id="s3-err" data-i18n="errors.wrongTotp">Incorrect code. Please check Google Authenticator and try again.</div>
-      <div class="attempt-warning" id="s3-attempts" style="display:none;"></div>
-      <p class="login-hint" data-i18n="login.step3.hint">Code changes every 30 seconds · No internet needed</p>
-      <p class="login-hint" data-i18n="login.step3.adminOnly">Only required for Admin and Contributors</p>
-    </div>
-  </div>
-</div>
-
-<!-- Header -->
-<div id="header">
-  <div class="logo">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M10 2 L6 8 L10 10 L14 8 Z"/>
-      <path d="M10 10 L4 13 L10 16 L16 13 Z"/>
-      <path d="M10 16 L8 19 L12 19 Z"/>
+  <!-- Loading Screen -->
+  <div id="loading">
+    <svg width="64" height="64" viewBox="0 0 64 64">
+      <path d="M32 8 L24 24 L32 32 L40 24 Z" fill="#1a3a2a" />
+      <path d="M32 32 L20 40 L32 48 L44 40 Z" fill="#4a7c59" />
+      <path d="M32 48 L28 56 L36 56 Z" fill="#c8963e" />
     </svg>
-    <span data-i18n="app.name">The Family Tree</span>
+    <div id="loading-spinner"></div>
+    <p id="loading-text" data-i18n="loading.message">Loading family data...</p>
   </div>
 
-  <nav>
-    <button id="nav-tree" class="active" onclick="showView('tree')" data-i18n="nav.tree">Tree</button>
-    <button id="nav-calendar" onclick="showView('calendar')" data-i18n="nav.calendar">Calendar</button>
-    <button id="nav-map" onclick="showView('map')" data-i18n="nav.map" style="display:none;">Map</button>
-    <button id="nav-admin" onclick="showView('admin')" data-i18n="nav.admin">Admin</button>
-  </nav>
+  <!-- Watermark (Dynamic, post-login) -->
+  <div id="watermark"></div>
 
-  <div style="display:flex;align-items:center;">
-    <div id="search-bar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="21 21l-4.35-4.35"/>
+  <!-- Language Toggle (Pre-login) -->
+  <div id="lang-toggle" onclick="toggleLang()">मराठी</div>
+
+  <!-- Login Screens -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-emblem">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M12 3 L8 9 L12 12 L16 9 Z" />
+          <path d="M12 12 L6 15 L12 18 L18 15 Z" />
+          <path d="M12 18 L10 21 L14 21 Z" />
+        </svg>
+      </div>
+      <h1 class="login-title" data-i18n="login.title">The Family Tree</h1>
+      <p class="login-sub" data-i18n="login.subtitle">Our Heritage</p>
+
+      <div class="step-dots">
+        <div class="dot" id="dot1"></div>
+        <div class="dot" id="dot2"></div>
+        <div class="dot" id="dot3"></div>
+      </div>
+
+      <!-- Step 2: Identity (Name + DOB Hash) -->
+      <div id="step2">
+        <div class="lbl" data-i18n="login.step2.heading">Who are you?</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step2.subtitle">
+          Enter your details to identify yourself
+        </p>
+        <input type="text" id="s2-name" class="inp" data-i18n-placeholder="login.step2.namePlaceholder"
+          placeholder="Your full name (e.g. Vikram Sharma)" />
+        <input type="text" id="s2-dob" class="inp" data-i18n-placeholder="login.step2.dobPlaceholder"
+          placeholder="Date of birth — DDMMYYYY (e.g. 04111972)" maxlength="8" />
+        <button class="login-btn" onclick="step2Submit()" data-i18n="login.step2.button">Confirm identity</button>
+        <div class="error-msg" id="s2-err" data-i18n="errors.identityNotFound">Name and date of birth not found. Check
+          spelling or continue as guest.</div>
+        <div class="attempt-warning" id="s2-attempts" style="display:none;"></div>
+        <p class="login-hint" data-i18n="login.step2.hint">Like your PAN card password — your name + birthday</p>
+        <a class="guest-link" onclick="enterAsGuest()" data-i18n="login.step2.guestLink">Continue as guest (view
+          ancestors only)</a>
+      </div>
+
+      <!-- Step 3: TOTP -->
+      <div id="step3" style="display:none;">
+        <div class="lbl" data-i18n="login.step3.heading">One-time code</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:14px;" data-i18n="login.step3.subtitle">
+          Open Google Authenticator → Family Tree
+        </p>
+        <div class="totp-timer" id="totp-timer">30</div>
+        <div class="totp-box" id="totp-box">
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,0)" onpaste="totpPaste(event)" />
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,1)" />
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,2)" />
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,3)" />
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,4)" />
+          <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,5)" />
+        </div>
+        <button class="login-btn" onclick="step3Submit()" data-i18n="login.step3.button" disabled>Verify and
+          enter</button>
+        <div class="error-msg" id="s3-err" data-i18n="errors.wrongTotp">Incorrect code. Please check Google
+          Authenticator and try again.</div>
+        <div class="attempt-warning" id="s3-attempts" style="display:none;"></div>
+        <p class="login-hint" data-i18n="login.step3.hint">Code changes every 30 seconds · No internet needed</p>
+        <p class="login-hint" data-i18n="login.step3.adminOnly">Only required for Admin and Contributors</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div id="header">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10 2 L6 8 L10 10 L14 8 Z" />
+        <path d="M10 10 L4 13 L10 16 L16 13 Z" />
+        <path d="M10 16 L8 19 L12 19 Z" />
       </svg>
-      <input type="text" id="search-input" data-i18n-placeholder="nav.search" placeholder="Search family members…"/>
-    </div>
-    <div id="user-badge"></div>
-    <button id="logout-btn" onclick="logout()">Logout</button>
-    <div id="lang-toggle-app" onclick="toggleLang()">मराठी</div>
-  </div>
-</div>
-
-<!-- App Layout -->
-<div id="app">
-  <!-- Sidebar -->
-  <div id="sidebar">
-    <!-- View Modes -->
-    <div class="sb-sec">
-      <h3 data-i18n="tree.viewModes.title">View Modes</h3>
-      <button class="view-btn active" onclick="setViewMode('full')" data-view="full">
-        <span class="em">🌳</span>
-        <span data-i18n="tree.viewModes.full">Full tree</span>
-      </button>
-      <button class="view-btn" onclick="setViewMode('ancestor4')" data-view="ancestor4">
-        <span class="em">⬆️</span>
-        <span data-i18n="tree.viewModes.ancestorFour">4 generations up</span>
-      </button>
-      <button class="view-btn" onclick="setViewMode('descendant4')" data-view="descendant4">
-        <span class="em">⬇️</span>
-        <span data-i18n="tree.viewModes.descendantFour">4 generations down</span>
-      </button>
-      <button class="view-btn" onclick="setViewMode('hourglass')" data-view="hourglass">
-        <span class="em">⏳</span>
-        <span data-i18n="tree.viewModes.hourglass">Hourglass (both)</span>
-      </button>
-      <button class="view-btn" onclick="setViewMode('compact')" data-view="compact">
-        <span class="em">📐</span>
-        <span data-i18n="tree.viewModes.compact">Compact (2 gen)</span>
-      </button>
+      <span data-i18n="app.name">The Family Tree</span>
     </div>
 
-    <!-- Member List -->
-    <div class="sb-sec" style="flex:1;overflow:hidden;">
-      <h3 data-i18n="tree.allMembers">All Members</h3>
-      <div id="member-list" style="overflow-y:auto;max-height:300px;"></div>
-    </div>
+    <nav>
+      <button id="nav-tree" class="active" onclick="showView('tree')" data-i18n="nav.tree">Tree</button>
+      <button id="nav-calendar" onclick="showView('calendar')" data-i18n="nav.calendar">Calendar</button>
+      <button id="nav-map" onclick="showView('map')" data-i18n="nav.map" style="display:none;">Map</button>
+      <button id="nav-admin" onclick="showView('admin')" data-i18n="nav.admin">Admin</button>
+    </nav>
 
-    <!-- Tree Controls -->
-    <div class="sb-sec">
-      <h3 data-i18n="tree.controls.title">Controls</h3>
-      <button class="view-btn" onclick="treeZoom(1.2)">
-        <span class="em">🔍</span>
-        <span data-i18n="tree.controls.zoomIn">Zoom in</span>
-      </button>
-      <button class="view-btn" onclick="treeZoom(0.8)">
-        <span class="em">🔍</span>
-        <span data-i18n="tree.controls.zoomOut">Zoom out</span>
-      </button>
-      <button class="view-btn" onclick="treeFit()">
-        <span class="em">📐</span>
-        <span data-i18n="tree.controls.fit">Fit to screen</span>
-      </button>
-      <button class="view-btn" onclick="printTree()">
-        <span class="em">🖨️</span>
-        <span data-i18n="tree.controls.print">Print tree</span>
-      </button>
+    <div style="display:flex;align-items:center;">
+      <div id="search-bar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="11" cy="11" r="8" />
+          <path d="21 21l-4.35-4.35" />
+        </svg>
+        <input type="text" id="search-input" data-i18n-placeholder="nav.search" placeholder="Search family members…" />
+      </div>
+      <div id="user-badge"></div>
+      <button id="logout-btn" onclick="logout()">Logout</button>
+      <div id="lang-toggle-app" onclick="toggleLang()">मराठी</div>
     </div>
   </div>
 
-  <!-- Tree View -->
-  <div id="tree-view">
-    <svg id="tree-svg" style="width:100%;height:100%;cursor:grab;"></svg>
-    <div id="tree-controls">
-      <button class="tree-btn" onclick="treeZoom(1.2)" data-i18n="tree.controls.zoomIn">Zoom In</button>
-      <button class="tree-btn" onclick="treeZoom(0.8)" data-i18n="tree.controls.zoomOut">Zoom Out</button>
-      <button class="tree-btn" onclick="treeFit()" data-i18n="tree.controls.fit">Fit</button>
-    </div>
-    <div id="profile-panel" style="display:none; position:absolute; right:0; top:0; width:300px; background:white; height:100%; z-index:50;">
-      <div>Timeline</div>
-      <div>Bio</div>
-      <div>Family</div>
-    </div>
-  </div>
-
-  <!-- Calendar View -->
-  <div id="calendar-view">
-    <h2 data-i18n="calendar.title">Family Calendar</h2>
-    <p data-i18n="calendar.subtitle" style="margin-bottom:24px;">Upcoming occasions · Next 365 days</p>
-    <div id="calendar-filters" style="margin-bottom:24px;"></div>
-    <div id="calendar-events">
-      <div class="event-item">Dummy Event</div>
-    </div>
-    <button>WhatsApp</button>
-    <button>.ics download</button>
-  </div>
-
-  <!-- Admin View -->
-  <div id="admin-view">
-    <h2 data-i18n="admin.title">Admin Panel</h2>
-
-    <!-- Quick Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0;">
-      <div class="stat-card">
-        <div class="stat-num" id="stat-members">0</div>
-        <div class="stat-lbl" data-i18n="admin.stats.members">Members</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-events">0</div>
-        <div class="stat-lbl" data-i18n="admin.stats.events">Events</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-photos">0</div>
-        <div class="stat-lbl" data-i18n="admin.stats.photos">Photos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-pending">0</div>
-        <div class="stat-lbl" data-i18n="admin.stats.pendingPRs">Pending PRs</div>
-      </div>
-    </div>
-
-    <!-- GEDCOM Export Section -->
-    <div class="admin-card" style="margin-bottom:24px;">
-      <h3 data-i18n="admin.importExport.title">Import / Export</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Export family data in standard GEDCOM format</p>
-      <button class="admin-btn" onclick="exportGedcom()" data-i18n="admin.importExport.exportGedcom">Export GEDCOM (.ged)</button>
-      <button class="admin-btn" onclick="downloadFamilyJson()" data-i18n="admin.importExport.downloadJson">Download family.json</button>
-      <button class="admin-btn">CSV import</button>
-    </div>
-
-    <!-- Add Member Form -->
-    <div class="admin-card">
-      <h3 data-i18n="admin.addMember.title">Add Member</h3>
-      <p data-i18n="admin.addMember.subtitle" style="font-size:13px;color:var(--muted);margin-bottom:16px;">
-        Mandatory fields only — fill the rest later
-      </p>
-      <form id="add-member-form" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <input type="text" id="new-firstName" data-i18n-placeholder="admin.addMember.firstName" placeholder="First name *" class="inp" required/>
-        <input type="text" id="new-lastName" data-i18n-placeholder="admin.addMember.lastName" placeholder="Last name *" class="inp" required/>
-        <input type="text" id="new-dob" data-i18n-placeholder="admin.addMember.dob" placeholder="Date of birth (DDMMYYYY) *" class="inp" maxlength="8" required/>
-        <select id="new-gender" class="inp" required>
-          <option value="">Gender *</option>
-          <option value="M">Male</option>
-          <option value="F">Female</option>
-        </select>
-        <button type="submit" class="admin-btn" data-i18n="admin.addMember.submit" style="grid-column:1/-1;">
-          Add to tree → GitHub PR
+  <!-- App Layout -->
+  <div id="app">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <!-- View Modes -->
+      <div class="sb-sec">
+        <h3 data-i18n="tree.viewModes.title">View Modes</h3>
+        <button class="view-btn active" onclick="setViewMode('full')" data-view="full">
+          <span class="em">🌳</span>
+          <span data-i18n="tree.viewModes.full">Full tree</span>
         </button>
-      </form>
+        <button class="view-btn" onclick="setViewMode('ancestor4')" data-view="ancestor4">
+          <span class="em">⬆️</span>
+          <span data-i18n="tree.viewModes.ancestorFour">4 generations up</span>
+        </button>
+        <button class="view-btn" onclick="setViewMode('descendant4')" data-view="descendant4">
+          <span class="em">⬇️</span>
+          <span data-i18n="tree.viewModes.descendantFour">4 generations down</span>
+        </button>
+        <button class="view-btn" onclick="setViewMode('hourglass')" data-view="hourglass">
+          <span class="em">⏳</span>
+          <span data-i18n="tree.viewModes.hourglass">Hourglass (both)</span>
+        </button>
+        <button class="view-btn" onclick="setViewMode('compact')" data-view="compact">
+          <span class="em">📐</span>
+          <span data-i18n="tree.viewModes.compact">Compact (2 gen)</span>
+        </button>
+      </div>
+
+      <!-- Member List -->
+      <div class="sb-sec" style="flex:1;overflow:hidden;">
+        <h3 data-i18n="tree.allMembers">All Members</h3>
+        <div id="member-list" style="overflow-y:auto;max-height:300px;"></div>
+      </div>
+
+      <!-- Tree Controls -->
+      <div class="sb-sec">
+        <h3 data-i18n="tree.controls.title">Controls</h3>
+        <button class="view-btn" onclick="treeZoom(1.2)">
+          <span class="em">🔍</span>
+          <span data-i18n="tree.controls.zoomIn">Zoom in</span>
+        </button>
+        <button class="view-btn" onclick="treeZoom(0.8)">
+          <span class="em">🔍</span>
+          <span data-i18n="tree.controls.zoomOut">Zoom out</span>
+        </button>
+        <button class="view-btn" onclick="treeFit()">
+          <span class="em">📐</span>
+          <span data-i18n="tree.controls.fit">Fit to screen</span>
+        </button>
+        <button class="view-btn" onclick="printTree()">
+          <span class="em">🖨️</span>
+          <span data-i18n="tree.controls.print">Print tree</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tree View -->
+    <div id="tree-view">
+      <svg id="tree-svg" style="width:100%;height:100%;cursor:grab;"></svg>
+      <div id="tree-controls">
+        <button class="tree-btn" onclick="treeZoom(1.2)" data-i18n="tree.controls.zoomIn">Zoom In</button>
+        <button class="tree-btn" onclick="treeZoom(0.8)" data-i18n="tree.controls.zoomOut">Zoom Out</button>
+        <button class="tree-btn" onclick="treeFit()" data-i18n="tree.controls.fit">Fit</button>
+      </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div id="calendar-view">
+      <h2 data-i18n="calendar.title">Family Calendar</h2>
+      <p data-i18n="calendar.subtitle" style="margin-bottom:24px;">Upcoming occasions · Next 365 days</p>
+      <div id="calendar-filters" style="margin-bottom:24px;"></div>
+      <div id="calendar-events"></div>
+    </div>
+
+    <!-- Admin View -->
+    <div id="admin-view">
+      <h2 data-i18n="admin.title">Admin Panel</h2>
+
+      <!-- Quick Stats -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0;">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-members">0</div>
+          <div class="stat-lbl" data-i18n="admin.stats.members">Members</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-events">0</div>
+          <div class="stat-lbl" data-i18n="admin.stats.events">Events</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-photos">0</div>
+          <div class="stat-lbl" data-i18n="admin.stats.photos">Photos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-pending">0</div>
+          <div class="stat-lbl" data-i18n="admin.stats.pendingPRs">Pending PRs</div>
+        </div>
+      </div>
+
+      <!-- GEDCOM Export Section -->
+      <div class="admin-card" style="margin-bottom:24px;">
+        <h3 data-i18n="admin.importExport.title">Import / Export</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Export family data in standard GEDCOM format
+        </p>
+        <button class="admin-btn" onclick="exportGedcom()" data-i18n="admin.importExport.exportGedcom">Export GEDCOM
+          (.ged)</button>
+        <button class="admin-btn" onclick="downloadFamilyJson()" data-i18n="admin.importExport.downloadJson">Download
+          family.json</button>
+      </div>
+
+      <!-- CSV Import Section -->
+      <div class="admin-card">
+        <h3 data-i18n="admin.bulkImport.title">Bulk Import (CSV)</h3>
+        <p data-i18n="admin.bulkImport.subtitle" style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+          Import multiple family members at once
+        </p>
+        <div style="margin-bottom:16px;">
+          <button class="admin-btn" onclick="downloadCsvTemplate()" data-i18n="admin.bulkImport.downloadTemplate">Download CSV Template</button>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="lbl" data-i18n="admin.bulkImport.pasteCSV">Paste CSV data here:</label>
+          <textarea id="csv-import-input" class="inp" style="height:120px;resize:vertical;font-family:monospace;font-size:12px;"
+            placeholder="id,firstName,lastName,gender,birthDate,status&#10;P008,John,Smith,M,01011970,living&#10;P009,Jane,Smith,F,15051972,living"></textarea>
+        </div>
+        <button id="csv-import-btn" class="admin-btn" onclick="previewCsvImport()">Preview Import</button>
+        <div id="csv-preview" style="display:none;margin-top:16px;padding:12px;background:var(--cream);border-radius:8px;">
+          <h4 style="font-size:14px;color:var(--g-text);margin-bottom:8px;">Import Preview</h4>
+          <div id="csv-preview-content"></div>
+          <div style="margin-top:12px;">
+            <button class="admin-btn" onclick="confirmCsvImport()">Confirm Import</button>
+            <button class="admin-btn" style="background:var(--muted);" onclick="cancelCsvImport()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Member Form -->
+      <div class="admin-card">
+        <h3 data-i18n="admin.addMember.title">Add Member</h3>
+        <p data-i18n="admin.addMember.subtitle" style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+          Mandatory fields only — fill the rest later
+        </p>
+        <form id="add-member-form" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <input type="text" id="new-firstName" data-i18n-placeholder="admin.addMember.firstName"
+            placeholder="First name *" class="inp" required />
+          <input type="text" id="new-lastName" data-i18n-placeholder="admin.addMember.lastName"
+            placeholder="Last name *" class="inp" required />
+          <input type="text" id="new-dob" data-i18n-placeholder="admin.addMember.dob"
+            placeholder="Date of birth (DDMMYYYY) *" class="inp" maxlength="8" required />
+          <select id="new-gender" class="inp" required>
+            <option value="">Gender *</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+          </select>
+          <button type="submit" class="admin-btn" data-i18n="admin.addMember.submit" style="grid-column:1/-1;">
+            Add to tree → GitHub PR
+          </button>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Export Progress Modal -->
-<div id="export-modal">
-  <div class="export-card">
-    <h3>Exporting GEDCOM</h3>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Generating family tree data...</p>
-    <div class="export-progress">
-      <div class="export-bar" id="export-bar"></div>
+  <!-- Export Progress Modal -->
+  <div id="export-modal">
+    <div class="export-card">
+      <h3>Exporting GEDCOM</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Generating family tree data...</p>
+      <div class="export-progress">
+        <div class="export-bar" id="export-bar"></div>
+      </div>
+      <p id="export-status" style="font-size:11px;color:var(--muted);">Processing...</p>
     </div>
-    <p id="export-status" style="font-size:11px;color:var(--muted);">Processing...</p>
   </div>
-</div>
 
-<!-- Mobile Bottom Navigation -->
-<div id="bottom-nav">
-  <button class="bottom-nav-btn active" onclick="showView('tree')">
-    <div class="ico">🌳</div>
-    <div data-i18n="nav.tree">Tree</div>
-  </button>
-  <button class="bottom-nav-btn" onclick="showView('calendar')">
-    <div class="ico">📅</div>
-    <div data-i18n="nav.calendar">Calendar</div>
-  </button>
-  <button class="bottom-nav-btn" onclick="showView('admin')">
-    <div class="ico">⚙️</div>
-    <div data-i18n="nav.admin">Admin</div>
-  </button>
-</div>
+  <!-- Mobile Bottom Navigation -->
+  <div id="bottom-nav" style="display:none;">
+    <button class="bottom-nav-btn active" onclick="showView('tree')">
+      <div class="ico">🌳</div>
+      <div data-i18n="nav.tree">Tree</div>
+    </button>
+    <button class="bottom-nav-btn" onclick="showView('calendar')">
+      <div class="ico">📅</div>
+      <div data-i18n="nav.calendar">Calendar</div>
+    </button>
+    <button class="bottom-nav-btn" onclick="showView('admin')">
+      <div class="ico">⚙️</div>
+      <div data-i18n="nav.admin">Admin</div>
+    </button>
+  </div>
 
-<!-- Scripts -->
-<script src="vendor/leaflet.js"></script>
-<script src="vendor/d3.min.js"></script>
-<script src="vendor/flexsearch.bundle.js"></script>
-<script src="vendor/otpauth.min.js"></script>
+  <!-- Scripts -->
+  <script src="vendor/leaflet.js"></script>
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/flexsearch.bundle.js"></script>
+  <script src="vendor/otpauth.min.js"></script>
 
-<script type="module">
-// ═══════════════════════════════════════════════════════════
-//  The Family Tree — Phase 7 Enhanced Application Core
-//  TOTP · PWA · i18n · GEDCOM Export · Performance
-// ═══════════════════════════════════════════════════════════
+  <script type="module">
+    // ═══════════════════════════════════════════════════════════
+    //  The Family Tree — Phase 7 Enhanced Application Core
+    //  TOTP · PWA · i18n · GEDCOM Export · Performance
+    // ═══════════════════════════════════════════════════════════
 
-// ── Global State ───────────────────────────────────────────
-let familyData = null, authData = null, config = null;
-let i18n = {}, currentLang = localStorage.getItem('lang') || 'en';
-let currentUser = null, currentRole = 'guest';
-let selectedPerson = null, treeMode = 'full';
-let searchIndex = null, leafletMap = null;
-let treeTransform = { x: 0, y: 0, k: 1 };
-let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
-let lockoutTime = parseInt(localStorage.getItem('lockoutTime') || '0');
-let watermarkObserver = null;
+    // ── Global State ───────────────────────────────────────────
+    let familyData = null, authData = null, config = null;
+    let i18n = {}, currentLang = localStorage.getItem('lang') || 'en';
+    let currentUser = null, currentRole = 'guest';
+    let selectedPerson = null, treeMode = 'full';
+    let searchIndex = null, leafletMap = null;
+    let treeTransform = { x: 0, y: 0, k: 1 };
+    let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+    let lockoutTime = parseInt(localStorage.getItem('lockoutTime') || '0');
+    let watermarkObserver = null;
 
-// ── Phase 7 Features ───────────────────────────────────────
-// Virtual scrolling for large trees
-let virtualizedNodes = [];
-let viewportHeight = 0;
-let scrollTop = 0;
-const ITEM_HEIGHT = 80;
-const BUFFER_SIZE = 5;
+    // ── Phase 7 Features ───────────────────────────────────────
+    // Virtual scrolling for large trees
+    let virtualizedNodes = [];
+    let viewportHeight = 0;
+    let scrollTop = 0;
+    const ITEM_HEIGHT = 80;
+    const BUFFER_SIZE = 5;
 
-// Image lazy loading
-const imageObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const img = entry.target;
-      const src = img.dataset.src;
-      if (src) {
-        img.src = src;
-        img.classList.remove('loading');
-        imageObserver.unobserve(img);
+    // Image lazy loading
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          const src = img.dataset.src;
+          if (src) {
+            img.src = src;
+            img.classList.remove('loading');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    }, { rootMargin: '50px' });
+
+    // Debounced search
+    let searchTimeout;
+    function debounceSearch(callback, delay) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(callback, delay);
+    }
+
+    // ── Application Initialization ─────────────────────────────
+    async function init() {
+      try {
+        // Show loading spinner
+        document.getElementById('loading-text').textContent = 'Loading family data...';
+
+        // Check for lockout
+        const now = Date.now();
+        if (lockoutTime && now < lockoutTime) {
+          const remaining = Math.ceil((lockoutTime - now) / 60000);
+          document.getElementById('loading-text').textContent = `Account locked. Try again in ${remaining} minutes.`;
+          return;
+        }
+
+        // Load all data in parallel
+        const [fd, ad, cfg, en, mr] = await Promise.all([
+          fetch('./data/family.json').then(r => r.json()),
+          fetch('./data/auth.json').then(r => r.json()),
+          fetch('./data/config.json').then(r => r.json()),
+          fetch('./data/i18n/en.json').then(r => r.json()),
+          fetch('./data/i18n/mr.json').then(r => r.json()),
+        ]);
+
+        familyData = fd; authData = ad; config = cfg;
+        i18n = { en, mr };
+
+        // Apply language and setup
+        applyLang();
+        setupSearch();
+        setupSecurity();
+        setupPWA();
+
+        // Hide loading, show login
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        showStep(2); // Skip staticrypt step in development
+
+      } catch (e) {
+        document.getElementById('loading-text').textContent = 'Error loading data. Please refresh.';
+        console.error('Init error:', e);
       }
     }
-  });
-}, { rootMargin: '50px' });
 
-// Debounced search
-let searchTimeout;
-function debounceSearch(callback, delay) {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(callback, delay);
-}
-
-// ── Application Initialization ─────────────────────────────
-async function init() {
-  try {
-    // Show loading spinner
-    document.getElementById('loading-text').textContent = 'Loading family data...';
-
-    // Check for lockout
-    const now = Date.now();
-    if (lockoutTime && now < lockoutTime) {
-      const remaining = Math.ceil((lockoutTime - now) / 60000);
-      document.getElementById('loading-text').textContent = `Account locked. Try again in ${remaining} minutes.`;
-      return;
+    // ── i18n System ────────────────────────────────────────────
+    function t(key) {
+      const parts = key.split('.');
+      let obj = i18n[currentLang] || i18n.en;
+      for (const p of parts) {
+        obj = obj?.[p];
+        if (!obj) break;
+      }
+      return obj || key;
     }
 
-    // Load all data in parallel
-    const [fd, ad, cfg, en, mr] = await Promise.all([
-      fetch('./data/family.json').then(r => r.json()),
-      fetch('./data/auth.json').then(r => r.json()),
-      fetch('./data/config.json').then(r => r.json()),
-      fetch('./data/i18n/en.json').then(r => r.json()),
-      fetch('./data/i18n/mr.json').then(r => r.json()),
-    ]);
-
-    familyData = fd; authData = ad; config = cfg;
-    i18n = { en, mr };
-
-    // Apply language and setup
-    applyLang();
-    setupSearch();
-    setupSecurity();
-    setupPWA();
-
-    // Hide loading, show login
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    showStep(2); // Skip staticrypt step in development
-
-  } catch(e) {
-    document.getElementById('loading-text').textContent = 'Error loading data. Please refresh.';
-    console.error('Init error:', e);
-  }
-}
-
-// ── i18n System ────────────────────────────────────────────
-function t(key) {
-  const parts = key.split('.');
-  let obj = i18n[currentLang] || i18n.en;
-  for (const p of parts) {
-    obj = obj?.[p];
-    if (!obj) break;
-  }
-  return obj || key;
-}
-
-function applyLang() {
-  // Update all elements with data-i18n attribute
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const val = t(key);
-    if (val && val !== key) el.textContent = val;
-  });
-
-  // Update placeholder text
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    const val = t(key);
-    if (val && val !== key) el.placeholder = val;
-  });
-
-  // Update language toggle buttons
-  const toggle = document.getElementById('lang-toggle');
-  const toggleApp = document.getElementById('lang-toggle-app');
-  const label = currentLang === 'en' ? 'मराठी' : 'English';
-  if (toggle) toggle.textContent = label;
-  if (toggleApp) toggleApp.textContent = label;
-
-  // Update document title
-  document.title = t('app.name');
-}
-
-window.toggleLang = function() {
-  currentLang = currentLang === 'en' ? 'mr' : 'en';
-  localStorage.setItem('lang', currentLang);
-  applyLang();
-};
-
-// ── Enhanced Security Setup ────────────────────────────────
-function setupSecurity() {
-  // Screenshot detection
-  document.addEventListener('keyup', e => {
-    if (e.key === 'PrintScreen') showSecurityWarning('screenshot');
-  });
-
-  // Disable right-click on images
-  document.addEventListener('contextmenu', e => {
-    if (e.target.tagName === 'IMG') e.preventDefault();
-  });
-
-  // Page visibility blur
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && currentRole !== 'guest') {
-      document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
-        el.style.filter = 'blur(8px)';
+    function applyLang() {
+      // Update all elements with data-i18n attribute
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = t(key);
+        if (val && val !== key) el.textContent = val;
       });
-    } else {
-      document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
-        el.style.filter = '';
+
+      // Update placeholder text
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const val = t(key);
+        if (val && val !== key) el.placeholder = val;
+      });
+
+      // Update language toggle buttons
+      const toggle = document.getElementById('lang-toggle');
+      const toggleApp = document.getElementById('lang-toggle-app');
+      const label = currentLang === 'en' ? 'मराठी' : 'English';
+      if (toggle) toggle.textContent = label;
+      if (toggleApp) toggleApp.textContent = label;
+
+      // Update document title
+      document.title = t('app.name');
+    }
+
+    window.toggleLang = function () {
+      currentLang = currentLang === 'en' ? 'mr' : 'en';
+      localStorage.setItem('lang', currentLang);
+      applyLang();
+    };
+
+    // ── Enhanced Security Setup ────────────────────────────────
+    function setupSecurity() {
+      // Screenshot detection
+      document.addEventListener('keyup', e => {
+        if (e.key === 'PrintScreen') showSecurityWarning('screenshot');
+      });
+
+      // Disable right-click on images
+      document.addEventListener('contextmenu', e => {
+        if (e.target.tagName === 'IMG') e.preventDefault();
+      });
+
+      // Page visibility blur
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && currentRole !== 'guest') {
+          document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
+            el.style.filter = 'blur(8px)';
+          });
+        } else {
+          document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
+            el.style.filter = '';
+          });
+        }
       });
     }
-  });
-}
 
-function showSecurityWarning(type) {
-  console.warn(`Security event: ${type} detected`);
-  // Could log to analytics or show warning overlay
-}
+    function showSecurityWarning(type) {
+      console.warn(`Security event: ${type} detected`);
+      // Could log to analytics or show warning overlay
+    }
 
-// ── Enhanced Dynamic Watermark ─────────────────────────────
-function injectWatermark(name) {
-  const wm = document.getElementById('watermark');
-  wm.innerHTML = '';
-  wm.style.display = 'block';
+    // ── Enhanced Dynamic Watermark ─────────────────────────────
+    function injectWatermark(name) {
+      const wm = document.getElementById('watermark');
+      wm.innerHTML = '';
+      wm.style.display = 'block';
 
-  const now = new Date();
-  const text = `${name} · ${now.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })} ${now.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })}`;
+      const now = new Date();
+      const text = `${name} · ${now.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })} ${now.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
 
-  // Generate tiled watermark
-  generateWatermarkTiles(wm, text);
+      // Generate tiled watermark
+      generateWatermarkTiles(wm, text);
 
-  // Setup MutationObserver to re-inject if tampered
-  if (watermarkObserver) watermarkObserver.disconnect();
-  watermarkObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' || mutation.type === 'attributes') {
-        // Re-inject watermark if it was modified
-        if (wm.children.length === 0 || wm.style.display === 'none') {
-          generateWatermarkTiles(wm, text);
-          wm.style.display = 'block';
+      // Setup MutationObserver to re-inject if tampered
+      if (watermarkObserver) watermarkObserver.disconnect();
+      watermarkObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' || mutation.type === 'attributes') {
+            // Re-inject watermark if it was modified
+            if (wm.children.length === 0 || wm.style.display === 'none') {
+              generateWatermarkTiles(wm, text);
+              wm.style.display = 'block';
+            }
+          }
+        });
+      });
+      watermarkObserver.observe(wm, {
+        childList: true,
+        attributes: true,
+        subtree: true
+      });
+
+      // Re-generate on window resize
+      window.addEventListener('resize', () => {
+        debounceSearch(() => generateWatermarkTiles(wm, text), 200);
+      });
+    }
+
+    function generateWatermarkTiles(container, text) {
+      container.innerHTML = '';
+      const rows = Math.ceil(window.innerHeight / 120) + 2;
+      const cols = Math.ceil(window.innerWidth / 220) + 2;
+
+      for (let row = -1; row < rows; row++) {
+        for (let col = -1; col < cols; col++) {
+          const div = document.createElement('div');
+          div.className = 'wm-tile';
+          div.textContent = text;
+          div.style.top = `${row * 120 + col * 40}px`;
+          div.style.left = `${col * 220}px`;
+          container.appendChild(div);
         }
       }
-    });
-  });
-  watermarkObserver.observe(wm, {
-    childList: true,
-    attributes: true,
-    subtree: true
-  });
-
-  // Re-generate on window resize
-  window.addEventListener('resize', () => {
-    debounceSearch(() => generateWatermarkTiles(wm, text), 200);
-  });
-}
-
-function generateWatermarkTiles(container, text) {
-  container.innerHTML = '';
-  const rows = Math.ceil(window.innerHeight / 120) + 2;
-  const cols = Math.ceil(window.innerWidth / 220) + 2;
-
-  for (let row = -1; row < rows; row++) {
-    for (let col = -1; col < cols; col++) {
-      const div = document.createElement('div');
-      div.className = 'wm-tile';
-      div.textContent = text;
-      div.style.top = `${row * 120 + col * 40}px`;
-      div.style.left = `${col * 220}px`;
-      container.appendChild(div);
     }
-  }
-}
 
-// ── Enhanced Login Flow with TOTP ──────────────────────────
-window.step2Submit = async function() {
-  if (Date.now() < lockoutTime) {
-    showError('s2-err', 'Account locked. Try again later.');
-    return;
-  }
-
-  const name = document.getElementById('s2-name').value.trim();
-  const dob = document.getElementById('s2-dob').value.trim().replace(/\D/g,'');
-
-  if (!name || dob.length !== 8) {
-    showError('s2-err', t('errors.identityNotFound'));
-    return;
-  }
-
-  try {
-    // Generate identity hash
-    const normalised = (name.toLowerCase().replace(/\s+/g,'') + dob);
-    const hash = await sha256(normalised);
-    const entry = authData.entries.find(e => e.hash === hash);
-
-    if (!entry) {
-      loginAttempts++;
-      localStorage.setItem('loginAttempts', loginAttempts.toString());
-
-      if (loginAttempts >= 5) {
-        const lockTime = Date.now() + (15 * 60 * 1000); // 15 minutes
-        localStorage.setItem('lockoutTime', lockTime.toString());
-        showError('s2-err', 'Too many failed attempts. Account locked for 15 minutes.');
+    // ── Enhanced Login Flow with TOTP ──────────────────────────
+    window.step2Submit = async function () {
+      if (Date.now() < lockoutTime) {
+        showError('s2-err', 'Account locked. Try again later.');
         return;
       }
 
-      showError('s2-err', t('errors.identityNotFound'));
-      showAttemptWarning('s2-attempts', `${loginAttempts}/5 attempts used`);
-      return;
+      const name = document.getElementById('s2-name').value.trim();
+      const dob = document.getElementById('s2-dob').value.trim().replace(/\D/g, '');
+
+      if (!name || dob.length !== 8) {
+        showError('s2-err', t('errors.identityNotFound'));
+        return;
+      }
+
+      try {
+        // Generate identity hash
+        const normalised = (name.toLowerCase().replace(/\s+/g, '') + dob);
+        const hash = await sha256(normalised);
+        const entry = authData.entries.find(e => e.hash === hash);
+
+        if (!entry) {
+          loginAttempts++;
+          localStorage.setItem('loginAttempts', loginAttempts.toString());
+
+          if (loginAttempts >= 5) {
+            const lockTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+            localStorage.setItem('lockoutTime', lockTime.toString());
+            showError('s2-err', 'Too many failed attempts. Account locked for 15 minutes.');
+            return;
+          }
+
+          showError('s2-err', t('errors.identityNotFound'));
+          showAttemptWarning('s2-attempts', `${loginAttempts}/5 attempts used`);
+          return;
+        }
+
+        // Reset attempts on success
+        loginAttempts = 0;
+        localStorage.removeItem('loginAttempts');
+        localStorage.removeItem('lockoutTime');
+
+        currentUser = entry;
+        currentRole = entry.role;
+
+        if (entry.totpRequired && entry.totpSecret) {
+          showStep(3);
+          startTOTPTimer();
+          focusTOTPInput();
+        } else {
+          enterApp();
+        }
+
+      } catch (e) {
+        console.error('Login error:', e);
+        showError('s2-err', 'Login failed. Please try again.');
+      }
+    };
+
+    window.step3Submit = async function () {
+      const code = getTOTPCode();
+      if (code.length !== 6) {
+        showError('s3-err', 'Please enter 6-digit code.');
+        return;
+      }
+
+      try {
+        // Validate TOTP using otpauth library
+        const totp = new OTPAuth.TOTP({
+          secret: OTPAuth.Secret.fromBase32(currentUser.totpSecret),
+          digits: 6,
+          period: 30,
+        });
+
+        const isValid = totp.validate({ token: code, window: 1 });
+
+        if (isValid !== null) {
+          // Valid TOTP
+          clearInterval(totpInterval);
+          enterApp();
+        } else {
+          // Invalid TOTP
+          loginAttempts++;
+          localStorage.setItem('loginAttempts', loginAttempts.toString());
+
+          if (loginAttempts >= 5) {
+            const lockTime = Date.now() + (15 * 60 * 1000);
+            localStorage.setItem('lockoutTime', lockTime.toString());
+            showError('s3-err', 'Too many failed attempts. Account locked for 15 minutes.');
+            return;
+          }
+
+          showError('s3-err', t('errors.wrongTotp'));
+          showAttemptWarning('s3-attempts', `${loginAttempts}/5 attempts used`);
+          clearTOTPInputs();
+        }
+
+      } catch (e) {
+        console.error('TOTP validation error:', e);
+        showError('s3-err', 'TOTP validation failed. Please try again.');
+      }
+    };
+
+    function getTOTPCode() {
+      const inputs = document.querySelectorAll('.totp-d');
+      return Array.from(inputs).map(inp => inp.value).join('');
     }
 
-    // Reset attempts on success
-    loginAttempts = 0;
-    localStorage.removeItem('loginAttempts');
-    localStorage.removeItem('lockoutTime');
-
-    currentUser = entry;
-    currentRole = entry.role;
-
-    if (entry.totpRequired && entry.totpSecret) {
-      showStep(3);
-      startTOTPTimer();
-      focusTOTPInput();
-    } else {
-      enterApp();
+    function clearTOTPInputs() {
+      document.querySelectorAll('.totp-d').forEach((inp, i) => {
+        inp.value = '';
+        inp.classList.remove('filled');
+        if (i === 0) inp.focus();
+      });
     }
 
-  } catch (e) {
-    console.error('Login error:', e);
-    showError('s2-err', 'Login failed. Please try again.');
-  }
-};
+    function focusTOTPInput() {
+      document.querySelector('.totp-d').focus();
+    }
 
-window.step3Submit = async function() {
-  const code = getTOTPCode();
-  if (code.length !== 6) {
-    showError('s3-err', 'Please enter 6-digit code.');
-    return;
-  }
+    // TOTP Input Handlers
+    window.totpInput = function (input, index) {
+      const value = input.value;
 
-  try {
-    // Validate TOTP using otpauth library
-    const totp = new OTPAuth.TOTP({
-      secret: OTPAuth.Secret.fromBase32(currentUser.totpSecret),
-      digits: 6,
-      period: 30,
-    });
+      if (!/^\d$/.test(value) && value !== '') {
+        input.value = '';
+        return;
+      }
 
-    const isValid = totp.validate({ token: code, window: 1 });
+      if (value) {
+        input.classList.add('filled');
+        // Move to next input
+        if (index < 5) {
+          document.querySelectorAll('.totp-d')[index + 1].focus();
+        }
+      } else {
+        input.classList.remove('filled');
+      }
 
-    if (isValid !== null) {
-      // Valid TOTP
+      // Check if complete
+      const code = getTOTPCode();
+      const submitBtn = document.querySelector('#step3 .login-btn');
+      submitBtn.disabled = code.length !== 6;
+
+      // Auto-submit if complete
+      if (code.length === 6) {
+        setTimeout(() => step3Submit(), 100);
+      }
+    };
+
+    window.totpPaste = function (event) {
+      event.preventDefault();
+      const paste = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+      const inputs = document.querySelectorAll('.totp-d');
+
+      for (let i = 0; i < paste.length; i++) {
+        if (inputs[i]) {
+          inputs[i].value = paste[i];
+          inputs[i].classList.add('filled');
+        }
+      }
+
+      const submitBtn = document.querySelector('#step3 .login-btn');
+      submitBtn.disabled = paste.length !== 6;
+    };
+
+    // TOTP Timer
+    let totpInterval;
+    function startTOTPTimer() {
       clearInterval(totpInterval);
-      enterApp();
-    } else {
-      // Invalid TOTP
-      loginAttempts++;
-      localStorage.setItem('loginAttempts', loginAttempts.toString());
 
-      if (loginAttempts >= 5) {
-        const lockTime = Date.now() + (15 * 60 * 1000);
-        localStorage.setItem('lockoutTime', lockTime.toString());
-        showError('s3-err', 'Too many failed attempts. Account locked for 15 minutes.');
-        return;
+      function tick() {
+        const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
+        const timerEl = document.getElementById('totp-timer');
+        if (timerEl) {
+          timerEl.textContent = remaining;
+          const angle = ((30 - remaining) / 30) * 360;
+          timerEl.style.setProperty('--angle', `${angle}deg`);
+        }
       }
 
-      showError('s3-err', t('errors.wrongTotp'));
-      showAttemptWarning('s3-attempts', `${loginAttempts}/5 attempts used`);
-      clearTOTPInputs();
+      tick();
+      totpInterval = setInterval(tick, 1000);
     }
 
-  } catch (e) {
-    console.error('TOTP validation error:', e);
-    showError('s3-err', 'TOTP validation failed. Please try again.');
-  }
-};
+    window.enterAsGuest = function () {
+      currentUser = null;
+      currentRole = 'guest';
+      enterApp();
+    };
 
-function getTOTPCode() {
-  const inputs = document.querySelectorAll('.totp-d');
-  return Array.from(inputs).map(inp => inp.value).join('');
-}
+    function enterApp() {
+      // Hide login, show app
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('header').style.display = 'flex';
+      document.getElementById('app').style.display = 'flex';
 
-function clearTOTPInputs() {
-  document.querySelectorAll('.totp-d').forEach((inp, i) => {
-    inp.value = '';
-    inp.classList.remove('filled');
-    if (i === 0) inp.focus();
-  });
-}
+      // Inject watermark
+      const displayName = currentUser ? currentUser.displayName : 'Guest';
+      injectWatermark(displayName);
 
-function focusTOTPInput() {
-  document.querySelector('.totp-d').focus();
-}
+      // Update UI
+      document.getElementById('user-badge').textContent =
+        currentUser ? `${currentUser.displayName} · ${currentRole}` : 'Guest';
 
-// TOTP Input Handlers
-window.totpInput = function(input, index) {
-  const value = input.value;
+      // Hide admin nav for non-admins
+      if (currentRole !== 'admin') {
+        const adminNav = document.getElementById('nav-admin');
+        if (adminNav) adminNav.style.display = 'none';
+      }
 
-  if (!/^\d$/.test(value) && value !== '') {
-    input.value = '';
-    return;
-  }
+      // Hide map nav (disabled in config)
+      if (!config.features?.mapView) {
+        const mapNav = document.getElementById('nav-map');
+        if (mapNav) mapNav.style.display = 'none';
+      }
 
-  if (value) {
-    input.classList.add('filled');
-    // Move to next input
-    if (index < 5) {
-      document.querySelectorAll('.totp-d')[index + 1].focus();
+      // Setup mobile navigation
+      if (window.innerWidth <= 768) {
+        document.getElementById('bottom-nav').style.display = 'flex';
+        document.getElementById('app').style.paddingBottom = '60px';
+      }
+
+      // Initialize app
+      buildApp();
     }
-  } else {
-    input.classList.remove('filled');
-  }
 
-  // Check if complete
-  const code = getTOTPCode();
-  const submitBtn = document.querySelector('#step3 .login-btn');
-  submitBtn.disabled = code.length !== 6;
+    function showStep(n) {
+      [2, 3].forEach(i => {
+        const step = document.getElementById(`step${i}`);
+        if (step) step.style.display = i === n ? 'block' : 'none';
 
-  // Auto-submit if complete
-  if (code.length === 6) {
-    setTimeout(() => step3Submit(), 100);
-  }
-};
+        const dot = document.getElementById(`dot${i}`);
+        if (dot) dot.classList.toggle('active', i === n);
+      });
 
-window.totpPaste = function(event) {
-  event.preventDefault();
-  const paste = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-  const inputs = document.querySelectorAll('.totp-d');
-
-  for (let i = 0; i < paste.length; i++) {
-    if (inputs[i]) {
-      inputs[i].value = paste[i];
-      inputs[i].classList.add('filled');
+      // Clear error messages
+      document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
+      document.querySelectorAll('.attempt-warning').forEach(e => e.style.display = 'none');
     }
-  }
 
-  const submitBtn = document.querySelector('#step3 .login-btn');
-  submitBtn.disabled = paste.length !== 6;
-};
-
-// TOTP Timer
-let totpInterval;
-function startTOTPTimer() {
-  clearInterval(totpInterval);
-
-  function tick() {
-    const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
-    const timerEl = document.getElementById('totp-timer');
-    if (timerEl) {
-      timerEl.textContent = remaining;
-      const angle = ((30 - remaining) / 30) * 360;
-      timerEl.style.setProperty('--angle', `${angle}deg`);
+    function showError(elementId, message) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.textContent = message;
+        el.style.display = 'block';
+      }
     }
-  }
 
-  tick();
-  totpInterval = setInterval(tick, 1000);
-}
+    function showAttemptWarning(elementId, message) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.textContent = message;
+        el.style.display = 'block';
+      }
+    }
 
-window.enterAsGuest = function() {
-  currentUser = null;
-  currentRole = 'guest';
-  enterApp();
-};
+    window.logout = function () {
+      if (watermarkObserver) watermarkObserver.disconnect();
+      sessionStorage.clear();
+      location.reload();
+    };
 
-function enterApp() {
-  // Hide login, show app
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('header').style.display = 'flex';
-  document.getElementById('app').style.display = 'flex';
+    // ── PWA Setup ──────────────────────────────────────────────
+    function setupPWA() {
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered:', reg))
+          .catch(err => console.log('SW registration failed:', err));
+      }
 
-  // Inject watermark
-  const displayName = currentUser ? currentUser.displayName : 'Guest';
-  injectWatermark(displayName);
+      // Handle install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
 
-  // Update UI
-  document.getElementById('user-badge').textContent =
-    currentUser ? `${currentUser.displayName} · ${currentRole}` : 'Guest';
-
-  // Hide admin nav for non-admins
-  if (currentRole !== 'admin') {
-    const adminNav = document.getElementById('nav-admin');
-    if (adminNav) adminNav.style.display = 'none';
-  }
-
-  // Hide map nav (disabled in config)
-  if (!config.features?.mapView) {
-    const mapNav = document.getElementById('nav-map');
-    if (mapNav) mapNav.style.display = 'none';
-  }
-
-  // Setup mobile navigation
-  if (window.innerWidth <= 768) {
-    document.getElementById('bottom-nav').style.display = 'flex';
-    document.getElementById('app').style.paddingBottom = '60px';
-  }
-
-  // Initialize app
-  buildApp();
-}
-
-function showStep(n) {
-  [2, 3].forEach(i => {
-    const step = document.getElementById(`step${i}`);
-    if (step) step.style.display = i === n ? 'block' : 'none';
-
-    const dot = document.getElementById(`dot${i}`);
-    if (dot) dot.classList.toggle('active', i === n);
-  });
-
-  // Clear error messages
-  document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
-  document.querySelectorAll('.attempt-warning').forEach(e => e.style.display = 'none');
-}
-
-function showError(elementId, message) {
-  const el = document.getElementById(elementId);
-  if (el) {
-    el.textContent = message;
-    el.style.display = 'block';
-  }
-}
-
-function showAttemptWarning(elementId, message) {
-  const el = document.getElementById(elementId);
-  if (el) {
-    el.textContent = message;
-    el.style.display = 'block';
-  }
-}
-
-window.logout = function() {
-  if (watermarkObserver) watermarkObserver.disconnect();
-  sessionStorage.clear();
-  location.reload();
-};
-
-// ── PWA Setup ──────────────────────────────────────────────
-function setupPWA() {
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg))
-      .catch(err => console.log('SW registration failed:', err));
-  }
-
-  // Handle install prompt
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // Show install banner (optional)
-    const installBanner = document.createElement('div');
-    installBanner.innerHTML = `
+        // Show install banner (optional)
+        const installBanner = document.createElement('div');
+        installBanner.innerHTML = `
       <div style="position:fixed;bottom:20px;left:20px;right:20px;background:var(--g);color:white;
                   padding:12px 16px;border-radius:8px;font-size:13px;z-index:1000;
                   display:flex;align-items:center;justify-content:space-between;">
@@ -1079,36 +1647,36 @@ function setupPWA() {
         </button>
       </div>
     `;
-    document.body.appendChild(installBanner.firstElementChild);
+        document.body.appendChild(installBanner.firstElementChild);
 
-    window.installPWA = () => {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        deferredPrompt = null;
-        installBanner.remove();
+        window.installPWA = () => {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(() => {
+            deferredPrompt = null;
+            installBanner.remove();
+          });
+        };
       });
-    };
-  });
-}
+    }
 
-// ── GEDCOM Export ──────────────────────────────────────────
-window.exportGedcom = async function() {
-  if (currentRole !== 'admin' && currentRole !== 'contributor') {
-    alert('GEDCOM export is only available for Admin and Contributors.');
-    return;
-  }
+    // ── GEDCOM Export ──────────────────────────────────────────
+    window.exportGedcom = async function () {
+      if (currentRole !== 'admin' && currentRole !== 'contributor') {
+        alert('GEDCOM export is only available for Admin and Contributors.');
+        return;
+      }
 
-  const modal = document.getElementById('export-modal');
-  const bar = document.getElementById('export-bar');
-  const status = document.getElementById('export-status');
+      const modal = document.getElementById('export-modal');
+      const bar = document.getElementById('export-bar');
+      const status = document.getElementById('export-status');
 
-  modal.style.display = 'flex';
-  bar.style.width = '0%';
-  status.textContent = 'Processing persons...';
+      modal.style.display = 'flex';
+      bar.style.width = '0%';
+      status.textContent = 'Processing persons...';
 
-  try {
-    // Generate GEDCOM content
-    let gedcom = `0 HEAD
+      try {
+        // Generate GEDCOM content
+        let gedcom = `0 HEAD
 1 SOUR Family Tree
 2 VERS 1.0
 2 NAME The Family Tree
@@ -1120,279 +1688,414 @@ window.exportGedcom = async function() {
 2 FORM LINEAGE-LINKED
 `;
 
-    // Update progress
-    bar.style.width = '20%';
-    status.textContent = 'Processing individuals...';
-    await new Promise(resolve => setTimeout(resolve, 500));
+        // Update progress
+        bar.style.width = '20%';
+        status.textContent = 'Processing individuals...';
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Add individuals
-    const visiblePersons = filterByRole(familyData.persons);
-    for (let i = 0; i < visiblePersons.length; i++) {
-      const person = visiblePersons[i];
-      gedcom += `
+        // Add individuals
+        const visiblePersons = filterByRole(familyData.persons);
+        for (let i = 0; i < visiblePersons.length; i++) {
+          const person = visiblePersons[i];
+          gedcom += `
 0 @${person.id}@ INDI
 1 NAME ${person.firstName} /${person.lastName}/
 1 SEX ${person.gender}`;
 
-      if (person.birthDate) {
-        gedcom += `
+          if (person.birthDate) {
+            gedcom += `
 1 BIRT
 2 DATE ${formatGedcomDate(person.birthDate)}`;
-        if (person.birthPlace) {
-          gedcom += `
+            if (person.birthPlace) {
+              gedcom += `
 2 PLAC ${person.birthPlace}`;
-        }
-      }
+            }
+          }
 
-      if (person.status === 'deceased' && person.deathDate) {
-        gedcom += `
+          if (person.status === 'deceased' && person.deathDate) {
+            gedcom += `
 1 DEAT
 2 DATE ${formatGedcomDate(person.deathDate)}`;
-        if (person.deathPlace) {
-          gedcom += `
+            if (person.deathPlace) {
+              gedcom += `
 2 PLAC ${person.deathPlace}`;
-        }
-      }
+            }
+          }
 
-      if (person.occupation) {
-        gedcom += `
+          if (person.occupation) {
+            gedcom += `
 1 OCCU ${person.occupation}`;
-      }
+          }
 
-      // Update progress
-      const progress = 20 + (i / visiblePersons.length) * 60;
-      bar.style.width = `${progress}%`;
-    }
+          // Update progress
+          const progress = 20 + (i / visiblePersons.length) * 60;
+          bar.style.width = `${progress}%`;
+        }
 
-    status.textContent = 'Processing relationships...';
-    bar.style.width = '80%';
-    await new Promise(resolve => setTimeout(resolve, 300));
+        status.textContent = 'Processing relationships...';
+        bar.style.width = '80%';
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Add families/relationships
-    const families = new Map();
-    let famId = 1;
+        // Add families/relationships
+        const families = new Map();
+        let famId = 1;
 
-    familyData.relationships.forEach(rel => {
-      if (rel.type === 'marriage') {
-        const famKey = `FAM${famId++}`;
-        families.set(rel.id, famKey);
+        familyData.relationships.forEach(rel => {
+          if (rel.type === 'marriage') {
+            const famKey = `FAM${famId++}`;
+            families.set(rel.id, famKey);
 
-        gedcom += `
+            gedcom += `
 0 @${famKey}@ FAM
 1 HUSB @${rel.person1Id}@
 1 WIFE @${rel.person2Id}@`;
 
-        if (rel.startDate) {
-          gedcom += `
+            if (rel.startDate) {
+              gedcom += `
 1 MARR
 2 DATE ${formatGedcomDate(rel.startDate)}`;
-        }
-      }
-    });
+            }
+          }
+        });
 
-    status.textContent = 'Finalizing export...';
-    bar.style.width = '95%';
-    await new Promise(resolve => setTimeout(resolve, 200));
+        status.textContent = 'Finalizing export...';
+        bar.style.width = '95%';
+        await new Promise(resolve => setTimeout(resolve, 200));
 
-    gedcom += `
+        gedcom += `
 0 TRLR`;
 
-    // Download file
-    const blob = new Blob([gedcom], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`;
-    link.click();
-    URL.revokeObjectURL(url);
+        // Download file
+        const blob = new Blob([gedcom], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `family-tree-${new Date().toISOString().split('T')[0]}.ged`;
+        link.click();
+        URL.revokeObjectURL(url);
 
-    bar.style.width = '100%';
-    status.textContent = 'Export complete!';
+        bar.style.width = '100%';
+        status.textContent = 'Export complete!';
 
-    setTimeout(() => {
-      modal.style.display = 'none';
-    }, 1000);
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 1000);
 
-  } catch (e) {
-    console.error('GEDCOM export error:', e);
-    status.textContent = 'Export failed. Please try again.';
-    setTimeout(() => {
-      modal.style.display = 'none';
-    }, 2000);
-  }
-};
-
-function formatGedcomDate(dateStr) {
-  if (!dateStr) return '';
-  if (dateStr.length === 8) {
-    // DDMMYYYY format
-    const day = dateStr.slice(0, 2);
-    const month = dateStr.slice(2, 4);
-    const year = dateStr.slice(4, 8);
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    return `${day} ${months[parseInt(month) - 1]} ${year}`;
-  }
-  return dateStr; // Return as-is if not in expected format
-}
-
-window.downloadFamilyJson = function() {
-  const filtered = {
-    ...familyData,
-    persons: filterByRole(familyData.persons).map(filterFields)
-  };
-
-  const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `family-data-${new Date().toISOString().split('T')[0]}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-};
-
-// ── Performance Optimizations ──────────────────────────────
-function setupVirtualScrolling(container, items, renderItem) {
-  const itemHeight = 80;
-  const containerHeight = container.clientHeight;
-  const totalHeight = items.length * itemHeight;
-
-  const content = container.querySelector('.virtual-content') || document.createElement('div');
-  content.className = 'virtual-content';
-  content.style.height = `${totalHeight}px`;
-
-  if (!container.querySelector('.virtual-content')) {
-    container.appendChild(content);
-  }
-
-  function updateVisibleItems() {
-    const scrollTop = container.scrollTop;
-    const startIndex = Math.floor(scrollTop / itemHeight);
-    const endIndex = Math.min(startIndex + Math.ceil(containerHeight / itemHeight) + BUFFER_SIZE, items.length);
-
-    // Clear existing items
-    content.innerHTML = '';
-
-    // Render visible items
-    for (let i = startIndex; i < endIndex; i++) {
-      const item = items[i];
-      const element = renderItem(item, i);
-      element.style.position = 'absolute';
-      element.style.top = `${i * itemHeight}px`;
-      element.style.left = '0';
-      element.style.right = '0';
-      element.style.height = `${itemHeight}px`;
-      content.appendChild(element);
-    }
-  }
-
-  container.addEventListener('scroll', debounce(updateVisibleItems, 10));
-  updateVisibleItems();
-}
-
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
+      } catch (e) {
+        console.error('GEDCOM export error:', e);
+        status.textContent = 'Export failed. Please try again.';
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 2000);
+      }
     };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
 
-function setupLazyLoading() {
-  // Setup intersection observer for images
-  document.querySelectorAll('img[data-src]').forEach(img => {
-    img.classList.add('lazy-img', 'loading');
-    imageObserver.observe(img);
-  });
-}
-
-// ── Enhanced Search ────────────────────────────────────────
-function setupSearch() {
-  if (!familyData?.persons) return;
-
-  searchIndex = new FlexSearch.Document({
-    tokenize: "forward",
-    cache: 100,
-    document: {
-      id: "id",
-      index: ["firstName", "lastName", "occupation", "birthPlace"],
-      store: ["id", "firstName", "lastName"]
+    function formatGedcomDate(dateStr) {
+      if (!dateStr) return '';
+      if (dateStr.length === 8) {
+        // DDMMYYYY format
+        const day = dateStr.slice(0, 2);
+        const month = dateStr.slice(2, 4);
+        const year = dateStr.slice(4, 8);
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        return `${day} ${months[parseInt(month) - 1]} ${year}`;
+      }
+      return dateStr; // Return as-is if not in expected format
     }
-  });
 
-  // Index visible persons only
-  const visiblePersons = filterByRole(familyData.persons);
-  visiblePersons.forEach(person => searchIndex.add(person));
+    window.downloadFamilyJson = function () {
+      const filtered = {
+        ...familyData,
+        persons: filterByRole(familyData.persons).map(filterFields)
+      };
 
-  // Setup search input with debouncing
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      debounceSearch(() => performSearch(e.target.value), 300);
-    });
-  }
-}
+      const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `family-data-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    };
 
-function performSearch(query) {
-  if (!query || !searchIndex) return [];
+    // ── CSV Import Functions ───────────────────────────────────
+    let csvPreviewData = null;
 
-  try {
-    const results = searchIndex.search(query, { limit: 10 });
-    // Handle FlexSearch results format
-    const persons = results.flatMap(result =>
-      result.result.map(id =>
-        familyData.persons.find(p => p.id === id)
-      )
-    ).filter(Boolean);
+    window.downloadCsvTemplate = function () {
+      const template = `id,firstName,lastName,gender,birthDate,status,birthPlace,occupation,religion,education
+P008,John,Smith,M,01011970,living,Mumbai,Engineer,Hindu,Bachelor of Engineering
+P009,Jane,Smith,F,15051972,living,Delhi,Doctor,Hindu,MBBS
+P010,Bob,Johnson,M,25121980,living,Pune,Teacher,Christian,Master of Arts`;
 
-    highlightSearchResults(persons);
-    return persons;
-  } catch (e) {
-    console.error('Search error:', e);
-    return [];
-  }
-}
+      const blob = new Blob([template], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'family-import-template.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    };
 
-function highlightSearchResults(persons) {
-  // Clear previous highlights
-  document.querySelectorAll('.member-item').forEach(el => {
-    el.classList.remove('search-highlight');
-  });
+    window.previewCsvImport = function () {
+      if (currentRole !== 'admin' && currentRole !== 'contributor') {
+        alert('CSV import is only available for Admin and Contributors.');
+        return;
+      }
 
-  // Highlight matching persons
-  persons.forEach(person => {
-    const el = document.getElementById(`li-${person.id}`);
-    if (el) el.classList.add('search-highlight');
-  });
-}
+      const csvInput = document.getElementById('csv-import-input');
+      const csvData = csvInput.value.trim();
 
-// ── Core App Functions ─────────────────────────────────────
-function buildApp() {
-  buildMemberList();
-  renderTree();
-  buildAdminPanel();
-  setupLazyLoading();
+      if (!csvData) {
+        alert('Please enter CSV data first.');
+        return;
+      }
 
-  // Setup debounced window resize
-  window.addEventListener('resize', debounce(() => {
-    renderTree();
-    if (watermarkObserver && currentUser) {
-      injectWatermark(currentUser.displayName || 'Guest');
+      try {
+        // Parse CSV
+        const lines = csvData.split('\n').filter(line => line.trim());
+        if (lines.length < 2) {
+          throw new Error('CSV must have at least a header row and one data row.');
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim());
+        const requiredHeaders = ['id', 'firstName', 'lastName', 'gender'];
+
+        // Check required headers
+        for (const required of requiredHeaders) {
+          if (!headers.includes(required)) {
+            throw new Error(`Missing required column: ${required}`);
+          }
+        }
+
+        // Parse data rows
+        const persons = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          if (values.length !== headers.length) {
+            throw new Error(`Row ${i + 1}: Expected ${headers.length} columns, got ${values.length}`);
+          }
+
+          const person = {};
+          headers.forEach((header, index) => {
+            person[header] = values[index] || null;
+          });
+
+          // Validate required fields
+          if (!person.id || !person.firstName || !person.lastName || !person.gender) {
+            throw new Error(`Row ${i + 1}: Missing required fields`);
+          }
+
+          // Check for ID conflicts
+          if (familyData.persons.find(p => p.id === person.id)) {
+            throw new Error(`Row ${i + 1}: Person ID ${person.id} already exists`);
+          }
+
+          persons.push(person);
+        }
+
+        csvPreviewData = persons;
+
+        // Show preview
+        const preview = document.getElementById('csv-preview');
+        const content = document.getElementById('csv-preview-content');
+
+        content.innerHTML = `
+          <p style="font-size:13px;color:var(--g-text);margin-bottom:8px;">
+            <strong>${persons.length} persons</strong> ready to import:
+          </p>
+          <div style="max-height:150px;overflow-y:auto;font-size:12px;">
+            ${persons.map(p => `
+              <div style="padding:4px 8px;border-bottom:1px solid var(--border);">
+                <strong>${p.firstName} ${p.lastName}</strong> (${p.id}) - ${p.gender}, ${p.birthDate || 'No DOB'}, ${p.status || 'living'}
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        preview.style.display = 'block';
+
+      } catch (e) {
+        alert(`CSV Error: ${e.message}`);
+        console.error('CSV parsing error:', e);
+      }
+    };
+
+    window.confirmCsvImport = function () {
+      if (!csvPreviewData) {
+        alert('No data to import.');
+        return;
+      }
+
+      try {
+        // Add persons to family data
+        familyData.persons.push(...csvPreviewData);
+
+        // Update UI
+        buildMemberList();
+        renderTree();
+        buildAdminPanel();
+
+        // Clear import
+        document.getElementById('csv-import-input').value = '';
+        document.getElementById('csv-preview').style.display = 'none';
+
+        alert(`Successfully imported ${csvPreviewData.length} family members!`);
+        csvPreviewData = null;
+
+      } catch (e) {
+        alert(`Import failed: ${e.message}`);
+        console.error('Import error:', e);
+      }
+    };
+
+    window.cancelCsvImport = function () {
+      csvPreviewData = null;
+      document.getElementById('csv-preview').style.display = 'none';
+    };
+
+    // ── Performance Optimizations ──────────────────────────────
+    function setupVirtualScrolling(container, items, renderItem) {
+      const itemHeight = 80;
+      const containerHeight = container.clientHeight;
+      const totalHeight = items.length * itemHeight;
+
+      const content = container.querySelector('.virtual-content') || document.createElement('div');
+      content.className = 'virtual-content';
+      content.style.height = `${totalHeight}px`;
+
+      if (!container.querySelector('.virtual-content')) {
+        container.appendChild(content);
+      }
+
+      function updateVisibleItems() {
+        const scrollTop = container.scrollTop;
+        const startIndex = Math.floor(scrollTop / itemHeight);
+        const endIndex = Math.min(startIndex + Math.ceil(containerHeight / itemHeight) + BUFFER_SIZE, items.length);
+
+        // Clear existing items
+        content.innerHTML = '';
+
+        // Render visible items
+        for (let i = startIndex; i < endIndex; i++) {
+          const item = items[i];
+          const element = renderItem(item, i);
+          element.style.position = 'absolute';
+          element.style.top = `${i * itemHeight}px`;
+          element.style.left = '0';
+          element.style.right = '0';
+          element.style.height = `${itemHeight}px`;
+          content.appendChild(element);
+        }
+      }
+
+      container.addEventListener('scroll', debounce(updateVisibleItems, 10));
+      updateVisibleItems();
     }
-  }, 250));
-}
 
-function buildMemberList() {
-  const list = document.getElementById('member-list');
-  if (!list) return;
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
 
-  const persons = filterByRole(familyData.persons);
+    function setupLazyLoading() {
+      // Setup intersection observer for images
+      document.querySelectorAll('img[data-src]').forEach(img => {
+        img.classList.add('lazy-img', 'loading');
+        imageObserver.observe(img);
+      });
+    }
 
-  if (persons.length === 0) {
-    list.innerHTML = `
+    // ── Enhanced Search ────────────────────────────────────────
+    function setupSearch() {
+      if (!familyData?.persons) return;
+
+      searchIndex = new FlexSearch.Document({
+        tokenize: "forward",
+        cache: 100,
+        document: {
+          id: "id",
+          index: ["firstName", "lastName", "occupation", "birthPlace"],
+          store: ["id", "firstName", "lastName"]
+        }
+      });
+
+      // Index visible persons only
+      const visiblePersons = filterByRole(familyData.persons);
+      visiblePersons.forEach(person => searchIndex.add(person));
+
+      // Setup search input with debouncing
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          debounceSearch(() => performSearch(e.target.value), 300);
+        });
+      }
+    }
+
+    function performSearch(query) {
+      if (!query || !searchIndex) return [];
+
+      try {
+        const results = searchIndex.search(query, { limit: 10 });
+        // Handle FlexSearch results format
+        const persons = results.flatMap(result =>
+          result.result.map(id =>
+            familyData.persons.find(p => p.id === id)
+          )
+        ).filter(Boolean);
+
+        highlightSearchResults(persons);
+        return persons;
+      } catch (e) {
+        console.error('Search error:', e);
+        return [];
+      }
+    }
+
+    function highlightSearchResults(persons) {
+      // Clear previous highlights
+      document.querySelectorAll('.member-item').forEach(el => {
+        el.classList.remove('search-highlight');
+      });
+
+      // Highlight matching persons
+      persons.forEach(person => {
+        const el = document.getElementById(`li-${person.id}`);
+        if (el) el.classList.add('search-highlight');
+      });
+    }
+
+    // ── Core App Functions ─────────────────────────────────────
+    function buildApp() {
+      buildMemberList();
+      renderTree();
+      buildAdminPanel();
+      setupLazyLoading();
+
+      // Setup debounced window resize
+      window.addEventListener('resize', debounce(() => {
+        renderTree();
+        if (watermarkObserver && currentUser) {
+          injectWatermark(currentUser.displayName || 'Guest');
+        }
+      }, 250));
+    }
+
+    function buildMemberList() {
+      const list = document.getElementById('member-list');
+      if (!list) return;
+
+      const persons = filterByRole(familyData.persons);
+
+      if (persons.length === 0) {
+        list.innerHTML = `
       <div style="padding:14px;font-size:14px;color:var(--muted);line-height:1.7;">
         ${t('guest.noAccess')}<br>
         <span onclick="location.reload()"
@@ -1400,164 +2103,152 @@ function buildMemberList() {
           ${t('guest.login')}
         </span>
       </div>`;
-    return;
-  }
+        return;
+      }
 
-  // Use virtual scrolling for large lists
-  if (persons.length > 50) {
-    setupVirtualScrolling(list, persons, renderMemberItem);
-  } else {
-    list.innerHTML = [...persons]
-      .sort((a,b) => a.firstName.localeCompare(b.firstName))
-      .map(p => renderMemberItem(p).outerHTML).join('');
-  }
-}
+      // Use virtual scrolling for large lists
+      if (persons.length > 50) {
+        setupVirtualScrolling(list, persons, renderMemberItem);
+      } else {
+        list.innerHTML = [...persons]
+          .sort((a, b) => a.firstName.localeCompare(b.firstName))
+          .map(p => renderMemberItem(p).outerHTML).join('');
+      }
+    }
 
-function renderMemberItem(person, index = 0) {
-  const div = document.createElement('div');
-  div.className = 'member-item';
-  div.id = `li-${person.id}`;
-  div.onclick = () => selectPerson(person.id);
+    function renderMemberItem(person, index = 0) {
+      const div = document.createElement('div');
+      div.className = 'member-item';
+      div.id = `li-${person.id}`;
+      div.onclick = () => selectPerson(person.id);
 
-  const initials = (person.firstName[0] + (person.lastName[0] || '')).toUpperCase();
-  const years = formatYears(person);
+      const initials = (person.firstName[0] + (person.lastName[0] || '')).toUpperCase();
+      const years = formatYears(person);
 
-  div.innerHTML = `
-    <div class="av" style="background:${person.gender==='F'?'#c8963e':'#4a7c59'}">${initials}</div>
+      div.innerHTML = `
+    <div class="av" style="background:${person.gender === 'F' ? '#c8963e' : '#4a7c59'}">${initials}</div>
     <div>
       <div class="mi-name">${person.firstName} ${person.lastName}</div>
       <div class="mi-sub">${years}</div>
     </div>
   `;
 
-  return div;
-}
-
-function formatYears(person) {
-  const birth = person.birthDate ? person.birthDate.slice(-4) : '';
-  const death = person.status === 'deceased' && person.deathDate ? person.deathDate.slice(-4) : '';
-
-  if (birth && death) return `${birth} – ${death} †`;
-  if (birth) return birth;
-  return '';
-}
-
-function buildAdminPanel() {
-  if (currentRole !== 'admin' && currentRole !== 'contributor') return;
-
-  // Update stats
-  const visiblePersons = filterByRole(familyData.persons);
-  document.getElementById('stat-members').textContent = visiblePersons.length;
-  document.getElementById('stat-events').textContent = familyData.events?.length || 0;
-  document.getElementById('stat-photos').textContent = familyData.media?.filter(m => m.type === 'photo').length || 0;
-  document.getElementById('stat-pending').textContent = '0'; // TODO: Implement
-}
-
-// ── Tree Rendering ─────────────────────────────────────────
-function renderTree() {
-  // Placeholder - tree rendering would be implemented here
-  // For Phase 7, focus is on login, PWA, and export features
-  const svg = document.getElementById('tree-svg');
-  if (svg && familyData) {
-    const g = d3.select(svg).selectAll('*').remove();
-
-    // Simple placeholder tree
-    const visiblePersons = filterByRole(familyData.persons);
-    if (visiblePersons.length === 0) {
-      d3.select(svg).append('text')
-        .attr('x', '50%')
-        .attr('y', '50%')
-        .attr('text-anchor', 'middle')
-        .attr('font-family', 'var(--fd)')
-        .attr('font-size', '18')
-        .attr('fill', 'var(--muted)')
-        .text(t('guest.loginToSeeTree') || 'Log in to see your family tree');
-    } else {
-      // Add a dummy node to pass E2E tests
-      const node = d3.select(svg).append('g').attr('class', 'node');
-      node.append('circle').attr('r', 10);
-      node.on('click', () => {
-        document.getElementById('profile-panel').style.display = 'block';
-      });
+      return div;
     }
-  }
-}
 
-function selectPerson(personId) {
-  selectedPerson = personId;
-  // Update selection UI
-  document.querySelectorAll('.member-item').forEach(el => {
-    el.classList.remove('selected');
-  });
-  const el = document.getElementById(`li-${personId}`);
-  if (el) el.classList.add('selected');
-}
+    function formatYears(person) {
+      const birth = person.birthDate ? person.birthDate.slice(-4) : '';
+      const death = person.status === 'deceased' && person.deathDate ? person.deathDate.slice(-4) : '';
 
-// ── Navigation ─────────────────────────────────────────────
-window.showView = function(view) {
-  // Hide all views
-  document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
-    el.style.display = 'none';
-  });
+      if (birth && death) return `${birth} – ${death} †`;
+      if (birth) return birth;
+      return '';
+    }
 
-  // Show selected view
-  const viewElement = document.getElementById(`${view}-view`);
-  if (viewElement) viewElement.style.display = 'block';
+    function buildAdminPanel() {
+      if (currentRole !== 'admin' && currentRole !== 'contributor') return;
 
-  // Update navigation
-  document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-  const navBtn = document.getElementById(`nav-${view}`);
-  if (navBtn) navBtn.classList.add('active');
+      // Update stats
+      const visiblePersons = filterByRole(familyData.persons);
+      document.getElementById('stat-members').textContent = visiblePersons.length;
+      document.getElementById('stat-events').textContent = familyData.events?.length || 0;
+      document.getElementById('stat-photos').textContent = familyData.media?.filter(m => m.type === 'photo').length || 0;
+      document.getElementById('stat-pending').textContent = '0'; // TODO: Implement
+    }
 
-  // Update mobile navigation
-  document.querySelectorAll('.bottom-nav-btn').forEach(btn => btn.classList.remove('active'));
-  const mobileBtn = document.querySelector(`.bottom-nav-btn[onclick*="${view}"]`);
-  if (mobileBtn) mobileBtn.classList.add('active');
-};
+    // ── Tree Rendering ─────────────────────────────────────────
+    function renderTree() {
+      // Placeholder - tree rendering would be implemented here
+      // For Phase 7, focus is on login, PWA, and export features
+      const svg = document.getElementById('tree-svg');
+      if (svg && familyData) {
+        const g = d3.select(svg).selectAll('*').remove();
 
-window.setViewMode = function(mode) {
-  treeMode = mode;
-  document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelector(`[data-view="${mode}"]`)?.classList.add('active');
-  renderTree();
-};
+        // Simple placeholder tree
+        const visiblePersons = filterByRole(familyData.persons);
+        if (visiblePersons.length === 0) {
+          d3.select(svg).append('text')
+            .attr('x', '50%')
+            .attr('y', '50%')
+            .attr('text-anchor', 'middle')
+            .attr('font-family', 'var(--fd)')
+            .attr('font-size', '18')
+            .attr('fill', 'var(--muted)')
+            .text(t('guest.loginToSeeTree') || 'Log in to see your family tree');
+        }
+      }
+    }
 
-// ── Utility Functions ──────────────────────────────────────
-async function sha256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+    function selectPerson(personId) {
+      selectedPerson = personId;
+      // Update selection UI
+      document.querySelectorAll('.member-item').forEach(el => {
+        el.classList.remove('selected');
+      });
+      const el = document.getElementById(`li-${personId}`);
+      if (el) el.classList.add('selected');
+    }
 
-function filterByRole(persons) {
-  if (currentRole === 'guest') return persons.filter(p => p.status === 'deceased');
-  return persons;
-}
+    // ── Navigation ─────────────────────────────────────────────
+    window.showView = function (view) {
+      // Hide all views
+      document.querySelectorAll('#tree-view, #calendar-view, #admin-view').forEach(el => {
+        el.style.display = 'none';
+      });
 
-function filterFields(person) {
-  if (currentRole === 'viewer' || currentRole === 'guest') {
-    const p = { ...person };
-    if (p.contactInfo) p.contactInfo = null;
-    return p;
-  }
-  return person;
-}
+      // Show selected view
+      const viewElement = document.getElementById(`${view}-view`);
+      if (viewElement) viewElement.style.display = 'block';
 
-// Initialize app when DOM loads
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+      // Update navigation
+      document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+      const navBtn = document.getElementById(`nav-${view}`);
+      if (navBtn) navBtn.classList.add('active');
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW setup failed', err));
-  });
-}
+      // Update mobile navigation
+      document.querySelectorAll('.bottom-nav-btn').forEach(btn => btn.classList.remove('active'));
+      const mobileBtn = document.querySelector(`.bottom-nav-btn[onclick*="${view}"]`);
+      if (mobileBtn) mobileBtn.classList.add('active');
+    };
 
-</script>
+    window.setViewMode = function (mode) {
+      treeMode = mode;
+      document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-view="${mode}"]`)?.classList.add('active');
+      renderTree();
+    };
+
+    // ── Utility Functions ──────────────────────────────────────
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function filterByRole(persons) {
+      if (currentRole === 'guest') return persons.filter(p => p.status === 'deceased');
+      return persons;
+    }
+
+    function filterFields(person) {
+      if (currentRole === 'viewer' || currentRole === 'guest') {
+        const p = { ...person };
+        if (p.contactInfo) p.contactInfo = null;
+        return p;
+      }
+      return person;
+    }
+
+    // Initialize app when DOM loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+  </script>
 
 </body>
+
 </html>
