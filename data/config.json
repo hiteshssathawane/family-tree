@@ -44,6 +44,8 @@
     "branch": "main",
     "dataPath": "data/family.json"
   },
+  "workerUrl": "",
+  "r2BaseUrl": "",
   "features": {
     "totp": true,
     "multiLanguage": true,

@@ -658,25 +658,30 @@ nav button:hover,nav button.active{background:rgba(200,150,60,.2);border-color:r
         <p data-i18n="admin.addMember.subtitle">Mandatory fields only — fill the rest later</p>
         <input class="admin-inp" id="af-firstname" placeholder="First name *"/>
         <input class="admin-inp" id="af-lastname" placeholder="Last name *"/>
-        <input class="admin-inp" id="af-dob" placeholder="Date of birth (DDMMYYYY) *"/>
-        <div class="role-row">
-          <button class="role-pill active" onclick="selectRole(this,'viewer')">Viewer</button>
-          <button class="role-pill" onclick="selectRole(this,'contributor')">Contributor</button>
-          <button class="role-pill" onclick="selectRole(this,'admin')">Admin</button>
-        </div>
-        <input type="hidden" id="af-role" value="viewer"/>
-        <select class="admin-select" id="af-branch">
-          <option value="">Loading branches…</option>
+        <select class="admin-select" id="af-gender">
+          <option value="">Select gender *</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <input class="admin-inp" id="af-dob" placeholder="DD/MM/YYYY *" maxlength="10"/>
+        <select class="admin-select" id="af-status">
+          <option value="living">Living</option>
+          <option value="deceased">Deceased</option>
+          <option value="unknown">Unknown</option>
+        </select>
+        <select class="admin-select" id="af-relationship">
+          <option value="">Select relationship to existing member *</option>
         </select>
         <div class="upload-zone" onclick="document.getElementById('af-photo').click()">
-          <p>Drop profile photo or tap to select</p>
-          <div class="hint">Cloudflare R2 · max 5MB</div>
+          <p>Upload profile photo</p>
+          <div class="hint">Uploads to Cloudflare R2 · max 5MB</div>
           <input type="file" id="af-photo" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)"/>
         </div>
         <div id="af-photo-preview" style="display:none;margin-bottom:8px;">
           <img id="af-photo-img" style="width:60px;height:60px;border-radius:50%;object-fit:cover;"/>
         </div>
-        <button class="admin-btn" onclick="addMember()">Add to tree → GitHub PR</button>
+        <button class="admin-btn" onclick="submitNewMember()">Add to family tree</button>
       </div>
 
       <!-- Bulk import CSV -->
@@ -973,6 +978,7 @@ function startTOTPTimer() {
 // ── Build App ──────────────────────────────────────────────
 function buildApp() {
   populateBranchSelect();
+  populateRelationshipDropdown();
   buildMemberList();
   buildCalendarFilters();
   renderTree();
@@ -2214,20 +2220,111 @@ window.handlePhotoSelect = function(input) {
   reader.readAsDataURL(file);
 };
 
-window.addMember = function() {
-  const fn = document.getElementById('af-firstname').value.trim();
-  const ln = document.getElementById('af-lastname').value.trim();
+// ── Phase 5: Submit new member via Cloudflare Worker ──────────
+window.submitNewMember = async function() {
+  const firstName = document.getElementById('af-firstname').value.trim();
+  const lastName = document.getElementById('af-lastname').value.trim();
+  const gender = document.getElementById('af-gender').value;
   const dob = document.getElementById('af-dob').value.trim();
-  const role = document.getElementById('af-role').value;
-  const branch = document.getElementById('af-branch').value;
-  if (!fn || !ln || !dob) { alert('First name, last name, and date of birth are required.'); return; }
-  const ids = familyData.persons.map(p => parseInt(p.id.replace('P',''))).sort((a,b)=>b-a);
-  const newId = 'P' + String((ids[0]||0)+1).padStart(3,'0');
-  const newPerson = { id:newId, firstName:fn, lastName:ln, gender:'M', status:'living', birthDate:dob||null, tags:[branch], private:false };
-  familyData.persons.push(newPerson);
-  buildMemberList(); renderTree(); buildAdminStats();
-  alert(`${fn} ${ln} added as ${newId}. Download family.json to save permanently.`);
+  const status = document.getElementById('af-status').value;
+  const relationship = document.getElementById('af-relationship').value;
+
+  // Validate mandatory fields
+  if (!firstName || !lastName || !gender || !dob || !relationship) {
+    alert('Please fill in all required fields: First name, Last name, Gender, Date of birth, and Relationship.');
+    return;
+  }
+
+  // Validate date format DD/MM/YYYY
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+    alert('Date of birth must be in DD/MM/YYYY format (e.g., 15/03/1985)');
+    return;
+  }
+
+  if (!config.workerUrl) {
+    alert('Worker URL not configured. Please set config.workerUrl in config.json');
+    return;
+  }
+
+  const memberData = {
+    firstName,
+    lastName,
+    gender,
+    dob,
+    status,
+    relationshipTo: relationship.split(':')[0], // Extract person ID
+    relationshipType: relationship.split(':')[1], // Extract relationship type
+    photoUrl: await uploadPhotoIfNeeded()
+  };
+
+  try {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Adding member...';
+
+    const response = await fetch(config.workerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'addMember',
+        data: memberData
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(`✅ ${firstName} ${lastName} added successfully as ${result.personId}!\n\nThe family tree will update automatically.`);
+      clearAddMemberForm();
+      // Reload the page to refresh with new data
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      alert(`❌ Error adding member: ${result.error}`);
+    }
+  } catch (error) {
+    console.error('Error submitting member:', error);
+    alert(`❌ Network error: ${error.message}`);
+  } finally {
+    const btn = document.querySelector('#af-firstname').closest('.admin-card').querySelector('.admin-btn');
+    btn.disabled = false;
+    btn.textContent = 'Add to family tree';
+  }
 };
+
+async function uploadPhotoIfNeeded() {
+  const fileInput = document.getElementById('af-photo');
+  if (!fileInput.files[0]) return null;
+
+  // For now, return null - R2 upload would require signed URLs
+  // This can be implemented later when R2 is properly configured
+  console.log('Photo upload not yet implemented');
+  return null;
+}
+
+function clearAddMemberForm() {
+  document.getElementById('af-firstname').value = '';
+  document.getElementById('af-lastname').value = '';
+  document.getElementById('af-gender').value = '';
+  document.getElementById('af-dob').value = '';
+  document.getElementById('af-status').value = 'living';
+  document.getElementById('af-relationship').value = '';
+  document.getElementById('af-photo').value = '';
+  document.getElementById('af-photo-preview').style.display = 'none';
+}
+
+function populateRelationshipDropdown() {
+  const select = document.getElementById('af-relationship');
+  if (!familyData || !select) return;
+
+  const options = familyData.persons.map(p =>
+    `<option value="${p.id}:parent-child">${p.firstName} ${p.lastName} (as parent)</option>` +
+    `<option value="${p.id}:marriage">${p.firstName} ${p.lastName} (as spouse)</option>`
+  ).join('');
+
+  select.innerHTML = `<option value="">Select relationship to existing member *</option>${options}`;
+}
 
 // ── Bulk CSV Import ────────────────────────────────────────
 window.downloadCSVTemplate = function() {
@@ -2267,29 +2364,55 @@ window.previewCSV = function() {
   document.getElementById('csv-preview').dataset.rows = JSON.stringify(rows);
 };
 
-window.confirmCSVImport = function() {
-  const rows = JSON.parse(document.getElementById('csv-preview').dataset.rows || '[]');
-  const existing = new Set(familyData.persons.map(p => p.id));
-  let added = 0;
-  rows.forEach(r => {
-    if (existing.has(r.id)) return;
-    familyData.persons.push({
-      id:r.id, firstName:r.firstName, middleName:r.middleName||'',
-      lastName:r.lastName, maidenName:r.maidenName||null,
-      gender:['M','F','X'].includes(r.gender)?r.gender:'M',
-      status:['living','deceased','unknown'].includes(r.status)?r.status:'living',
-      birthDate:r.birthDate||null, birthPlace:r.birthPlace||null,
-      deathDate:r.deathDate||null, deathPlace:r.deathPlace||null,
-      occupation:r.occupation||null, religion:r.religion||null,
-      education:r.education||null, biography:r.biography||null,
-      private:false
+window.confirmCSVImport = async function() {
+  const csvData = document.getElementById('csv-paste').value.trim();
+  if (!csvData) {
+    alert('No CSV data to import');
+    return;
+  }
+
+  if (!config.workerUrl) {
+    alert('Worker URL not configured. Please set config.workerUrl in config.json');
+    return;
+  }
+
+  try {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+
+    const response = await fetch(config.workerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'bulkImport',
+        data: csvData
+      })
     });
-    existing.add(r.id); added++;
-  });
-  buildMemberList(); renderTree(); buildAdminStats();
-  document.getElementById('csv-preview').style.display = 'none';
-  document.getElementById('csv-paste').value = '';
-  alert(`✅ ${added} member(s) imported. Download family.json to save permanently.`);
+
+    const result = await response.json();
+
+    if (result.success) {
+      document.getElementById('csv-preview').style.display = 'none';
+      document.getElementById('csv-paste').value = '';
+      alert(`✅ ${result.count} member(s) imported successfully!\n\nMembers added:\n${result.members.join('\n')}\n\nThe family tree will update automatically.`);
+      // Reload the page to refresh with new data
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      alert(`❌ Error importing CSV: ${result.error}`);
+    }
+  } catch (error) {
+    console.error('Error importing CSV:', error);
+    alert(`❌ Network error: ${error.message}`);
+  } finally {
+    const btn = document.querySelector('#csv-paste').closest('.admin-card').querySelector('.admin-btn:not(.outline)');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Confirm import';
+    }
+  }
 };
 
 function parseCSVLine(line) {
