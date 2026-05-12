@@ -10,7 +10,7 @@
       "properties": {
         "familyName": { "type": "string" },
         "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-        "rootPersonId": { "type": "string", "pattern": "^P\\d+$" },
+        "rootPersonId": { "type": "string", "pattern": "^[a-zA-Z0-9_]+$" },
         "privacy": {
           "type": "object",
           "properties": {
@@ -27,13 +27,15 @@
         "type": "object",
         "required": ["id", "firstName", "lastName", "gender", "status"],
         "properties": {
-          "id": { "type": "string", "pattern": "^P\\d+$" },
+          "id": { "type": "string", "pattern": "^[a-zA-Z0-9_]+$" },
           "firstName": { "type": "string", "minLength": 1 },
           "lastName": { "type": "string", "minLength": 1 },
           "gender": { "enum": ["M", "F", "X"] },
           "status": { "enum": ["living", "deceased", "unknown"] },
+          "maritalStatus": { "enum": ["single", "married", "divorced", "widowed", "unknown"] },
           "birthDate": { "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$" },
           "deathDate": { "type": ["string", "null"], "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$" },
+          "location": { "type": ["string", "null"] },
           "private": { "type": "boolean" }
         }
       }
@@ -44,7 +46,7 @@
         "type": "object",
         "required": ["id", "type"],
         "properties": {
-          "id": { "type": "string", "pattern": "^R\\d+$" },
+          "id": { "type": "string", "pattern": "^[a-zA-Z0-9_]+$" },
           "type": { "enum": ["marriage", "parent-child", "adoption", "step-parent", "foster"] }
         }
       }
