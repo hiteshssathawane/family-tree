@@ -9,11 +9,15 @@
     "gedcom:in": "node scripts/gedcom-import.js",
     "gedcom:out": "node scripts/gedcom-export.js",
     "csv:import": "node scripts/csv-import.js",
+    "sheet:pull": "node scripts/pull-sheet.js",
+    "media:sync": "node scripts/sync-media.js",
     "encrypt": "node scripts/encrypt.js",
     "prebuild": "npm run validate"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1051.0",
     "ajv": "^8.20.0",
+    "dotenv": "^17.4.2",
     "staticrypt": "^3.4.0"
   },
   "engines": {
