@@ -22,12 +22,46 @@ if (args.length < 2) {
   process.exit(1);
 }
 
-const fullName = args[0];
+let fullName = args[0];
 const dob = args[1];
 const roleArg = args.indexOf('--role');
 const role = roleArg >= 0 ? args[roleArg + 1] : 'viewer';
 const branchArg = args.indexOf('--branch');
 const branch = branchArg >= 0 ? args[branchArg + 1] : 'sharma';
+
+// Check if person exists in family.json and is a married woman
+const familyPath = resolve('data/family.json');
+try {
+  const family = JSON.parse(readFileSync(familyPath, 'utf8'));
+  const parts = fullName.split(/\s+/);
+  const firstName = parts[0];
+  const lastName = parts[parts.length - 1];
+  
+  // Find person by firstName + lastName
+  const person = family.persons.find(p => 
+    p.firstName.toLowerCase() === firstName.toLowerCase() &&
+    p.lastName.toLowerCase() === lastName.toLowerCase()
+  );
+  
+  if (person && (person.gender === 'F' || person.gender === 'f')) {
+    const marriage = family.relationships.find(r => 
+      r.type === 'marriage' && (r.person1Id === person.id || r.person2Id === person.id)
+    );
+    if (marriage) {
+      const spouseId = marriage.person1Id === person.id ? marriage.person2Id : marriage.person1Id;
+      const spouse = family.persons.find(x => x.id === spouseId);
+      if (spouse && (spouse.gender === 'M' || spouse.gender === 'm') && spouse.lastName) {
+        if (lastName.toLowerCase() !== spouse.lastName.toLowerCase()) {
+          const oldFullName = fullName;
+          fullName = `${person.firstName} ${spouse.lastName}`;
+          console.log(`\nℹ️  Detected married female member. Rewriting login name from '${oldFullName}' to married name '${fullName}'.`);
+        }
+      }
+    }
+  }
+} catch (e) {
+  // Ignore errors reading family.json
+}
 
 // Normalise: lowercase, remove spaces, only letters+digits
 const normalised = (fullName.toLowerCase().replace(/\s+/g, '') + dob.replace(/\D/g, '')).replace(/[^a-z0-9]/g, '');

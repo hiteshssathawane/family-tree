@@ -1,4 +1,10 @@
-{
+/* ============================================================
+   FAMILY TREE DATA (AUTO-GENERATED)
+   ----------------------------------------------------------------
+   Generated on: 2026-05-21
+   ============================================================ */
+
+window.FAMILY_DATA = {
   "meta": {
     "familyName": "The Sathawane Family Tree",
     "description": "Our family genealogy — maintained with love",
@@ -1728,58 +1734,6 @@
       "profilePhoto": null,
       "tags": [],
       "private": false
-    },
-    {
-      "id": "HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "firstName": "Hitesh",
-      "fatherName": "Shankarrao",
-      "motherName": "Jyoti",
-      "lastName": "Sathawane",
-      "maidenName": null,
-      "gender": "M",
-      "status": "living",
-      "maritalStatus": "married",
-      "birthDate": "1985-12-28",
-      "birthPlace": "Nagpur",
-      "deathDate": null,
-      "deathPlace": null,
-      "occupation": null,
-      "education": "Master in Financial Management , B.E.",
-      "location": "Dombivli - India",
-      "commonName": null,
-      "commonNameMr": null,
-      "firstNameMr": "हितेश",
-      "lastNameMr": "साठवणे",
-      "biography": null,
-      "profilePhoto": null,
-      "tags": [],
-      "private": false
-    },
-    {
-      "id": "SHANKARRAO___SATHAWANE",
-      "firstName": "Shankarrao",
-      "fatherName": "",
-      "motherName": "",
-      "lastName": "Sathawane",
-      "maidenName": null,
-      "gender": "M",
-      "status": "living",
-      "maritalStatus": "married",
-      "birthDate": null,
-      "birthPlace": null,
-      "deathDate": null,
-      "deathPlace": null,
-      "occupation": null,
-      "education": null,
-      "location": null,
-      "commonName": null,
-      "commonNameMr": null,
-      "firstNameMr": null,
-      "lastNameMr": null,
-      "biography": "Father of Hitesh Sathawane.",
-      "profilePhoto": null,
-      "tags": [],
-      "private": false
     }
   ],
   "relationships": [
@@ -2626,44 +2580,8 @@
       "parentId": "BHAVANA___WAGHMARE",
       "childId": "SHRIYA_BHAVANA_SHASHI_WAGHMARE",
       "relation": "biological"
-    },
-    {
-      "id": "R1779391007217_13",
-      "type": "marriage",
-      "person1Id": "SHANKARRAO___SATHAWANE",
-      "person2Id": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
-      "startDate": null,
-      "endDate": null,
-      "endReason": null,
-      "place": null,
-      "notes": "Auto-created parental marriage link."
-    },
-    {
-      "id": "R1779391007217_645",
-      "type": "marriage",
-      "person1Id": "HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "person2Id": "SWATI_CHAYA_BHIMRAO_BIRADAR",
-      "startDate": "2015-05-01",
-      "endDate": null,
-      "endReason": null,
-      "place": null,
-      "notes": null
-    },
-    {
-      "id": "R_PC_SHANKARRAO___SATHAWANE_HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "type": "parent-child",
-      "parentId": "SHANKARRAO___SATHAWANE",
-      "childId": "HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "relation": "biological"
-    },
-    {
-      "id": "R_PC_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE_HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "type": "parent-child",
-      "parentId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
-      "childId": "HITESH_JYOTI_SHANKARRAO_SATHAWANE",
-      "relation": "biological"
     }
   ],
   "events": [],
   "media": []
-}
+};

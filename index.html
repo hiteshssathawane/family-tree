@@ -10,6 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
+  <script src="vendor/otpauth.min.js"></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -1890,6 +1891,32 @@
     font-family: "Cormorant Garamond", serif;
   }
 
+  /* Language toggle button */
+  .lang-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 14px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 19px;
+    cursor: pointer;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+    user-select: none;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .lang-toggle-btn:hover {
+    background: #fdfaf3;
+    border-color: rgba(184,90,42,0.4);
+    color: var(--sunset-2);
+  }
+
   /* Profile chip on the right */
   .me-chip {
     display: flex;
@@ -1925,15 +1952,11 @@
     margin: 12px auto 0;
     max-width: 1000px;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 7px;
-    overflow-x: auto;
-    overflow-y: hidden;
     padding: 4px 20px 12px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    scroll-snap-type: x proximity;
   }
-  .tags-row::-webkit-scrollbar { display: none; }
   .tag {
     flex-shrink: 0;
     display: inline-flex;
@@ -3157,6 +3180,7 @@
         <div class="search-dropdown" id="search-dropdown"></div>
       </div>
 
+      <button class="lang-toggle-btn" id="lang-toggle" title="Switch Language / भाषा बदला">EN</button>
       <div class="me-chip" id="me-chip" title="Manisha Waghmare (you)">
         <div class="mc-thumb" id="me-chip-thumb">M</div>
         <span class="mc-name">Manisha</span>
@@ -3326,10 +3350,36 @@
     })();
 
     // Multi-Step Form Logic
+    let authData = null;
+    let matchedUserEntry = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('data/auth.json');
+        authData = await res.json();
+      } catch (e) {
+        console.error('Failed to load auth.json:', e);
+      }
+
+      // Language Toggle logic
+      window.CURRENT_LANG = 'EN';
+      const langBtn = document.getElementById('lang-toggle');
+      if (langBtn) {
+        langBtn.addEventListener('click', () => {
+          const nextLang = window.CURRENT_LANG === 'EN' ? 'MR' : 'EN';
+          window.CURRENT_LANG = nextLang;
+          langBtn.textContent = nextLang === 'EN' ? 'EN' : 'मराठी';
+          if (window.updateLanguage) {
+            window.updateLanguage(nextLang);
+          }
+        });
+      }
+    });
+
     function nextStep() {
       const pwd = document.getElementById('familyPassword').value;
-      if (pwd.trim() === '') {
-        alert('Please enter the family password.');
+      if (pwd.trim().toLowerCase() !== 'sathawane') {
+        alert('Incorrect family password. Please try again.');
         return;
       }
       document.getElementById('step1').classList.remove('active');
@@ -3353,11 +3403,18 @@
       }
     }
 
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // Complete Login and show Tabs
-    function nextStep2() {
-      const name = document.getElementById('fullName').value;
-      const dob = document.getElementById('dob').value;
-      if (!name.trim() || !dob.trim()) {
+    async function nextStep2() {
+      const name = document.getElementById('fullName').value.trim();
+      const dob = document.getElementById('dob').value.trim();
+      if (!name || !dob) {
         alert('Please fill out all fields.');
         return;
       }
@@ -3365,6 +3422,26 @@
         alert('Please enter a valid date of birth (dd/mm/yyyy).');
         return;
       }
+
+      // Normalize name and DOB to match creation algorithm
+      const nameNormalized = name.toLowerCase().replace(/\s+/g, '');
+      const dobNormalized = dob.replace(/\D/g, '');
+      const normalised = (nameNormalized + dobNormalized).replace(/[^a-z0-9]/g, '');
+      const computedHash = await sha256(normalised);
+
+      if (!authData || !authData.entries) {
+        alert('Auth database is loading. Please wait a second and try again.');
+        return;
+      }
+
+      const matched = authData.entries.find(e => e.hash === computedHash);
+      if (!matched) {
+        alert('Identity verification failed. Name or Date of Birth is incorrect.');
+        return;
+      }
+
+      matchedUserEntry = matched;
+
       document.getElementById('step2').classList.remove('active');
       document.getElementById('step3').classList.add('active');
       setTimeout(() => document.querySelectorAll('.totp-d')[0].focus(), 100);
@@ -3401,6 +3478,40 @@
         return;
       }
 
+      if (!matchedUserEntry) {
+        alert('Session error. Please restart login.');
+        location.reload();
+        return;
+      }
+
+      // Validate TOTP if required
+      if (matchedUserEntry.totpRequired && matchedUserEntry.totpSecret) {
+        try {
+          const totp = new OTPAuth.TOTP({
+            issuer: "TheFamilyTree",
+            label: matchedUserEntry.displayName,
+            algorithm: "SHA1",
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(matchedUserEntry.totpSecret)
+          });
+          
+          const delta = totp.validate({
+            token: code,
+            window: 1
+          });
+          
+          if (delta === null) {
+            alert('Invalid authentication code. Please try again.');
+            return;
+          }
+        } catch (e) {
+          console.error('TOTP validation error:', e);
+          alert('Error validating code. Please try again.');
+          return;
+        }
+      }
+
       // Hide login container
       document.getElementById('login-container').style.display = 'none';
 
@@ -3410,15 +3521,78 @@
       // Add logged-in class to body
       document.body.classList.add('logged-in');
 
-      // Dynamically load scripts tree-data.js and tree-app.js
-      const s1 = document.createElement('script');
-      s1.src = 'tree-data.js';
-      s1.onload = () => {
-        const s2 = document.createElement('script');
-        s2.src = 'tree-app.js';
-        document.body.appendChild(s2);
+      // Dynamically load scripts tree-helpers.js, tree-data.js and tree-app.js
+      const cacheBust = '?v=' + Date.now();
+      const s0 = document.createElement('script');
+      s0.src = 'tree-helpers.js' + cacheBust;
+      s0.onload = () => {
+        const s1 = document.createElement('script');
+        s1.src = 'tree-data.js' + cacheBust;
+        s1.onload = () => {
+          let initialMe = "HITESH_JYOTI_SHANKAR_SATHAWANE";
+          
+          const rawData = window.FAMILY_DATA || window.FAMILY;
+          if (matchedUserEntry && rawData && rawData.persons) {
+            const matchedRaw = rawData.persons.find(p => {
+              const directName = `${p.firstName} ${p.lastName}`.toLowerCase();
+              const targetName = matchedUserEntry.displayName.toLowerCase();
+              if (directName === targetName) return true;
+              
+              if (p.gender === 'F' || p.gender === 'f') {
+                const marriage = rawData.relationships.find(r => 
+                  r.type === 'marriage' && (r.person1Id === p.id || r.person2Id === p.id)
+                );
+                if (marriage) {
+                  const spouseId = marriage.person1Id === p.id ? marriage.person2Id : marriage.person1Id;
+                  const husband = rawData.persons.find(h => h.id === spouseId && (h.gender === 'M' || h.gender === 'm'));
+                  if (husband && husband.lastName) {
+                    const marriedName = `${p.firstName} ${husband.lastName}`.toLowerCase();
+                    if (marriedName === targetName) return true;
+                  }
+                }
+              }
+              return false;
+            });
+            if (matchedRaw) {
+              initialMe = matchedRaw.id;
+            }
+          } else if (matchedUserEntry && window.FAMILY && window.FAMILY.people) {
+            const matchedPerson = window.FAMILY.people.find(p => {
+              const targetName = matchedUserEntry.displayName.toLowerCase();
+              if (p.name.toLowerCase() === targetName) return true;
+              const baseName = p.name.replace(/\s*\([^)]+\)/g, '').toLowerCase().trim();
+              if (baseName === targetName) return true;
+              return false;
+            });
+            if (matchedPerson) {
+              initialMe = matchedPerson.id;
+            }
+          }
+
+          if (window.FAMILY_DATA && window.processRawFamilyData) {
+            window.FAMILY = window.processRawFamilyData(window.FAMILY_DATA, initialMe);
+          } else if (window.FAMILY) {
+            window.FAMILY.ME = initialMe;
+          }
+
+          // Update the ME Chip display to show the logged-in user!
+          const meChipName = document.querySelector('#me-chip .mc-name');
+          const meChipThumb = document.querySelector('#me-chip-thumb');
+          const meChip = document.getElementById('me-chip');
+          const mePerson = window.FAMILY.people.find(p => p.id === window.FAMILY.ME);
+          if (mePerson) {
+            meChipName.textContent = mePerson.firstName;
+            meChipThumb.textContent = mePerson.firstName[0];
+            meChip.title = `${mePerson.name} (you)`;
+          }
+
+          const s2 = document.createElement('script');
+          s2.src = 'tree-app.js' + cacheBust;
+          document.body.appendChild(s2);
+        };
+        document.body.appendChild(s1);
       };
-      document.body.appendChild(s1);
+      document.body.appendChild(s0);
     }
   </script>
 </body>
