@@ -10,7 +10,7 @@ import { execSync } from 'child_process';
 import crypto from 'crypto';
 
 // Default configuration (can also be set via environment variables)
-const WEB_APP_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbygij7rzvYrZvKitaEfmwpX-9TaL7v-6sgFXzXzcNXbPjtYcEaV4zPmUrPCuVBsJLw/exec";
+const WEB_APP_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbygv2ZJ-4Ugn_PgGpeszxxGURhdqXX46XaZQGuj9Z9iVGiKpCcmSff63qJABi1gfX9I/exec";
 const SECRET_TOKEN = process.env.GOOGLE_SHEET_SECRET || "MyFamilyTreeSecureToken2026";
 const outputCsvPath = resolve('data/form-responses.csv');
 
