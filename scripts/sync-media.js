@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import 'dotenv/config'; // Loads variables from .env file if it exists
+import crypto from 'crypto';
 
 const familyPath = resolve('data/family.json');
 
@@ -115,6 +116,37 @@ async function uploadToR2(fileName, buffer, mimeType) {
   return `${publicBaseUrl}/${fileName}`;
 }
 
+// Helper to call Apps Script Web App and delete the file from Google Drive
+async function deleteFromDriveViaAppsScript(fileId) {
+  const webAppUrl = process.env.GOOGLE_SHEET_URL;
+  const secretToken = process.env.GOOGLE_SHEET_SECRET;
+  
+  if (!webAppUrl || !secretToken) {
+    console.log(`   ℹ️  Skipping Drive cleanup callback (GOOGLE_SHEET_URL or GOOGLE_SHEET_SECRET not configured).`);
+    return;
+  }
+
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const token = crypto
+      .createHmac('sha256', secretToken)
+      .update(timestamp.toString())
+      .digest('hex');
+
+    const url = `${webAppUrl}?token=${token}&timestamp=${timestamp}&action=deleteFile&fileId=${fileId}`;
+    console.log(`   🗑️  Requesting Drive deletion for file ID: ${fileId}...`);
+    const res = await fetch(url);
+    const result = await res.json();
+    if (result.success) {
+      console.log(`   ✅ Successfully trashed file on Google Drive!`);
+    } else {
+      console.warn(`   ⚠️  Failed to trash file: ${result.error}`);
+    }
+  } catch (err) {
+    console.error(`   ❌ Error calling delete endpoint: ${err.message}`);
+  }
+}
+
 async function sync() {
   if (!existsSync(familyPath)) {
     console.error(`❌ family.json not found at ${familyPath}`);
@@ -147,6 +179,9 @@ async function sync() {
           console.log(`   🚀 Success! Public URL: ${cfUrl}`);
           person.profilePhoto = cfUrl;
           updated = true;
+
+          // Request Google Drive to delete the file
+          await deleteFromDriveViaAppsScript(fileId);
         } catch (err) {
           console.error(`   ❌ Failed to sync media for ${person.firstName}: ${err.message}`);
         }
