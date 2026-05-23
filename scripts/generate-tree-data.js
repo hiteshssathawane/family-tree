@@ -471,6 +471,7 @@ const outputPeople = persons.map(p => {
     deceased: p.status === 'deceased',
     bio: p.biography || `A valued member of our family.`,
     photo: p.profilePhoto || null,
+    backgroundPhoto: p.backgroundPhoto || null,
     x: coords.x,
     y: coords.y,
     parents,
@@ -494,6 +495,18 @@ persons.forEach(p => {
       photos: [null]
     });
   }
+
+  // Merge custom scrapbook entries
+  const customEntries = family.scrapbook && family.scrapbook[p.id] ? family.scrapbook[p.id] : [];
+  customEntries.forEach(e => {
+    timeline.push({
+      date: e.date,
+      caption: e.caption,
+      photos: e.photos || [null],
+      tags: e.tags || []
+    });
+  });
+
   if (p.status === 'deceased' && p.deathDate) {
     const dateStr = p.deathDate;
     timeline.push({
@@ -503,7 +516,16 @@ persons.forEach(p => {
       photos: [null]
     });
   }
+
   if (timeline.length > 0) {
+    // Sort timeline chronologically by extracting the 4-digit year
+    const getYear = (d) => {
+      if (!d) return 0;
+      const match = String(d).match(/\b\d{4}\b/);
+      return match ? parseInt(match[0]) : 0;
+    };
+    timeline.sort((a, b) => getYear(a.date) - getYear(b.date));
+
     outputScrapbook[p.id] = timeline;
   }
 });

@@ -149,6 +149,7 @@ lines.slice(1).forEach((line, i) => {
     lastNameMr: row.lastNameMr || null,
     biography: row.biography || null,
     profilePhoto: row.profilePhoto || null,
+    backgroundPhoto: row.backgroundPhoto || null,
     tags: row.tags ? row.tags.split(';').map(t => t.trim()) : [],
     private: false
   });

@@ -147,6 +147,85 @@ async function deleteFromDriveViaAppsScript(fileId) {
   }
 }
 
+// Helper function to sync a specific image field (profilePhoto or backgroundPhoto)
+async function syncField(person, fieldName, filePrefix) {
+  if (person[fieldName] && person[fieldName].includes('drive.google.com')) {
+    const fileId = extractGoogleDriveId(person[fieldName]);
+    if (fileId) {
+      console.log(`\n⏳ Found Google Drive URL for ${person.firstName} ${person.lastName} (${person.id}) [${fieldName}]`);
+      try {
+        console.log(`   ⬇️ Downloading image...`);
+        const { buffer, mimeType } = await downloadFromDrive(fileId);
+
+        // Get file extension from MIME type
+        let ext = 'jpg';
+        if (mimeType.includes('png')) ext = 'png';
+        else if (mimeType.includes('webp')) ext = 'webp';
+
+        const r2FileName = `${filePrefix}_${person.id.toLowerCase()}.${ext}`;
+        console.log(`   ⬆️ Uploading to Cloudflare R2 as: ${r2FileName}...`);
+        const cfUrl = await uploadToR2(r2FileName, buffer, mimeType);
+
+        console.log(`   🚀 Success! Public URL: ${cfUrl}`);
+        person[fieldName] = cfUrl;
+
+        // Request Google Drive to delete the file
+        await deleteFromDriveViaAppsScript(fileId);
+        return true;
+      } catch (err) {
+        console.error(`   ❌ Failed to sync media for ${person.firstName} [${fieldName}]: ${err.message}`);
+      }
+    }
+  }
+  return false;
+}
+
+async function syncScrapbook(family) {
+  let updated = false;
+  if (!family.scrapbook) return false;
+
+  for (const [personId, entries] of Object.entries(family.scrapbook)) {
+    for (let entryIdx = 0; entryIdx < entries.length; entryIdx++) {
+      const entry = entries[entryIdx];
+      if (Array.isArray(entry.photos)) {
+        for (let photoIdx = 0; photoIdx < entry.photos.length; photoIdx++) {
+          const photoUrl = entry.photos[photoIdx];
+          if (photoUrl && photoUrl.includes('drive.google.com')) {
+            const fileId = extractGoogleDriveId(photoUrl);
+            if (fileId) {
+              console.log(`\n⏳ Found Google Drive URL in scrapbook for ${personId} (entry #${entryIdx + 1}, photo #${photoIdx + 1})`);
+              try {
+                console.log(`   ⬇️ Downloading image...`);
+                const { buffer, mimeType } = await downloadFromDrive(fileId);
+
+                // Get file extension from MIME type
+                let ext = 'jpg';
+                if (mimeType.includes('png')) ext = 'png';
+                else if (mimeType.includes('webp')) ext = 'webp';
+
+                // Use personId, entryIdx, photoIdx for filename to make it unique and descriptive
+                const r2FileName = `scrapbook_${personId.toLowerCase()}_${entryIdx}_${photoIdx}.${ext}`;
+                console.log(`   ⬆️ Uploading to Cloudflare R2 as: ${r2FileName}...`);
+                const cfUrl = await uploadToR2(r2FileName, buffer, mimeType);
+
+                console.log(`   🚀 Success! Public URL: ${cfUrl}`);
+                entry.photos[photoIdx] = cfUrl;
+                updated = true;
+
+                // Request Google Drive to delete the file
+                await deleteFromDriveViaAppsScript(fileId);
+              } catch (err) {
+                console.error(`   ❌ Failed to sync scrapbook media for ${personId} (entry #${entryIdx + 1}, photo #${photoIdx + 1}): ${err.message}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return updated;
+}
+
 async function sync() {
   if (!existsSync(familyPath)) {
     console.error(`❌ family.json not found at ${familyPath}`);
@@ -159,34 +238,16 @@ async function sync() {
   console.log('📸 Scanning family.json for Google Drive media links...');
 
   for (const person of family.persons) {
-    if (person.profilePhoto && person.profilePhoto.includes('drive.google.com')) {
-      const fileId = extractGoogleDriveId(person.profilePhoto);
-      if (fileId) {
-        console.log(`\n⏳ Found Google Drive URL for ${person.firstName} ${person.lastName} (${person.id})`);
-        try {
-          console.log(`   ⬇️ Downloading image...`);
-          const { buffer, mimeType } = await downloadFromDrive(fileId);
-
-          // Get file extension from MIME type
-          let ext = 'jpg';
-          if (mimeType.includes('png')) ext = 'png';
-          else if (mimeType.includes('webp')) ext = 'webp';
-
-          const r2FileName = `profile_${person.id.toLowerCase()}.${ext}`;
-          console.log(`   ⬆️ Uploading to Cloudflare R2 as: ${r2FileName}...`);
-          const cfUrl = await uploadToR2(r2FileName, buffer, mimeType);
-
-          console.log(`   🚀 Success! Public URL: ${cfUrl}`);
-          person.profilePhoto = cfUrl;
-          updated = true;
-
-          // Request Google Drive to delete the file
-          await deleteFromDriveViaAppsScript(fileId);
-        } catch (err) {
-          console.error(`   ❌ Failed to sync media for ${person.firstName}: ${err.message}`);
-        }
-      }
+    const profileUpdated = await syncField(person, 'profilePhoto', 'profile');
+    const backgroundUpdated = await syncField(person, 'backgroundPhoto', 'background');
+    if (profileUpdated || backgroundUpdated) {
+      updated = true;
     }
+  }
+
+  const scrapbookUpdated = await syncScrapbook(family);
+  if (scrapbookUpdated) {
+    updated = true;
   }
 
   if (updated) {
@@ -194,7 +255,7 @@ async function sync() {
     writeFileSync(familyPath, JSON.stringify(family, null, 2), 'utf8');
     console.log('\n💾 Successfully updated family.json with new Cloudflare URLs!');
   } else {
-    console.log('\n✨ No pending Google Drive profile photos to migrate.');
+    console.log('\n✨ No pending Google Drive profile/background/scrapbook photos to migrate.');
   }
 }
 

@@ -42,6 +42,7 @@
           "lastNameMr": { "type": ["string", "null"] },
           "biography": { "type": ["string", "null"] },
           "profilePhoto": { "type": ["string", "null"] },
+          "backgroundPhoto": { "type": ["string", "null"] },
           "tags": { "type": "array", "items": { "type": "string" } },
           "private": { "type": "boolean" }
         }
@@ -79,6 +80,28 @@
           "id": { "type": "string", "pattern": "^M\\d+$" },
           "type": { "enum": ["photo", "video", "document", "audio"] },
           "filename": { "type": "string" }
+        }
+      }
+    },
+    "scrapbook": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["date", "caption", "photos", "tags"],
+          "properties": {
+            "date": { "type": "string" },
+            "caption": { "type": "string" },
+            "photos": {
+              "type": "array",
+              "items": { "type": ["string", "null"] }
+            },
+            "tags": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
         }
       }
     }

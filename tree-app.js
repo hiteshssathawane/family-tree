@@ -737,8 +737,13 @@
     }
     const cover = document.getElementById("lb-cover");
     cover.querySelectorAll(".lb-cover-img").forEach(el => el.remove());
-    // Soft sunset-toned cover. If person has a photo, show it blurred behind too.
-    if (p.photo) {
+    // If person has a background cover photo, render it in full resolution. Otherwise, blur profile photo.
+    if (p.backgroundPhoto) {
+      const img = document.createElement("img");
+      img.className = "lb-cover-img";
+      img.src = p.backgroundPhoto;
+      cover.insertBefore(img, photoEl);
+    } else if (p.photo) {
       const img = document.createElement("img");
       img.className = "lb-cover-img";
       img.src = p.photo;
