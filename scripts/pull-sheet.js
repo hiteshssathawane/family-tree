@@ -10,7 +10,7 @@ import { execSync } from 'child_process';
 import crypto from 'crypto';
 
 // Default configuration (can also be set via environment variables)
-const WEB_APP_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbwbPcBgZyC0uFEYazabQoPoYegtpWMZMlE1M76EoqbAxRpG2nO3R6vhlFdak40o54bZ/exec";
+const WEB_APP_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbygij7rzvYrZvKitaEfmwpX-9TaL7v-6sgFXzXzcNXbPjtYcEaV4zPmUrPCuVBsJLw/exec";
 const SECRET_TOKEN = process.env.GOOGLE_SHEET_SECRET || "MyFamilyTreeSecureToken2026";
 const outputCsvPath = resolve('data/form-responses.csv');
 
@@ -217,7 +217,7 @@ async function run() {
       });
     };
 
-    const ownerIdx = findHeaderIdx(sbHeaders, ['member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
+    const ownerIdx = findHeaderIdx(sbHeaders, ['whom', 'about', 'member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
     const dateIdx = findHeaderIdx(sbHeaders, ['date', 'year'], ['timestamp', 'birth', 'death', 'marriage']);
     const captionIdx = findHeaderIdx(sbHeaders, ['story', 'caption', 'description', 'text', 'details', 'memory']);
     const photosIdx = findHeaderIdx(sbHeaders, ['photo', 'picture', 'image', 'upload', 'file']);
