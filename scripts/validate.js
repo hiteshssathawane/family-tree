@@ -57,8 +57,8 @@ data.relationships.forEach(r => {
   }
 });
 
-// Root person exists
-if (!ids.includes(data.meta.rootPersonId)) {
+// Root person exists (if database is not empty)
+if (persons.length > 0 && !ids.includes(data.meta.rootPersonId)) {
   errors.push(`rootPersonId ${data.meta.rootPersonId} not found in persons`);
 }
 

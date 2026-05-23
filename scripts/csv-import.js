@@ -36,7 +36,9 @@ const lines = csv.split('\n')
 const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
 let added = 0, skipped = 0, errors = 0;
 
-const existingIds = new Set(family.persons.map(p => p.id));
+family.persons = [];
+family.relationships = [];
+const addedIds = new Set();
 const parsedRows = [];
 
 const monthMap = {
@@ -115,8 +117,8 @@ lines.slice(1).forEach((line, i) => {
   const motherNameStr = row.motherName || '';
   row.id = `${row.firstName}_${motherNameStr}_${fatherNameStr}_${row.lastName}`.toUpperCase().replace(/\s+/g, '');
 
-  if (existingIds.has(row.id)) {
-    console.log(`  ℹ️  ${row.id} (${row.firstName} ${row.lastName}) already exists — skipping`);
+  if (addedIds.has(row.id)) {
+    console.log(`  ℹ️  ${row.id} (${row.firstName} ${row.lastName}) duplicate in CSV — skipping`);
     skipped++;
     return;
   }
@@ -156,7 +158,7 @@ lines.slice(1).forEach((line, i) => {
 
   // Login auto-generation moved to the end of the import process after all relationships are processed
 
-  existingIds.add(row.id);
+  addedIds.add(row.id);
   parsedRows.push(row);
   added++;
   console.log(`  ✅ Added: ${row.firstName} ${row.lastName} (${row.id})`);
@@ -218,7 +220,7 @@ currentPersons.forEach((p) => {
         private: false
       };
       family.persons.push(father);
-      existingIds.add(fatherId);
+      addedIds.add(fatherId);
       added++;
       console.log(`  ➕ Auto-created father node: ${fFirst} ${fLast} (${fatherId})`);
     }
@@ -266,7 +268,7 @@ currentPersons.forEach((p) => {
         private: false
       };
       family.persons.push(mother);
-      existingIds.add(motherId);
+      addedIds.add(motherId);
       added++;
       console.log(`  ➕ Auto-created mother node: ${mFirst} ${mLast} (${motherId})`);
     }
@@ -279,12 +281,14 @@ currentPersons.forEach((p) => {
        (r.person1Id === mother.id && r.person2Id === father.id))
     );
     if (!exists) {
-      const relId = `R${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const p1 = father.id < mother.id ? father.id : mother.id;
+      const p2 = father.id < mother.id ? mother.id : father.id;
+      const relId = `R_M_${p1}_${p2}`;
       family.relationships.push({
         id: relId,
         type: 'marriage',
-        person1Id: father.id,
-        person2Id: mother.id,
+        person1Id: p1,
+        person2Id: p2,
         startDate: null,
         endDate: null,
         endReason: null,
@@ -346,7 +350,7 @@ parsedRows.forEach((row) => {
         private: false
       };
       family.persons.push(spouse);
-      existingIds.add(exactId);
+      addedIds.add(exactId);
       added++;
       console.log(`  ➕ Auto-created spouse node: ${sFirst} ${sLast} (${exactId})`);
     }
@@ -358,12 +362,14 @@ parsedRows.forEach((row) => {
     );
 
     if (!exists) {
-      const relId = `R${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const p1 = row.id < spouse.id ? row.id : spouse.id;
+      const p2 = row.id < spouse.id ? spouse.id : row.id;
+      const relId = `R_M_${p1}_${p2}`;
       family.relationships.push({
         id: relId,
         type: 'marriage',
-        person1Id: row.id,
-        person2Id: spouse.id,
+        person1Id: p1,
+        person2Id: p2,
         startDate: formatDate(row.marriageDate) || null,
         endDate: null,
         endReason: null,
@@ -507,14 +513,26 @@ family.persons.forEach(p => {
 // Since authData might be updated, we will write it
 writeFileSync(authPath, JSON.stringify(authData, null, 2));
 
-if (added > 0) {
-  family.meta.updatedAt = new Date().toISOString().split('T')[0];
-  writeFileSync(dataPath, JSON.stringify(family, null, 2));
-  console.log(`\n✅ Done! Added ${added} person(s). Skipped ${skipped}.`);
-  console.log(`Run 'npm run validate' to verify.`);
-} else {
-  console.log(`\nℹ️  No new persons to add, but logins updated. Skipped ${skipped} rows.`);
+// Auto-resolve rootPersonId in metadata if it has changed
+if (!addedIds.has(family.meta.rootPersonId)) {
+  const oldRootIdParts = family.meta.rootPersonId.split('_');
+  const oldRootFirstName = oldRootIdParts[0]?.toLowerCase();
+  const oldRootLastName = oldRootIdParts[oldRootIdParts.length - 1]?.toLowerCase();
+  
+  const match = family.persons.find(p => 
+    p.firstName.toLowerCase() === oldRootFirstName && 
+    p.lastName.toLowerCase() === oldRootLastName
+  );
+  if (match) {
+    console.log(`  🔄 Updating rootPersonId in metadata from '${family.meta.rootPersonId}' to '${match.id}'`);
+    family.meta.rootPersonId = match.id;
+  }
 }
+
+family.meta.updatedAt = new Date().toISOString().split('T')[0];
+writeFileSync(dataPath, JSON.stringify(family, null, 2));
+console.log(`\n✅ Done! Synced ${family.persons.length} persons, ${family.relationships.length} relationships.`);
+console.log(`Run 'npm run validate' to verify.`);
 
 // Handles quoted CSV fields
 function parseCSVLine(line) {
