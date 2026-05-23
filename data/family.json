@@ -851,5 +851,16 @@
   ],
   "events": [],
   "media": [],
-  "scrapbook": {}
+  "scrapbook": {
+    "SWATI_CHAAYA_BHIMRAO_BIRADAR": [
+      {
+        "date": "Unknown Date",
+        "caption": "Hitesh Sathawane",
+        "photos": [
+          "https://drive.google.com/open?id=1SzB6SRk-5hVgNr3XcdYBP6b__DNT9w60"
+        ],
+        "tags": []
+      }
+    ]
+  }
 }
