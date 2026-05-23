@@ -1,3 +1,4 @@
-firstName,fatherName,motherName,lastName,gender,status,maritalStatus,spouseFirstName,spouseFatherName,spouseMotherName,spouseLastName,marriageDate,birthDate,birthPlace,deathDate,deathPlace,occupation,education,location,biography,commonName,firstNameMr,lastNameMr,profilePhoto
-Hitesh,adsf,asdf,adfa,X,living,married,asdf,adsf,adsf,asdf,,,,,add,ads,asdf,asdf,asdf,,Sathawae,adfadf,https://drive.google.com/open?id=1RKHTxwBzC9-mia-S1LCxXhwM361oyRyn
-asdf,adf,adsf,dsfgdf,F,deceased,single,,,,,,,,,asdf,asdf,pdf,sdf,sdff,,sdf,asdf,https://drive.google.com/open?id=1kgFfeB-A4iqAb4oFeaoQ1YBdAhfKAv_d
+firstName,fatherName,motherName,lastName,gender,status,maritalStatus,spouseFirstName,spouseFatherName,spouseMotherName,spouseLastName,marriageDate,birthDate,birthPlace,deathDate,deathPlace,occupation,education,location,biography,commonName,firstNameMr,lastNameMr,profilePhoto,backgroundPhoto
+Hitesh,adsf,asdf,adfa,X,living,married,asdf,adsf,adsf,asdf,,,,,add,ads,asdf,asdf,asdf,,Sathawae,adfadf,https://drive.google.com/open?id=1RKHTxwBzC9-mia-S1LCxXhwM361oyRyn,https://drive.google.com/open?id=1zCaOIo1jx1by9qdUOZhr2IjKPvJ4IwMh
+asdf,adf,adsf,dsfgdf,F,deceased,single,,,,,,,,,asdf,asdf,pdf,sdf,sdff,,sdf,asdf,https://drive.google.com/open?id=1kgFfeB-A4iqAb4oFeaoQ1YBdAhfKAv_d,https://drive.google.com/open?id=1QC0v3JUwJdFeSRa18pLW9yv7DskUGgsQ
+asdffg,asdf,dfg,fgfg,M,living,married,fdg,df,dfg,sdf,,,,,,ads,asdfadf,asdf,asdf,pdf,fgfg,sdfg,https://drive.google.com/open?id=13M4SlfZf9tDAB_MTL0wttuWQHSKY2SMW,https://drive.google.com/open?id=17mp7sNxj2bvDwkMIhABZAWPF9tpv3eVy
