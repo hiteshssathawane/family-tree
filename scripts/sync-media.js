@@ -169,8 +169,8 @@ async function syncField(person, fieldName, filePrefix) {
         console.log(`   🚀 Success! Public URL: ${cfUrl}`);
         person[fieldName] = cfUrl;
 
-        // Request Google Drive to delete the file
-        await deleteFromDriveViaAppsScript(fileId);
+        // Request Google Drive to delete the file (disabled to avoid Drive permission errors)
+        // await deleteFromDriveViaAppsScript(fileId);
         return true;
       } catch (err) {
         console.error(`   ❌ Failed to sync media for ${person.firstName} [${fieldName}]: ${err.message}`);
@@ -212,8 +212,8 @@ async function syncScrapbook(family) {
                 entry.photos[photoIdx] = cfUrl;
                 updated = true;
 
-                // Request Google Drive to delete the file
-                await deleteFromDriveViaAppsScript(fileId);
+                // Request Google Drive to delete the file (disabled to avoid Drive permission errors)
+                // await deleteFromDriveViaAppsScript(fileId);
               } catch (err) {
                 console.error(`   ❌ Failed to sync scrapbook media for ${personId} (entry #${entryIdx + 1}, photo #${photoIdx + 1}): ${err.message}`);
               }
