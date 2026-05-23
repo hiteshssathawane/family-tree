@@ -426,8 +426,8 @@
       "firstNameMr": "asdf",
       "lastNameMr": "adsf",
       "biography": "asdf",
-      "profilePhoto": "https://drive.google.com/open?id=147-mpX2v18lbvwG2frGDuL6GMON7_agT",
-      "backgroundPhoto": "https://drive.google.com/open?id=1809k5dhlEEkSnEmi3ckcHc5ejSuPatYS",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_asdf_asdf_asdf_asdf.png",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_asdf_asdf_asdf_asdf.png",
       "tags": [],
       "private": false
     },
@@ -479,8 +479,8 @@
       "firstNameMr": "Hitesh",
       "lastNameMr": "Sathawane",
       "biography": "abcd",
-      "profilePhoto": "https://drive.google.com/open?id=1NTcODdiNl1p0jQKF6Ecee4AGEVf0wbRU",
-      "backgroundPhoto": "https://drive.google.com/open?id=1JTnKv3_9VJz5tfFr97ZZxNd1MNMuQmjj",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_hitesh_jyoti_shankarrao_sathawane.png",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_hitesh_jyoti_shankarrao_sathawane.png",
       "tags": [],
       "private": false
     },
@@ -857,7 +857,7 @@
         "date": "Unknown Date",
         "caption": "Hitesh Sathawane",
         "photos": [
-          "https://drive.google.com/open?id=1SzB6SRk-5hVgNr3XcdYBP6b__DNT9w60"
+          "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/scrapbook_swati_chaaya_bhimrao_biradar_0_0.jpg"
         ],
         "tags": []
       }
