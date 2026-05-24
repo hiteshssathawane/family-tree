@@ -1,0 +1,64 @@
+firstName,fatherName,motherName,lastName,gender,status,maritalStatus,spouseFirstName,spouseFatherName,spouseMotherName,spouseLastName,marriageDate,birthDate,birthPlace,deathDate,deathPlace,occupation,education,location,biography,commonName,commonNameMr,firstNameMr,lastNameMr
+Hitesh,Shankar,Jyoti,Sathawane,M,living,married,Swati,Bhimrao,Chaya,Biradar,2-May-15,29-Dec-85,Nagpur,,,Engineer,Master in Finantial Management,"Dombivli, India",Test living user.,,,हितेश,साठवणे
+Swati,Bhimrao,Chaya,Biradar,F,living,married,Hitesh,Shankar,Jyoti,Sathawane,2-May-15,1-Jul-91,Latur,,,Engineer,Master in Finantial Management,"Dombivli, India",Test living user.,,,स्वाती,बिरादार
+Shankar,Sampathrao,Vatsala,Sathawane,M,living,married,Jyoti,Bhaskarrao,Manaroma,Waghmare,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.,,,शंकर,साठवणे
+Jyoti,Bhaskarrao,Manaroma,Waghmare,F,deceased,married,Shankar,Sampathrao,Vatsala,Sathawane,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.,Baby,बेबी,ज्योती,वाघमारे
+Dhruv,Hitesh,Swati,Sathawane,M,living,single,,,,,,8-Nov-21,Dombivli,,,,U KG,"Dombivli, India",Test living user.,,,ध्रुव,साठवणे
+Arjun,Hitesh,Swati,Sathawane,M,living,single,,,,,,2-Dec-25,Dombivli,,,,,"Dombivli, India",Test living user.
+Sampathrao,,,Sathawane,M,deceased,married,Vatsala,,,,,,Bhandara,26-Nov-01,Nagpur,,,"Nagpur, India",
+Mahadeo,Sampathrao,Vatsala,Sathawane,M,living,married,Shaila,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+Sudhakar,Sampathrao,Vatsala,Sathawane,M,living,married,Meenakshi,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+Ratnakr,Sampathrao,Vatsala,Sathawane,M,living,married,Kalpana,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+Alka,Sampathrao,Vatsala,Sathawane,F,living,married,Dhashrath,,,Kalembe,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+Kalindi,Bhaskarrao,Manaroma,Waghmare,F,living,married,Prakash,,,Bisne,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+Vijay,Bhaskarrao,Manaroma,Waghmare,M,living,married,Heera,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+Ajay,Bhaskarrao,Manaroma,Waghmare,M,living,married,Sangeeta,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+Shashi,Bhaskarrao,Manaroma,Waghmare,M,living,married,Bhavana,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+Shirikanth,Bhaskarrao,Manaroma,Waghmare,M,deceased,single,,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+Vatsala,,,,F,deceased,married,Sampathrao,,,Sathawane,,,,,,,,,
+Shaila,,,,F,living,married,Mahadeo,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+Meenakshi,,,,F,living,married,Sudhakar,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+Kalpana,,,,F,living,married,Ratnakr,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+Dhashrath,,,Kalembe,M,living,married,Alka,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+Prakash,,,Bisne,M,living,married,Kalindi,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+Heera,,,,F,living,married,Vijay,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+Sangeeta,,,,F,living,married,Ajay,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+Bhavana,,,,F,living,married,Shashi,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+Gaurav,Shankar,Jyoti,Sathawane,M,living,married,Rajshree,,,Lanjewar,,9/4/87,,,,,,,
+Rajshree,,,Lanjewar,F,living,married,Gaurav,Shankar,Jyoti,Sathawane,,9/1/87,,,,,,,
+Erisha,Gaurav,Rajshree,Sathawane,F,living,single,,,,,,12/6/24,,,,,,,
+Rahul,Mahadeo,Shaila,Sathawane,M,living,married,Shruti,,,,,19-Jan,,,,,,,
+Mrunal,Mahadeo,Shaila,Sathawane,M,living,married,Ashwini,,,,,,,,,,,,
+Shruti,,,,F,living,married,Rahul,Mahadeo,Shaila,Sathawane,,,,,,,,,
+Ashwini,,,,F,living,married,Mrunal,Mahadeo,Shaila,Sathawane,,,,,,,,,
+Takshita,Rahul,Shruti,Sathawane,,living,single,,,,,,,,,,,,,
+Saurabh,Sudhakar,Meenakshi,Sathawane,M,living,single,,,,,,,,,,,,,
+Siddharth,Sudhakar,Meenakshi,Sathawane,M,living,single,,,,,,,,,,,,,
+Sameer,Sudhakar,Meenakshi,Sathawane,M,deceased,single,,,,,,,,,,,,,
+Vatsal,Ratnakr,Kalpana,Sathawane,M,living,single,,,,,,5-Sep,,,,,,,
+Shwetal,Dhashrath,Alka,Kalembe,M,living,married,Trushali,,,,,,,,,,,,
+Shivani,Dhashrath,Alka,Kalembe,F,living,married,Harshal,,,Khonde,,,,,,,,,
+Trushali,,,,F,living,married,Shwetal,Dhashrath,Alka,Kalembe,,,,,,,,,
+Harshal,,,Khonde,M,living,married,Shivani,Dhashrath,Alka,Kalembe,,,,,,,,,
+Yashmak,Shwetal,Trushali,Kalembe,M,living,single,,,,,,,,,,,,,
+Virika,Harshal,Shivani,Khonde,F,living,single,,,,,,,,,,,,,
+Daksh,Harshal,Shivani,Khonde,M,living,single,,,,,,,,,,,,,
+Aarti,Prakash,Kalindi,Bisne,F,living,married,Vishal,,,Pahune,,16-May,,,,,,,
+Amit,Prakash,Kalindi,Bisne,M,living,married,Maithali,,,,,20-Sep,,,,,,,
+Vishal,,,Pahune,M,living,married,Aarti,Prakash,Kalindi,Bisne,,,,,,,,,
+Maithali,,,,F,living,married,Amit,Prakash,Kalindi,Bisne,,,,,,,,,
+Shresht,Vishal,Aarti,Pahune,M,living,single,,,,,,,,,,,,,
+Shrimei,Vishal,Aarti,Pahune,F,living,single,,,,,,,,,,,,,
+Ananya,Amit,Maithali,Bisne,F,living,single,,,,,,,,,,,,,
+Vivan,Amit,Maithali,Bisne,M,living,single,,,,,,,,,,,,,
+Sumeet,Vijay,Heera,Waghmare,M,living,single,,,,,,,,,,,,,
+Susmit,Vijay,Heera,Waghmare,M,living,married,Mayuri,,,,,,,,,,,,
+Mayuri,,,,F,living,married,Susmit,Vijay,Heera,Waghmare,,,,,,,,,
+Riyan,Susmit,Mayuri,Waghmare,M,living,single,,,,,,,,,,,,,
+Saurabhi,Ajay,Sangeeta,Waghmare,F,living,married,Gaurav,,,Bhirud,,,,,,,,,
+Aishwarya,Ajay,Sangeeta,Waghmare,F,living,married,Shashwat,,,Bavankar,,,,,,,,,
+Vedant,Ajay,Sangeeta,Waghmare,M,living,single,,,,,,,,,,,,,
+Gaurav,,,Bhirud,M,living,married,Saurabhi,Ajay,Sangeeta,Waghmare,,,,,,,,,
+Shashwat,,,Bavankar,M,living,married,Aishwarya,Ajay,Sangeeta,Waghmare,,,,,,,,,
+Aryan,Shashi,Bhavana,Waghmare,M,living,single,,,,,,,,,,,,,
+Shriya,Shashi,Bhavana,Waghmare,F,living,single,,,,,,,,,,,,,

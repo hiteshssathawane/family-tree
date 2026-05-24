@@ -1,0 +1,64 @@
+Timestamp,Mobile Number,Profile Picture,Background Picture,First Name (English) *,First Name (Marathi - पहिले नाव) *,Last Name (English) *,Last Name (Marathi - आडनाव) *,Alias,Father Name (English) *,Mother Name (English) *,Gender *,Status *,Marital Status *,Spouse First Name (Mandatory if Married),Spouse Father Name,Spouse Mother Name,Spouse Last Name,Marriage Date,Birth Date *,Birth Place *,Death Date (If applicable, only if Status is Deceased),Death Place (If applicable, only if Status is Deceased),Occupation,Education Details (Free text field for specific qualifications),Location (Current City/Region) *,Biography
+24/05/2026 00:00:00,,,,Hitesh,हितेश,Sathawane,साठवणे,,Shankar,Jyoti,Male,Living,Married,Swati,Bhimrao,Chaya,Biradar,2-May-15,29-Dec-85,Nagpur,,,Engineer,Master in Finantial Management,"Dombivli, India",Test living user.
+24/05/2026 00:00:01,,,,Swati,स्वाती,Biradar,बिरादार,,Bhimrao,Chaya,Female,Living,Married,Hitesh,Shankar,Jyoti,Sathawane,2-May-15,1-Jul-91,Latur,,,Engineer,Master in Finantial Management,"Dombivli, India",Test living user.
+24/05/2026 00:00:02,,,,Shankar,शंकर,Sathawane,साठवणे,,Sampathrao,Vatsala,Male,Living,Married,Jyoti,Bhaskarrao,Manaroma,Waghmare,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+24/05/2026 00:00:03,,,,Jyoti,ज्योती,Waghmare,वाघमारे,Baby,Bhaskarrao,Manaroma,Female,Deceased,Married,Shankar,Sampathrao,Vatsala,Sathawane,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:04,,,,Dhruv,ध्रुव,Sathawane,साठवणे,,Hitesh,Swati,Male,Living,Single,,,,,,8-Nov-21,Dombivli,,,,U KG,"Dombivli, India",Test living user.
+24/05/2026 00:00:05,,,,Arjun,,Sathawane,,,Hitesh,Swati,Male,Living,Single,,,,,,2-Dec-25,Dombivli,,,,,"Dombivli, India",Test living user.
+24/05/2026 00:00:06,,,,Sampathrao,,Sathawane,,,,,Male,Deceased,Married,Vatsala,,,,,,Bhandara,26-Nov-01,Nagpur,,,"Nagpur, India",
+24/05/2026 00:00:07,,,,Mahadeo,,Sathawane,,,Sampathrao,Vatsala,Male,Living,Married,Shaila,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+24/05/2026 00:00:08,,,,Sudhakar,,Sathawane,,,Sampathrao,Vatsala,Male,Living,Married,Meenakshi,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+24/05/2026 00:00:09,,,,Ratnakr,,Sathawane,,,Sampathrao,Vatsala,Male,Living,Married,Kalpana,,,,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+24/05/2026 00:00:10,,,,Alka,,Sathawane,,,Sampathrao,Vatsala,Female,Living,Married,Dhashrath,,,Kalembe,29-Nov-84,27-Aug-54,Nagpur,,,Retired,MTech Electrical,"Dombivli, India",Test living user.
+24/05/2026 00:00:11,,,,Kalindi,,Waghmare,,,Bhaskarrao,Manaroma,Female,Living,Married,Prakash,,,Bisne,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:12,,,,Vijay,,Waghmare,,,Bhaskarrao,Manaroma,Male,Living,Married,Heera,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:13,,,,Ajay,,Waghmare,,,Bhaskarrao,Manaroma,Male,Living,Married,Sangeeta,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:14,,,,Shashi,,Waghmare,,,Bhaskarrao,Manaroma,Male,Living,Married,Bhavana,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:15,,,,Shirikanth,,Waghmare,,,Bhaskarrao,Manaroma,Male,Deceased,Single,,,,,29-Nov-84,23-Mar-63,Nagpur,23-May-17,Dombivli,Home Minister,Master of Arts,"Dombivli, India",Test living user.
+24/05/2026 00:00:16,,,,Vatsala,,,,,,,Female,Deceased,Married,Sampathrao,,,Sathawane,,,,,,,,,
+24/05/2026 00:00:17,,,,Shaila,,,,,,,Female,Living,Married,Mahadeo,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+24/05/2026 00:00:18,,,,Meenakshi,,,,,,,Female,Living,Married,Sudhakar,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+24/05/2026 00:00:19,,,,Kalpana,,,,,,,Female,Living,Married,Ratnakr,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+24/05/2026 00:00:20,,,,Dhashrath,,Kalembe,,,,,Male,Living,Married,Alka,Sampathrao,Vatsala,Sathawane,11/29/1984,,,,,,,,
+24/05/2026 00:00:21,,,,Prakash,,Bisne,,,,,Male,Living,Married,Kalindi,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+24/05/2026 00:00:22,,,,Heera,,,,,,,Female,Living,Married,Vijay,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+24/05/2026 00:00:23,,,,Sangeeta,,,,,,,Female,Living,Married,Ajay,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+24/05/2026 00:00:24,,,,Bhavana,,,,,,,Female,Living,Married,Shashi,Bhaskarrao,Manaroma,Waghmare,11/29/1984,,,,,,,,
+24/05/2026 00:00:25,,,,Gaurav,,Sathawane,,,Shankar,Jyoti,Male,Living,Married,Rajshree,,,Lanjewar,,9/4/87,,,,,,,
+24/05/2026 00:00:26,,,,Rajshree,,Lanjewar,,,,,Female,Living,Married,Gaurav,Shankar,Jyoti,Sathawane,,9/1/87,,,,,,,
+24/05/2026 00:00:27,,,,Erisha,,Sathawane,,,Gaurav,Rajshree,Female,Living,Single,,,,,,12/6/24,,,,,,,
+24/05/2026 00:00:28,,,,Rahul,,Sathawane,,,Mahadeo,Shaila,Male,Living,Married,Shruti,,,,,19-Jan,,,,,,,
+24/05/2026 00:00:29,,,,Mrunal,,Sathawane,,,Mahadeo,Shaila,Male,Living,Married,Ashwini,,,,,,,,,,,,
+24/05/2026 00:00:30,,,,Shruti,,,,,,,Female,Living,Married,Rahul,Mahadeo,Shaila,Sathawane,,,,,,,,,
+24/05/2026 00:00:31,,,,Ashwini,,,,,,,Female,Living,Married,Mrunal,Mahadeo,Shaila,Sathawane,,,,,,,,,
+24/05/2026 00:00:32,,,,Takshita,,Sathawane,,,Rahul,Shruti,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:33,,,,Saurabh,,Sathawane,,,Sudhakar,Meenakshi,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:34,,,,Siddharth,,Sathawane,,,Sudhakar,Meenakshi,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:35,,,,Sameer,,Sathawane,,,Sudhakar,Meenakshi,Male,Deceased,Single,,,,,,,,,,,,,
+24/05/2026 00:00:36,,,,Vatsal,,Sathawane,,,Ratnakr,Kalpana,Male,Living,Single,,,,,,5-Sep,,,,,,,
+24/05/2026 00:00:37,,,,Shwetal,,Kalembe,,,Dhashrath,Alka,Male,Living,Married,Trushali,,,,,,,,,,,,
+24/05/2026 00:00:38,,,,Shivani,,Kalembe,,,Dhashrath,Alka,Female,Living,Married,Harshal,,,Khonde,,,,,,,,,
+24/05/2026 00:00:39,,,,Trushali,,,,,,,Female,Living,Married,Shwetal,Dhashrath,Alka,Kalembe,,,,,,,,,
+24/05/2026 00:00:40,,,,Harshal,,Khonde,,,,,Male,Living,Married,Shivani,Dhashrath,Alka,Kalembe,,,,,,,,,
+24/05/2026 00:00:41,,,,Yashmak,,Kalembe,,,Shwetal,Trushali,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:42,,,,Virika,,Khonde,,,Harshal,Shivani,Female,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:43,,,,Daksh,,Khonde,,,Harshal,Shivani,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:44,,,,Aarti,,Bisne,,,Prakash,Kalindi,Female,Living,Married,Vishal,,,Pahune,,16-May,,,,,,,
+24/05/2026 00:00:45,,,,Amit,,Bisne,,,Prakash,Kalindi,Male,Living,Married,Maithali,,,,,20-Sep,,,,,,,
+24/05/2026 00:00:46,,,,Vishal,,Pahune,,,,,Male,Living,Married,Aarti,Prakash,Kalindi,Bisne,,,,,,,,,
+24/05/2026 00:00:47,,,,Maithali,,,,,,,Female,Living,Married,Amit,Prakash,Kalindi,Bisne,,,,,,,,,
+24/05/2026 00:00:48,,,,Shresht,,Pahune,,,Vishal,Aarti,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:49,,,,Shrimei,,Pahune,,,Vishal,Aarti,Female,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:50,,,,Ananya,,Bisne,,,Amit,Maithali,Female,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:51,,,,Vivan,,Bisne,,,Amit,Maithali,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:52,,,,Sumeet,,Waghmare,,,Vijay,Heera,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:53,,,,Susmit,,Waghmare,,,Vijay,Heera,Male,Living,Married,Mayuri,,,,,,,,,,,,
+24/05/2026 00:00:54,,,,Mayuri,,,,,,,Female,Living,Married,Susmit,Vijay,Heera,Waghmare,,,,,,,,,
+24/05/2026 00:00:55,,,,Riyan,,Waghmare,,,Susmit,Mayuri,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:56,,,,Saurabhi,,Waghmare,,,Ajay,Sangeeta,Female,Living,Married,Gaurav,,,Bhirud,,,,,,,,,
+24/05/2026 00:00:57,,,,Aishwarya,,Waghmare,,,Ajay,Sangeeta,Female,Living,Married,Shashwat,,,Bavankar,,,,,,,,,
+24/05/2026 00:00:58,,,,Vedant,,Waghmare,,,Ajay,Sangeeta,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:59,,,,Gaurav,,Bhirud,,,,,Male,Living,Married,Saurabhi,Ajay,Sangeeta,Waghmare,,,,,,,,,
+24/05/2026 00:00:60,,,,Shashwat,,Bavankar,,,,,Male,Living,Married,Aishwarya,Ajay,Sangeeta,Waghmare,,,,,,,,,
+24/05/2026 00:00:61,,,,Aryan,,Waghmare,,,Shashi,Bhavana,Male,Living,Single,,,,,,,,,,,,,
+24/05/2026 00:00:62,,,,Shriya,,Waghmare,,,Shashi,Bhavana,Female,Living,Single,,,,,,,,,,,,,

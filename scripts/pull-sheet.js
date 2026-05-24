@@ -8,6 +8,7 @@ import { writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { execSync } from 'child_process';
 import crypto from 'crypto';
+import 'dotenv/config';
 
 // Default configuration (can also be set via environment variables)
 const WEB_APP_URL = process.env.GOOGLE_SHEET_URL || "https://script.google.com/macros/s/AKfycbygv2ZJ-4Ugn_PgGpeszxxGURhdqXX46XaZQGuj9Z9iVGiKpCcmSff63qJABi1gfX9I/exec";
@@ -82,15 +83,19 @@ async function run() {
     throw new Error(`Google Apps Script returned an error: ${data.error}`);
   }
   
-  if (!Array.isArray(data) || data.length < 2) {
-    console.log('⚠️  No data rows found in spreadsheet.');
+  if (!Array.isArray(data) || data.length === 0) {
+    console.log('⚠️  No data found in spreadsheet.');
     return;
   }
 
   const sheetHeaders = data[0].map(h => String(h).trim());
   const rows = data.slice(1);
 
-  console.log(`📊 Retrieved ${rows.length} rows from Google Sheet.`);
+  if (rows.length === 0) {
+    console.log('ℹ️  Google Sheet has been cleared (0 data rows found). Synchronizing empty sheet to clear local database...');
+  } else {
+    console.log(`📊 Retrieved ${rows.length} rows from Google Sheet.`);
+  }
 
   // Define target CSV headers
   const csvHeaders = [
@@ -204,100 +209,103 @@ async function run() {
     }
   }
 
-  if (scrapbookData && scrapbookData.length > 1) {
-    console.log(`📊 Processing ${scrapbookData.length - 1} scrapbook entries...`);
-    const sbHeaders = scrapbookData[0].map(h => String(h).trim());
-    const sbRows = scrapbookData.slice(1);
+  if (scrapbookData) {
+    const familyPath = resolve('data/family.json');
+    const family = JSON.parse(readFileSync(familyPath, 'utf8'));
 
-    // Helper to find header index by keywords
-    const findHeaderIdx = (headers, keywords, excludeKeywords = []) => {
-      return headers.findIndex(h => {
-        const hl = h.toLowerCase();
-        return keywords.some(k => hl.includes(k)) && !excludeKeywords.some(k => hl.includes(k));
-      });
-    };
+    // Always clear/reset scrapbook if the scrapbook sheet was successfully fetched
+    family.scrapbook = {};
 
-    const ownerIdx = findHeaderIdx(sbHeaders, ['whom', 'about', 'member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
-    const dateIdx = findHeaderIdx(sbHeaders, ['date', 'year'], ['timestamp', 'birth', 'death', 'marriage']);
-    const captionIdx = findHeaderIdx(sbHeaders, ['story', 'caption', 'description', 'text', 'details', 'memory']);
-    const photosIdx = findHeaderIdx(sbHeaders, ['photo', 'picture', 'image', 'upload', 'file']);
-    const tagsIdx = findHeaderIdx(sbHeaders, ['tag', 'with', 'other']);
+    if (scrapbookData.length > 1) {
+      console.log(`📊 Processing ${scrapbookData.length - 1} scrapbook entries...`);
+      const sbHeaders = scrapbookData[0].map(h => String(h).trim());
+      const sbRows = scrapbookData.slice(1);
 
-    if (ownerIdx !== -1) {
-      const familyPath = resolve('data/family.json');
-      const family = JSON.parse(readFileSync(familyPath, 'utf8'));
-
-      // Build name to person ID lookup map
-      const nameToId = {};
-      family.persons.forEach(p => {
-        const fullName = `${p.firstName} ${p.lastName}`.toLowerCase().replace(/\s+/g, '');
-        nameToId[fullName] = p.id;
-        if (p.commonName) {
-          const commonFullName = `${p.commonName} ${p.lastName}`.toLowerCase().replace(/\s+/g, '');
-          nameToId[commonFullName] = p.id;
-          nameToId[p.commonName.toLowerCase().replace(/\s+/g, '')] = p.id;
-        }
-        nameToId[p.firstName.toLowerCase().replace(/\s+/g, '')] = p.id;
-      });
-
-      // Clear/initialize scrapbook map in family object
-      family.scrapbook = {};
-
-      sbRows.forEach(row => {
-        const ownerVal = row[ownerIdx];
-        if (!ownerVal) return;
-
-        const ownerKey = String(ownerVal).toLowerCase().replace(/\s+/g, '');
-        const ownerId = nameToId[ownerKey];
-        if (!ownerId) {
-          console.warn(`  ⚠️ Could not resolve scrapbook owner: "${ownerVal}"`);
-          return;
-        }
-
-        const dateVal = dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]).trim() : 'Unknown Date';
-        const captionVal = captionIdx !== -1 && row[captionIdx] ? String(row[captionIdx]).trim() : 'Memory';
-        
-        // Extract photos (Google Drive links)
-        let photosList = [];
-        if (photosIdx !== -1 && row[photosIdx]) {
-          photosList = String(row[photosIdx])
-            .split(/[\s,]+/)
-            .map(u => u.trim())
-            .filter(u => u.startsWith('http'));
-        }
-        if (photosList.length === 0) {
-          photosList = [null];
-        }
-
-        // Extract tags
-        let tagsList = [];
-        if (tagsIdx !== -1 && row[tagsIdx]) {
-          tagsList = String(row[tagsIdx])
-            .split(',')
-            .map(n => n.trim().toLowerCase().replace(/\s+/g, ''))
-            .filter(Boolean)
-            .map(nameKey => nameToId[nameKey])
-            .filter(Boolean);
-        }
-
-        if (!family.scrapbook[ownerId]) {
-          family.scrapbook[ownerId] = [];
-        }
-
-        family.scrapbook[ownerId].push({
-          date: dateVal,
-          caption: captionVal,
-          photos: photosList,
-          tags: tagsList
+      // Helper to find header index by keywords
+      const findHeaderIdx = (headers, keywords, excludeKeywords = []) => {
+        return headers.findIndex(h => {
+          const hl = h.toLowerCase();
+          return keywords.some(k => hl.includes(k)) && !excludeKeywords.some(k => hl.includes(k));
         });
-      });
+      };
 
-      // Save scrapbook back to family.json
-      writeFileSync(familyPath, JSON.stringify(family, null, 2), 'utf8');
-      console.log(`💾 Successfully merged scrapbook data into family.json!`);
-    } else {
-      console.warn(`  ⚠️ Could not find member/person ID column in Scrapbook sheet.`);
+      const ownerIdx = findHeaderIdx(sbHeaders, ['whom', 'about', 'member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
+      const dateIdx = findHeaderIdx(sbHeaders, ['date', 'year'], ['timestamp', 'birth', 'death', 'marriage']);
+      const captionIdx = findHeaderIdx(sbHeaders, ['story', 'caption', 'description', 'text', 'details', 'memory']);
+      const photosIdx = findHeaderIdx(sbHeaders, ['photo', 'picture', 'image', 'upload', 'file']);
+      const tagsIdx = findHeaderIdx(sbHeaders, ['tag', 'with', 'other']);
+
+      if (ownerIdx !== -1) {
+        // Build name to person ID lookup map
+        const nameToId = {};
+        family.persons.forEach(p => {
+          const fullName = `${p.firstName} ${p.lastName}`.toLowerCase().replace(/\s+/g, '');
+          nameToId[fullName] = p.id;
+          if (p.commonName) {
+            const commonFullName = `${p.commonName} ${p.lastName}`.toLowerCase().replace(/\s+/g, '');
+            nameToId[commonFullName] = p.id;
+            nameToId[p.commonName.toLowerCase().replace(/\s+/g, '')] = p.id;
+          }
+          nameToId[p.firstName.toLowerCase().replace(/\s+/g, '')] = p.id;
+        });
+
+        sbRows.forEach(row => {
+          const ownerVal = row[ownerIdx];
+          if (!ownerVal) return;
+
+          const ownerKey = String(ownerVal).toLowerCase().replace(/\s+/g, '');
+          const ownerId = nameToId[ownerKey];
+          if (!ownerId) {
+            console.warn(`  ⚠️ Could not resolve scrapbook owner: "${ownerVal}"`);
+            return;
+          }
+
+          const dateVal = dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]).trim() : 'Unknown Date';
+          const captionVal = captionIdx !== -1 && row[captionIdx] ? String(row[captionIdx]).trim() : 'Memory';
+          
+          // Extract photos (Google Drive links)
+          let photosList = [];
+          if (photosIdx !== -1 && row[photosIdx]) {
+            photosList = String(row[photosIdx])
+              .split(/[\s,]+/)
+              .map(u => u.trim())
+              .filter(u => u.startsWith('http'));
+          }
+          if (photosList.length === 0) {
+            photosList = [null];
+          }
+
+          // Extract tags
+          let tagsList = [];
+          if (tagsIdx !== -1 && row[tagsIdx]) {
+            tagsList = String(row[tagsIdx])
+              .split(',')
+              .map(n => n.trim().toLowerCase().replace(/\s+/g, ''))
+              .filter(Boolean)
+              .map(nameKey => nameToId[nameKey])
+              .filter(Boolean);
+          }
+
+          if (!family.scrapbook[ownerId]) {
+            family.scrapbook[ownerId] = [];
+          }
+
+          family.scrapbook[ownerId].push({
+            date: dateVal,
+            caption: captionVal,
+            photos: photosList,
+            tags: tagsList
+          });
+        });
+
+        console.log(`💾 Successfully merged scrapbook data into family.json!`);
+      } else {
+        console.warn(`  ⚠️ Could not find member/person ID column in Scrapbook sheet.`);
+      }
     }
+    
+    // Save scrapbook back to family.json
+    writeFileSync(familyPath, JSON.stringify(family, null, 2), 'utf8');
   }
 
   // Validate the data integrity

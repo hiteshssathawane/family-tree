@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node scripts/validate.js)"
+      "Bash(node scripts/validate.js)",
+      "Bash(grep -E \"\\\\.\\(html|js|css|json\\)$\")",
+      "Bash(find /Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement -name \"*Remix*\" -type d)",
+      "Read(//Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement/**)",
+      "Bash(find /Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal -name \"*Family Tree*\" -type d 2>/dev/null | head -10)",
+      "Read(//Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/**)",
+      "Bash(node js/test-transform.js)",
+      "Bash(awk '/\\\\\"persons\\\\\":/,/\\\\\"relationships\\\\\":/{if\\(/\\\\\"id\\\\\".*P0/\\){count++}} END{print \"Total persons: \" count}' \"/Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement/TheFamilyTreeProject/data/family.json\")",
+      "Bash(awk '/\\\\.node \\\\{/,/^  \\\\}/' \"/Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement/TheFamilyTreeProject/The Family Tree \\(Remix\\)/The Family Tree \\(Remix\\) - Canvas.html\")",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(node -c \"/Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement/TheFamilyTreeProject/js/tree-data.js\")",
+      "Bash(python3 -m http.server 8080)",
+      "Bash(chmod +x dev-server.sh)",
+      "Bash(pkill -f \"python3.*http.server\")"
     ]
   }
 }
