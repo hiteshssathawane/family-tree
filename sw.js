@@ -9,28 +9,16 @@ const STATIC_CACHE = [
   'vendor/leaflet.js',
   'vendor/leaflet.css',
   'vendor/fonts.css',
-  'vendor/otpauth.min.js',
   'vendor/fonts/playfair-display-400.woff2',
   'vendor/fonts/playfair-display-700.woff2',
   'vendor/fonts/lato-400.woff2',
   'vendor/fonts/lato-700.woff2'
 ];
 
-const DATA_CACHE = [
-  'data/family.json',
-  'data/auth.json',
-  'data/config.json',
-  'data/i18n/en.json',
-  'data/i18n/mr.json'
-];
-
 // Install event - cache static assets
 self.addEventListener('install', event => {
   event.waitUntil(
-    Promise.all([
-      caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_CACHE)),
-      caches.open(CACHE_NAME + '-data').then(cache => cache.addAll(DATA_CACHE))
-    ])
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_CACHE))
   );
   self.skipWaiting();
 });
@@ -56,17 +44,15 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
   const isIndexHtml = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
-  const isDataFile = url.pathname.includes('/data/');
   const isVendorFile = url.pathname.includes('/vendor/') || url.pathname.includes('/icons/');
 
-  // Network-first for data files and index.html (always get fresh)
-  if (isIndexHtml || isDataFile) {
+  // Network-first for index.html (always get fresh)
+  if (isIndexHtml) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
           const responseClone = response.clone();
-          const cacheName = isDataFile ? CACHE_NAME + '-data' : CACHE_NAME;
-          caches.open(cacheName).then(cache => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
           return response;
         })
         .catch(() => caches.match(event.request))

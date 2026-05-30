@@ -54,11 +54,10 @@ jobs:
           FAMILY_PASSWORD: ${{ secrets.FAMILY_PASSWORD }}
         run: |
           node scripts/encrypt.js
-          cp dist/index.html index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
       - uses: actions/deploy-pages@v4
         id: deployment

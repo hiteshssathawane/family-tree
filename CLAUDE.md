@@ -50,7 +50,7 @@ family-tree/
 ├── data/
 │   ├── family.json               ← ALL family data (single connected tree)
 │   ├── family.schema.json
-│   ├── auth.json                 ← SHA-256 hashes + TOTP secrets + roles
+│   ├── auth.json                 ← SHA-256 hashes + roles
 │   ├── config.json               ← Feature flags (mapView: false, etc.)
 │   └── i18n/
 │       ├── en.json
@@ -88,7 +88,7 @@ family-tree/
 
 ---
 
-## Security Model (3 Layers — DO NOT CHANGE)
+## Security Model (2 Layers — DO NOT CHANGE)
 
 ### Layer 1 — staticrypt AES-256
 - Encrypts entire `index.html` before deploy
@@ -101,17 +101,6 @@ family-tree/
 - Compared against `data/auth.json`
 - Match → role assigned → session stored in `sessionStorage`
 - No match → Guest role (deceased ancestors only, no living member data)
-
-### Layer 3 — TOTP (Google Authenticator)
-- Required only for Admin and Contributor roles
-- TOTP secret stored in `data/auth.json` as base32 string
-- Browser computes TOTP client-side using `otpauth` library (in vendor/)
-- Admin generates QR codes via `node scripts/setup-auth.js`, shares via WhatsApp
-
-### Watermark (post-login)
-- Tiled diagonal: `[FirstName LastName · DD Mon YYYY]`
-- CSS: `position:fixed; inset:0; pointer-events:none; opacity:0.07; z-index:9999`
-- Guest gets: `Guest · DD Mon YYYY`
 
 ### Screenshot Deterrence
 - `@media print { body { display: none; } }`
@@ -139,7 +128,6 @@ P007 Arjun Sathawane           ← Son
 ### Auth — Hitesh (Admin)
 ```
 Hash input : hiteshsathawane29121985
-TOTP secret: VPQ5GILZLMU4FC25
 Role       : admin
 ```
 
@@ -153,8 +141,8 @@ Role       : admin
     {
       "hash": "sha256(lowercase(fullname)+DDMMYYYY)",
       "role": "admin",
-      "totpRequired": true,
-      "totpSecret": "BASE32SECRETHERE",
+      "totpRequired": false,
+      "totpSecret": null,
       "displayName": "Hitesh Sathawane"
     }
   ],
@@ -230,7 +218,6 @@ Admin panel (browser)
 | FlexSearch | vendor/flexsearch.bundle.js | Full-text search |
 | Leaflet.js | vendor/leaflet.js + leaflet.css | Maps (disabled, kept for Phase 4 birthplace pin) |
 | Playfair Display + Lato | vendor/fonts.css + vendor/fonts/ | Heritage fonts (offline) |
-| otpauth | vendor/otpauth.min.js | TOTP client-side |
 
 To add a library: `node scripts/download-vendors.js` or `curl` into `vendor/` — never use CDN.
 
@@ -240,7 +227,7 @@ To add a library: `node scripts/download-vendors.js` or `curl` into `vendor/` �
 
 ```bash
 node scripts/validate.js                              # Validate family.json
-node scripts/setup-auth.js "Hitesh Sathawane" "29121985"  # Generate hash + TOTP QR
+node scripts/setup-auth.js "Hitesh Sathawane" "29121985"  # Generate hash for auth.json
 node scripts/gedcom-import.js file.ged                # Import GEDCOM
 node scripts/csv-import.js members.csv                # Bulk CSV import
 node scripts/encrypt.js                               # Encrypt (needs FAMILY_PASSWORD env)
@@ -277,7 +264,6 @@ node scripts/encrypt.js                               # Encrypt (needs FAMILY_PA
 1. Browser → app URL → enter family password → login with name + DOB
 2. Admin panel → Add member form (name, DOB, gender, relationship, photo)
 3. Changes auto-commit to GitHub via Cloudflare Worker
-4. TOTP: scan QR code (sent by Hitesh on WhatsApp) in Google Authenticator — once only
 
 ---
 
@@ -343,11 +329,8 @@ Mobile layout (768px breakpoint), 3-node centred view, swipe navigation, bottom 
 - Event creator for any member
 
 ### 🔲 Phase 7 — Security + PWA + i18n + Polish
-- TOTP login flow (3 screens)
-- Dynamic watermark (post-login)
 - Language toggle (en ↔ mr) in localStorage
 - PWA: manifest + service worker (offline app shell)
-- GEDCOM export
 - Performance: lazy-load photos, virtualise tree >300 nodes
 
 ---
@@ -361,7 +344,6 @@ Mobile layout (768px breakpoint), 3-node centred view, swipe navigation, bottom 
 | Cloudflare R2 | Photo storage | 10GB | ~1.2GB / 200 members |
 | Cloudflare Workers | GitHub API proxy | 100k req/day | Occasional commits |
 | staticrypt | Page encryption | Free, MIT | One CLI run per deploy |
-| TOTP | Auth | Free (math) | Client-side only |
 | FlexSearch | Search | Free, MIT | Client-side only |
 
 **Total: ₹0/month. Forever.**

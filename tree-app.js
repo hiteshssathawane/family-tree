@@ -1,7 +1,7 @@
 /* ============================================================
    THE FAMILY TREE — Canvas app
    ============================================================ */
-(function () {
+window.initTreeApp = function () {
   const F = window.FAMILY;
   const ME = F.ME;
 
@@ -34,7 +34,7 @@
   }
   function thumbHtml(p, cls) {
     const cl = cls || "node-thumb";
-    if (p.photo) return `<div class="${cl}"><img src="${p.photo}" alt=""></div>`;
+    if (p.photo) return `<div class="${cl}"><img src="${p.photo}" alt="" loading="lazy"></div>`;
     // Choose a soft warm tone for the bubble based on a hash of the id
     const palette = ["#7AAD7A","#A5D6A7","#9EBE9C","#C9B98E","#E0AB73","#D9886B","#B79774"];
     const idx = Math.abs(hashCode(p.id)) % palette.length;
@@ -457,9 +457,28 @@
     world.classList.toggle("animating", !!animate);
     world.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
     updateMinimap();
+    updateVirtualization();
     if (animate) {
       setTimeout(() => world.classList.remove("animating"), 650);
     }
+  }
+  function updateVirtualization() {
+    if (!F || !F.people || F.people.length <= 300) return;
+    const rect = canvas.getBoundingClientRect();
+    const pad = 300;
+    F.people.forEach(p => {
+      const n = nodesById[p.id];
+      if (!n) return;
+      const screenX = rect.left + rect.width / 2 + (p.x * view.scale + view.x);
+      const screenY = rect.top + rect.height / 2 + (p.y * view.scale + view.y);
+      const isVisible = (
+        screenX >= -pad &&
+        screenX <= window.innerWidth + pad &&
+        screenY >= -pad &&
+        screenY <= window.innerHeight + pad
+      );
+      n.style.display = isVisible ? '' : 'none';
+    });
   }
   function setView(v, animate) {
     view.x = v.x; view.y = v.y;
@@ -730,7 +749,9 @@
     const photoEl = document.getElementById("lb-profile-photo");
     photoEl.innerHTML = "";
     if (p.photo) {
-      const img = document.createElement("img"); img.src = p.photo;
+      const img = document.createElement("img"); 
+      img.src = p.photo;
+      img.loading = "lazy";
       photoEl.appendChild(img);
     } else {
       photoEl.textContent = initials(p.name);
@@ -742,11 +763,13 @@
       const img = document.createElement("img");
       img.className = "lb-cover-img";
       img.src = p.backgroundPhoto;
+      img.loading = "lazy";
       cover.insertBefore(img, photoEl);
     } else if (p.photo) {
       const img = document.createElement("img");
       img.className = "lb-cover-img";
       img.src = p.photo;
+      img.loading = "lazy";
       img.style.filter = "blur(8px) saturate(1.05)";
       img.style.transform = "scale(1.1)";
       cover.insertBefore(img, photoEl);
@@ -810,7 +833,7 @@
           <div class="scrap-photos count-${photos.length}">
             ${photos.map(ph => `
               <div class="scrap-photo ${ph ? "has-photo" : ""}">
-                ${ph ? `<img src="${ph}" alt="">` : `
+                ${ph ? `<img src="${ph}" alt="" loading="lazy">` : `
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:#8a5a36">
                     <rect x="3" y="5" width="18" height="14" rx="2"/>
                     <circle cx="9" cy="11" r="1.5"/>
@@ -917,4 +940,4 @@
   }
   init();
   window.addEventListener("resize", () => updateMinimap());
-})();
+};

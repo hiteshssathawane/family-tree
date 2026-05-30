@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
+  <meta name="robots" content="noindex, nofollow" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>The Family Tree — Sign In</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -10,7 +11,6 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
-  <script src="vendor/otpauth.min.js"></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -1240,32 +1240,6 @@
       height: 20px;
     }
 
-    /* Auth Code Input */
-    .totp-box {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 14px;
-    }
-
-    .totp-d {
-      width: 40px;
-      height: 48px;
-      border: 0.5px solid rgba(90, 60, 30, .25);
-      border-radius: 8px;
-      font-size: 22px;
-      font-weight: 700;
-      text-align: center;
-      color: var(--g-text, #1a3a2a);
-    }
-
-    .totp-d:focus {
-      border-color: var(--g-text, #1a3a2a);
-      outline: none;
-    }
-  
-
-
   :root {
     --bg: #f7f1e3;
     --bg-deep: #ede4cc;
@@ -1891,8 +1865,8 @@
     font-family: "Cormorant Garamond", serif;
   }
 
-  /* Language toggle button */
-  .lang-toggle-btn {
+  /* Header Chrome buttons styling (Language, Logout) */
+  .lang-toggle-btn, .logout-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1911,7 +1885,7 @@
     flex-shrink: 0;
     margin-right: 8px;
   }
-  .lang-toggle-btn:hover {
+  .lang-toggle-btn:hover, .logout-btn:hover {
     background: #fdfaf3;
     border-color: rgba(184,90,42,0.4);
     color: var(--sunset-2);
@@ -3123,25 +3097,6 @@
         <button class="signin" type="button" onclick="nextStep2()">CONTINUE</button>
       </div>
 
-      <!-- Step 3: Auth Code -->
-      <div class="form-step" id="step3">
-        <div style="margin-bottom: 8px; text-align: center;">
-          <label
-            style="display: block; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;">Authentication
-            Code</label>
-          <div class="totp-box" id="totp-box">
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,0)" onpaste="totpPaste(event)"
-              style="padding: 0;" />
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,1)" style="padding: 0;" />
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,2)" style="padding: 0;" />
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,3)" style="padding: 0;" />
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,4)" style="padding: 0;" />
-            <input type="text" class="totp-d" maxlength="1" onkeyup="totpInput(this,5)" style="padding: 0;" />
-          </div>
-        </div>
-        <button class="signin" type="submit" onclick="completeLogin()">VERIFY & ENTER</button>
-      </div>
-
     </form>
   </main>
   </div>
@@ -3185,6 +3140,7 @@
         <div class="mc-thumb" id="me-chip-thumb">M</div>
         <span class="mc-name">Manisha</span>
       </div>
+      <button class="logout-btn" id="logout-btn" title="Log Out / लॉग आउट">Logout</button>
     </div>
 
     <div class="tags-row" id="tags-row"></div>
@@ -3354,24 +3310,38 @@
     let matchedUserEntry = null;
 
     window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const res = await fetch('data/auth.json');
-        authData = await res.json();
-      } catch (e) {
-        console.error('Failed to load auth.json:', e);
+      if (window.AUTH_DATA) {
+        authData = window.AUTH_DATA;
+      } else {
+        try {
+          const res = await fetch('data/auth.json');
+          authData = await res.json();
+        } catch (e) {
+          console.error('Failed to load auth.json:', e);
+        }
       }
 
       // Language Toggle logic
-      window.CURRENT_LANG = 'EN';
+      window.CURRENT_LANG = localStorage.getItem('family_tree_lang') || 'EN';
       const langBtn = document.getElementById('lang-toggle');
       if (langBtn) {
+        langBtn.textContent = window.CURRENT_LANG === 'EN' ? 'EN' : 'मराठी';
         langBtn.addEventListener('click', () => {
           const nextLang = window.CURRENT_LANG === 'EN' ? 'MR' : 'EN';
           window.CURRENT_LANG = nextLang;
+          localStorage.setItem('family_tree_lang', nextLang);
           langBtn.textContent = nextLang === 'EN' ? 'EN' : 'मराठी';
           if (window.updateLanguage) {
             window.updateLanguage(nextLang);
           }
+        });
+      }
+
+      // Logout button logic
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          location.reload();
         });
       }
 
@@ -3385,7 +3355,7 @@
 
     function nextStep() {
       const pwd = document.getElementById('familyPassword').value;
-      if (pwd.trim().toLowerCase() !== 'sathawane') {
+      if (pwd.trim() !== 'InLovingMemoryOfJyoti=Energy') {
         alert('Incorrect family password. Please try again.');
         return;
       }
@@ -3449,74 +3419,14 @@
 
       matchedUserEntry = matched;
 
-      document.getElementById('step2').classList.remove('active');
-      document.getElementById('step3').classList.add('active');
-      setTimeout(() => document.querySelectorAll('.totp-d')[0].focus(), 100);
-    }
-
-    function totpInput(input, index) {
-      if (input.value.length === 1 && index < 5) {
-        document.querySelectorAll('.totp-d')[index + 1].focus();
-      }
-      // Simple backspace handling if empty
-      if (input.value.length === 0 && index > 0 && event.key === 'Backspace') {
-        document.querySelectorAll('.totp-d')[index - 1].focus();
-      }
-    }
-
-    function totpPaste(event) {
-      event.preventDefault();
-      let paste = (event.clipboardData || window.clipboardData).getData('text');
-      paste = paste.replace(/\D/g, '').substring(0, 6);
-      const inputs = document.querySelectorAll('.totp-d');
-      for (let i = 0; i < paste.length; i++) {
-        inputs[i].value = paste[i];
-      }
-      if (paste.length > 0) {
-        inputs[Math.min(paste.length, 5)].focus();
-      }
+      completeLogin();
     }
 
     function completeLogin() {
-      const inputs = document.querySelectorAll('.totp-d');
-      const code = Array.from(inputs).map(i => i.value).join('');
-      if (code.length !== 6) {
-        alert('Please enter the 6-digit authentication code.');
-        return;
-      }
-
       if (!matchedUserEntry) {
         alert('Session error. Please restart login.');
         location.reload();
         return;
-      }
-
-      // Validate TOTP if required
-      if (matchedUserEntry.totpRequired && matchedUserEntry.totpSecret) {
-        try {
-          const totp = new OTPAuth.TOTP({
-            issuer: "TheFamilyTree",
-            label: matchedUserEntry.displayName,
-            algorithm: "SHA1",
-            digits: 6,
-            period: 30,
-            secret: OTPAuth.Secret.fromBase32(matchedUserEntry.totpSecret)
-          });
-          
-          const delta = totp.validate({
-            token: code,
-            window: 1
-          });
-          
-          if (delta === null) {
-            alert('Invalid authentication code. Please try again.');
-            return;
-          }
-        } catch (e) {
-          console.error('TOTP validation error:', e);
-          alert('Error validating code. Please try again.');
-          return;
-        }
       }
 
       // Hide login container
@@ -3528,78 +3438,99 @@
       // Add logged-in class to body
       document.body.classList.add('logged-in');
 
-      // Dynamically load scripts tree-helpers.js, tree-data.js and tree-app.js
-      const cacheBust = '?v=' + Date.now();
-      const s0 = document.createElement('script');
-      s0.src = 'tree-helpers.js' + cacheBust;
-      s0.onload = () => {
-        const s1 = document.createElement('script');
-        s1.src = 'tree-data.js' + cacheBust;
-        s1.onload = () => {
-          let initialMe = "HITESH_JYOTI_SHANKAR_SATHAWANE";
-          
-          const rawData = window.FAMILY_DATA || window.FAMILY;
-          if (matchedUserEntry && rawData && rawData.persons) {
-            const matchedRaw = rawData.persons.find(p => {
-              const directName = `${p.firstName} ${p.lastName}`.toLowerCase();
-              const targetName = matchedUserEntry.displayName.toLowerCase();
-              if (directName === targetName) return true;
-              
-              if (p.gender === 'F' || p.gender === 'f') {
-                const marriage = rawData.relationships.find(r => 
-                  r.type === 'marriage' && (r.person1Id === p.id || r.person2Id === p.id)
-                );
-                if (marriage) {
-                  const spouseId = marriage.person1Id === p.id ? marriage.person2Id : marriage.person1Id;
-                  const husband = rawData.persons.find(h => h.id === spouseId && (h.gender === 'M' || h.gender === 'm'));
-                  if (husband && husband.lastName) {
-                    const marriedName = `${p.firstName} ${husband.lastName}`.toLowerCase();
-                    if (marriedName === targetName) return true;
-                  }
+      // Shared function to bootstrap and run the application logic after loading window.FAMILY_DATA
+      function runApplication() {
+        let initialMe = "HITESH_JYOTI_SHANKAR_SATHAWANE";
+        
+        const rawData = window.FAMILY_DATA || window.FAMILY;
+        if (matchedUserEntry && rawData && rawData.persons) {
+          const matchedRaw = rawData.persons.find(p => {
+            const directName = `${p.firstName} ${p.lastName}`.toLowerCase();
+            const targetName = matchedUserEntry.displayName.toLowerCase();
+            if (directName === targetName) return true;
+            
+            if (p.gender === 'F' || p.gender === 'f') {
+              const marriage = rawData.relationships.find(r => 
+                r.type === 'marriage' && (r.person1Id === p.id || r.person2Id === p.id)
+              );
+              if (marriage) {
+                const spouseId = marriage.person1Id === p.id ? marriage.person2Id : marriage.person1Id;
+                const husband = rawData.persons.find(h => h.id === spouseId && (h.gender === 'M' || h.gender === 'm'));
+                if (husband && husband.lastName) {
+                  const marriedName = `${p.firstName} ${husband.lastName}`.toLowerCase();
+                  if (marriedName === targetName) return true;
                 }
               }
-              return false;
-            });
-            if (matchedRaw) {
-              initialMe = matchedRaw.id;
             }
-          } else if (matchedUserEntry && window.FAMILY && window.FAMILY.people) {
-            const matchedPerson = window.FAMILY.people.find(p => {
-              const targetName = matchedUserEntry.displayName.toLowerCase();
-              if (p.name.toLowerCase() === targetName) return true;
-              const baseName = p.name.replace(/\s*\([^)]+\)/g, '').toLowerCase().trim();
-              if (baseName === targetName) return true;
-              return false;
-            });
-            if (matchedPerson) {
-              initialMe = matchedPerson.id;
-            }
+            return false;
+          });
+          if (matchedRaw) {
+            initialMe = matchedRaw.id;
           }
-
-          if (window.FAMILY_DATA && window.processRawFamilyData) {
-            window.FAMILY = window.processRawFamilyData(window.FAMILY_DATA, initialMe);
-          } else if (window.FAMILY) {
-            window.FAMILY.ME = initialMe;
+        } else if (matchedUserEntry && window.FAMILY && window.FAMILY.people) {
+          const matchedPerson = window.FAMILY.people.find(p => {
+            const targetName = matchedUserEntry.displayName.toLowerCase();
+            if (p.name.toLowerCase() === targetName) return true;
+            const baseName = p.name.replace(/\s*\([^)]+\)/g, '').toLowerCase().trim();
+            if (baseName === targetName) return true;
+            return false;
+          });
+          if (matchedPerson) {
+            initialMe = matchedPerson.id;
           }
+        }
 
-          // Update the ME Chip display to show the logged-in user!
-          const meChipName = document.querySelector('#me-chip .mc-name');
-          const meChipThumb = document.querySelector('#me-chip-thumb');
-          const meChip = document.getElementById('me-chip');
-          const mePerson = window.FAMILY.people.find(p => p.id === window.FAMILY.ME);
-          if (mePerson) {
-            meChipName.textContent = mePerson.firstName;
-            meChipThumb.textContent = mePerson.firstName[0];
-            meChip.title = `${mePerson.name} (you)`;
-          }
+        if (window.FAMILY_DATA && window.processRawFamilyData) {
+          window.FAMILY = window.processRawFamilyData(window.FAMILY_DATA, initialMe);
+        } else if (window.FAMILY) {
+          window.FAMILY.ME = initialMe;
+        }
 
-          const s2 = document.createElement('script');
-          s2.src = 'tree-app.js' + cacheBust;
-          document.body.appendChild(s2);
+        // Update the ME Chip display to show the logged-in user!
+        const meChipName = document.querySelector('#me-chip .mc-name');
+        const meChipThumb = document.querySelector('#me-chip-thumb');
+        const meChip = document.getElementById('me-chip');
+        const mePerson = window.FAMILY.people.find(p => p.id === window.FAMILY.ME);
+        if (mePerson) {
+          meChipName.textContent = mePerson.firstName;
+          meChipThumb.textContent = mePerson.firstName[0];
+          meChip.title = `${mePerson.name} (you)`;
+        }
+
+        // Call the tree visual app initializer
+        if (window.initTreeApp) {
+          window.initTreeApp();
+        }
+
+        // Apply persistent language preference immediately
+        if (window.updateLanguage) {
+          window.updateLanguage(window.CURRENT_LANG);
+        }
+      }
+
+      if (window.BUNDLED_MODE) {
+        // In bundled/production mode, all scripts and data are already inlined
+        runApplication();
+      } else {
+        // In local/development mode, dynamically load files
+        const cacheBust = '?v=' + Date.now();
+        const s0 = document.createElement('script');
+        s0.src = 'tree-helpers.js' + cacheBust;
+        s0.onload = () => {
+          const s1 = document.createElement('script');
+          s1.src = 'tree-data.js' + cacheBust;
+          s1.onload = () => {
+            const s2 = document.createElement('script');
+            s2.src = 'tree-app.js' + cacheBust;
+            s2.onload = () => {
+              runApplication();
+            };
+            document.body.appendChild(s2);
+          };
+          document.body.appendChild(s1);
         };
-        document.body.appendChild(s1);
-      };
-      document.body.appendChild(s0);
+        document.body.appendChild(s0);
+      }
     }
   </script>
 </body>

@@ -67,20 +67,8 @@ try {
 const normalised = (fullName.toLowerCase().replace(/\s+/g, '') + dob.replace(/\D/g, '')).replace(/[^a-z0-9]/g, '');
 const hash = createHash('sha256').update(normalised).digest('hex');
 
-// Generate TOTP secret (base32)
-const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-const secretBytes = randomBytes(20);
-let totpSecret = '';
-for (let i = 0; i < 16; i++) {
-  totpSecret += base32chars[secretBytes[i] % 32];
-}
-
-// TOTP is required for admin and contributor
-const totpRequired = ['admin', 'contributor'].includes(role);
-
-// QR code URL (use Google Charts API — free, no account)
-const otpauthUri = `otpauth://totp/FamilyTree:${encodeURIComponent(fullName)}?secret=${totpSecret}&issuer=FamilyTree&algorithm=SHA1&digits=6&period=30`;
-const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUri)}`;
+// TOTP is disabled
+const totpRequired = false;
 
 // Auth entry to add to auth.json
 const authEntry = {
@@ -88,7 +76,7 @@ const authEntry = {
   role,
   branch,
   totpRequired,
-  totpSecret: totpRequired ? totpSecret : null,
+  totpSecret: null,
   displayName: fullName
 };
 
@@ -99,16 +87,8 @@ console.log(`  Member  : ${fullName}`);
 console.log(`  DOB     : ${dob}`);
 console.log(`  Role    : ${role}`);
 console.log(`  Branch  : ${branch}`);
-console.log(`  TOTP    : ${totpRequired ? 'Required' : 'Not required'}`);
 console.log('\n─── Add this to data/auth.json → "entries" array: ───\n');
 console.log(JSON.stringify(authEntry, null, 2));
-
-if (totpRequired) {
-  console.log('\n─── TOTP QR Code ───');
-  console.log(`\nOpen this URL in your browser, screenshot the QR, send to ${fullName} on WhatsApp:`);
-  console.log(`\n  ${qrUrl}\n`);
-  console.log('They scan it once in Google Authenticator → done forever.');
-}
 
 // Optionally auto-update auth.json
 const authPath = resolve('data/auth.json');
