@@ -598,6 +598,7 @@ window.processRawFamilyData = function (rawData, initialMe) {
   const singleWidth = 200;
   const childGap = 100;
   const inLawExtraPadding = 560;
+  const verticalLevelHeight = 450;
 
   function assignWidths(node) {
     if (!node) return;
@@ -645,11 +646,32 @@ window.processRawFamilyData = function (rawData, initialMe) {
   const computedCoords = {};
   const levels = {};
 
+  // Cache root nodes IDs to order ancestor branches from left to right
+  const rootIds = rootNodes.map(rn => rn.id);
+
+  function getRootMarriageId(personId) {
+    let currentId = personId;
+    const maxWalk = 15;
+    let walk = 0;
+    while (walk < maxWalk) {
+      const pLinks = relationships.filter(r => r.type === 'parent-child' && r.childId === currentId);
+      if (pLinks.length === 0) break;
+      const fatherLink = pLinks.find(link => {
+        const parent = persons.find(x => x.id === link.parentId);
+        return parent && (parent.gender === 'M' || parent.gender === 'm');
+      });
+      currentId = fatherLink ? fatherLink.parentId : pLinks[0].parentId;
+      walk++;
+    }
+    const m = marriages.find(mar => mar.husbandId === currentId || mar.wifeId === currentId);
+    return m ? m.id : null;
+  }
+
   function assignAbsoluteCoords(node, absX, lvl) {
     if (!node) return;
 
     if (node.type === 'single') {
-      computedCoords[node.personId] = { x: absX, y: lvl * 420 };
+      computedCoords[node.personId] = { x: absX, y: lvl * verticalLevelHeight };
       levels[node.personId] = lvl;
     } else {
       const husband = persons.find(x => x.id === node.husbandId);
@@ -673,11 +695,23 @@ window.processRawFamilyData = function (rawData, initialMe) {
       const wParentX = getAverageParentX(wife);
 
       let swap = false;
-      if (hParentX !== null && wParentX !== null) {
+
+      // 1. Compare top-level root marriage indices to align descendants with their parent branches
+      const hRootId = getRootMarriageId(husband.id);
+      const wRootId = getRootMarriageId(wife.id);
+      const hRootIdx = hRootId ? rootIds.indexOf(hRootId) : -1;
+      const wRootIdx = wRootId ? rootIds.indexOf(wRootId) : -1;
+
+      if (hRootIdx !== -1 && wRootIdx !== -1 && hRootIdx !== wRootIdx) {
+        // If husband's root branch is placed to the right of wife's root branch, swap them
+        swap = hRootIdx > wRootIdx;
+      } else if (hParentX !== null && wParentX !== null) {
+        // 2. Default fallback: Compare direct parent coordinates if both are on canvas
         if (hParentX > wParentX) {
           swap = true;
         }
       } else if (hParentX !== null) {
+        // 3. Fallback: Position descendant closer to their parents
         if (hParentX > absX) {
           swap = true;
         }
@@ -690,8 +724,8 @@ window.processRawFamilyData = function (rawData, initialMe) {
       const leftId = swap ? wife.id : husband.id;
       const rightId = swap ? husband.id : wife.id;
 
-      computedCoords[leftId] = { x: Math.round(absX - 90), y: lvl * 420 };
-      computedCoords[rightId] = { x: Math.round(absX + 90), y: lvl * 420 };
+      computedCoords[leftId] = { x: Math.round(absX - 90), y: lvl * verticalLevelHeight };
+      computedCoords[rightId] = { x: Math.round(absX + 90), y: lvl * verticalLevelHeight };
       levels[leftId] = lvl;
       levels[rightId] = lvl;
 

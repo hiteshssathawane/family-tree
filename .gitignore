@@ -11,3 +11,6 @@ staticrypt-password.txt
 
 # vendor/ is intentionally committed — local copies of libraries
 # so the app works without any CDN or internet dependency
+
+# Ignore local database backups
+backups/
