@@ -14,3 +14,7 @@ staticrypt-password.txt
 
 # Ignore local database backups
 backups/
+
+# Playwright session (contains Google login cookies — never commit)
+.playwright-session/
+.form-progress.json

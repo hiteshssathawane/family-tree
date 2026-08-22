@@ -13,12 +13,19 @@
     "media:sync": "node scripts/sync-media.js",
     "encrypt": "node scripts/encrypt.js",
     "clear:data": "node scripts/clear-data.js",
+    "form:dry-run": "node scripts/fill-form.js --dry-run",
+    "form:next": "node scripts/fill-form.js",
+    "form:all": "node scripts/fill-form.js --all",
+    "form:status": "node scripts/fill-form.js --status",
+    "form:reset": "node scripts/fill-form.js --reset",
+    "form:one": "node scripts/fill-form.js --name",
     "prebuild": "npm run validate"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1051.0",
     "ajv": "^8.20.0",
     "dotenv": "^17.4.2",
+    "playwright": "^1.61.0",
     "staticrypt": "^3.4.0"
   },
   "engines": {

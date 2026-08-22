@@ -3321,6 +3321,27 @@
         }
       }
 
+      // Auto-login check from StatiCrypt unified form
+      const pendingName = sessionStorage.getItem('staticrypt_pending_name');
+      const pendingDob = sessionStorage.getItem('staticrypt_pending_dob');
+      if (pendingName && pendingDob) {
+        sessionStorage.removeItem('staticrypt_pending_name');
+        sessionStorage.removeItem('staticrypt_pending_dob');
+        document.getElementById('fullName').value = pendingName;
+        document.getElementById('dob').value = pendingDob;
+        setTimeout(() => {
+          nextStep2().catch(e => console.error('Auto-login error:', e));
+        }, 50);
+      } else if (window.BUNDLED_MODE) {
+        // Skip step 1 (duplicate Family Password) in production mode
+        const s1 = document.getElementById('step1');
+        const s2 = document.getElementById('step2');
+        if (s1 && s2) {
+          s1.classList.remove('active');
+          s2.classList.add('active');
+        }
+      }
+
       // Language Toggle logic
       window.CURRENT_LANG = localStorage.getItem('family_tree_lang') || 'EN';
       const langBtn = document.getElementById('lang-toggle');

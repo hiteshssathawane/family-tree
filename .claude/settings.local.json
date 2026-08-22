@@ -14,7 +14,10 @@
       "Bash(node -c \"/Users/hiteshsathawane/Library/CloudStorage/OneDrive-Personal/Developement/TheFamilyTreeProject/js/tree-data.js\")",
       "Bash(python3 -m http.server 8080)",
       "Bash(chmod +x dev-server.sh)",
-      "Bash(pkill -f \"python3.*http.server\")"
+      "Bash(pkill -f \"python3.*http.server\")",
+      "Bash(npx playwright *)",
+      "Bash(node scripts/fill-form.js --dry-run)",
+      "Bash(node scripts/fill-form.js --status)"
     ]
   }
 }
