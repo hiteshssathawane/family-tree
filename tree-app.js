@@ -73,6 +73,11 @@ window.initTreeApp = function () {
           escapeHtml(modalDisplayName) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
       }
     }
+    // Update calendar panel if it is visible
+    const calendarEl = document.getElementById("calendar-panel");
+    if (calendarEl && calendarEl.style.display !== "none") {
+      renderCalendar();
+    }
   };
 
   /* ============================================================
@@ -892,18 +897,522 @@ window.initTreeApp = function () {
   });
 
   /* ============================================================
-     MOBILE NAV
+     VIEW SWITCHING & CALENDAR LOGIC (PHASE 6)
      ============================================================ */
-  document.querySelectorAll(".mnav-btn").forEach(b => {
-    b.addEventListener("click", () => {
-      document.querySelectorAll(".mnav-btn").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      const k = b.dataset.nav;
-      if (k === "search") setTimeout(() => search.focus(), 60);
-      else if (k === "profile" || k === "timeline") openPerson(ME);
-      else if (k === "tree") centerOnMe();
+  let activeCalBranch = "all";
+  let activeCalType = "all";
+  let calSearchQuery = "";
+
+  function switchView(viewName) {
+    const canvasEl = document.getElementById("canvas");
+    const zoomEl = document.querySelector(".zoom-ctrls");
+    const minimapEl = document.getElementById("minimap-container") || document.getElementById("minimap");
+    const calendarEl = document.getElementById("calendar-panel");
+    const tagsRowEl = document.getElementById("tags-row");
+
+    // Sync Desktop Tabs
+    document.querySelectorAll(".top-tabs button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === viewName);
+    });
+
+    // Sync Mobile Tabs
+    document.querySelectorAll(".mnav-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.nav === viewName);
+    });
+
+    if (viewName === "calendar") {
+      if (canvasEl) canvasEl.style.display = "none";
+      if (zoomEl) zoomEl.style.display = "none";
+      if (minimapEl) minimapEl.style.display = "none";
+      if (tagsRowEl) tagsRowEl.style.display = "none";
+      if (calendarEl) {
+        calendarEl.style.display = "flex";
+        renderCalendar();
+      }
+    } else {
+      // Default to "tree"
+      if (calendarEl) calendarEl.style.display = "none";
+      if (canvasEl) canvasEl.style.display = "block";
+      if (zoomEl) zoomEl.style.display = "flex";
+      if (minimapEl) minimapEl.style.display = "block";
+      if (tagsRowEl) tagsRowEl.style.display = "flex";
+      
+      setTimeout(() => {
+        centerOnMe();
+      }, 50);
+    }
+  }
+
+  // Desktop Tabs Click Listener
+  document.querySelectorAll(".top-tabs button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      if (tab) switchView(tab);
     });
   });
+
+  // Mobile Bottom Nav Listener
+  document.querySelectorAll(".mnav-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      const k = b.dataset.nav;
+      if (k === "search") {
+        switchView("tree");
+        setTimeout(() => search.focus(), 60);
+      } else if (k === "profile") {
+        openPerson(ME);
+      } else if (k === "calendar") {
+        switchView("calendar");
+      } else if (k === "tree") {
+        switchView("tree");
+      }
+    });
+  });
+
+  // Calendar render functions
+  function calculateNextOccur(dateStr, startYear) {
+    if (!dateStr) return null;
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length < 3) return null;
+    const [year, month, day] = parts;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let nextOcc = new Date(today.getFullYear(), month - 1, day);
+    nextOcc.setHours(0, 0, 0, 0);
+    
+    if (nextOcc.getTime() < today.getTime()) {
+      nextOcc.setFullYear(today.getFullYear() + 1);
+    }
+    
+    const diffMs = nextOcc.getTime() - today.getTime();
+    const daysLeft = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    
+    const milestone = startYear ? (nextOcc.getFullYear() - startYear) : null;
+    
+    return { nextOcc, daysLeft, milestone };
+  }
+
+  function renderCalendar() {
+    const listEl = document.getElementById("calendar-list");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+
+    const rawData = window.FAMILY_DATA || window.FAMILY;
+    if (!rawData) {
+      listEl.innerHTML = `<div class="cal-empty">Could not load family data.</div>`;
+      return;
+    }
+
+    // Set header translations
+    const panelTitle = document.getElementById("cal-panel-title");
+    const exportText = document.getElementById("cal-export-text");
+    const searchInput = document.getElementById("cal-search-input");
+    const typeAll = document.getElementById("cal-type-all");
+    const typeBirthdays = document.getElementById("cal-type-birthdays");
+    const typeAnniversaries = document.getElementById("cal-type-anniversaries");
+
+    if (window.CURRENT_LANG === "MR") {
+      if (panelTitle) panelTitle.textContent = "कुटुंब दिनदर्शिका";
+      if (exportText) exportText.textContent = "दिनदर्शिका डाउनलोड करा (.ics)";
+      if (searchInput) searchInput.placeholder = "कार्यक्रम शोधा...";
+      if (typeAll) typeAll.textContent = "सर्व";
+      if (typeBirthdays) typeBirthdays.textContent = "वाढदिवस";
+      if (typeAnniversaries) typeAnniversaries.textContent = "लग्नाचे वाढदिवस";
+      const mnavCal = document.getElementById("mnav-calendar-label");
+      if (mnavCal) mnavCal.textContent = "दिनदर्शिका";
+    } else {
+      if (panelTitle) panelTitle.textContent = "Upcoming Occasions";
+      if (exportText) exportText.textContent = "Export Calendar (.ics)";
+      if (searchInput) searchInput.placeholder = "Search occasions...";
+      if (typeAll) typeAll.textContent = "All";
+      if (typeBirthdays) typeBirthdays.textContent = "Birthdays";
+      if (typeAnniversaries) typeAnniversaries.textContent = "Anniversaries";
+      const mnavCal = document.getElementById("mnav-calendar-label");
+      if (mnavCal) mnavCal.textContent = "Calendar";
+    }
+
+    // Gather branch filter options (major last names with >= 3 members)
+    const counts = {};
+    rawData.persons.forEach(p => {
+      if (p.lastName) counts[p.lastName] = (counts[p.lastName] || 0) + 1;
+    });
+    const majorBranches = Object.keys(counts).filter(k => counts[k] >= 3).sort((a,b) => counts[b] - counts[a]);
+
+    // Build branch filter pills UI
+    const branchFiltersEl = document.getElementById("cal-branch-filters");
+    if (branchFiltersEl) {
+      let pillsHtml = `<button class="cal-pill ${activeCalBranch === 'all' ? 'active' : ''}" data-branch="all">${window.CURRENT_LANG === "MR" ? "सर्व शाखा" : "All Branches"}</button>`;
+      majorBranches.forEach(b => {
+        pillsHtml += `<button class="cal-pill ${activeCalBranch === b ? 'active' : ''}" data-branch="${b}">${b} (${counts[b]})</button>`;
+      });
+      branchFiltersEl.innerHTML = pillsHtml;
+      
+      branchFiltersEl.querySelectorAll(".cal-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          branchFiltersEl.querySelectorAll(".cal-pill").forEach(x => x.classList.remove("active"));
+          pill.classList.add("active");
+          activeCalBranch = pill.dataset.branch;
+          filterAndRenderList();
+        });
+      });
+    }
+
+    // Gather occasions
+    const occasions = [];
+
+    // 1. Birthdays (living members only)
+    rawData.persons.forEach(p => {
+      if (p.status !== "deceased" && p.birthDate) {
+        const startYear = parseInt(p.birthDate.split("-")[0]);
+        const calc = calculateNextOccur(p.birthDate, startYear);
+        if (calc) {
+          occasions.push({
+            id: p.id,
+            person: p,
+            type: "birthday",
+            dateStr: p.birthDate,
+            daysLeft: calc.daysLeft,
+            milestone: calc.milestone,
+            branch: p.lastName,
+            titleEn: `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birthday`,
+            titleMr: `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांचा ${calc.milestone}वा वाढदिवस`,
+            dateLabel: formatDateLabel(calc.nextOcc)
+          });
+        }
+      }
+    });
+
+    // 2. Anniversaries
+    rawData.relationships.forEach(r => {
+      if (r.type === "marriage" && r.marriageDate) {
+        const p1 = rawData.persons.find(x => x.id === r.person1Id);
+        const p2 = rawData.persons.find(x => x.id === r.person2Id);
+        if (p1 && p2) {
+          const startYear = parseInt(r.marriageDate.split("-")[0]);
+          const calc = calculateNextOccur(r.marriageDate, startYear);
+          if (calc) {
+            const branch = p1.lastName || p2.lastName;
+            const p1NameMr = p1.firstNameMr || p1.firstName.split(" ")[0];
+            const p2NameMr = p2.firstNameMr || p2.firstName.split(" ")[0];
+            
+            occasions.push({
+              id: r.id,
+              relationship: r,
+              person1: p1,
+              person2: p2,
+              type: "anniversary",
+              dateStr: r.marriageDate,
+              daysLeft: calc.daysLeft,
+              milestone: calc.milestone,
+              branch: branch,
+              titleEn: `${p1.firstName} & ${p2.firstName}'s ${getOrdinal(calc.milestone)} Anniversary`,
+              titleMr: `${p1NameMr} आणि ${p2NameMr} यांचा ${calc.milestone}वा लग्नाचा वाढदिवस`,
+              dateLabel: formatDateLabel(calc.nextOcc)
+            });
+          }
+        }
+      }
+    });
+
+    // Sort occasions by daysLeft
+    occasions.sort((a, b) => a.daysLeft - b.daysLeft);
+    window.CALENDAR_OCCASIONS = occasions;
+    filterAndRenderList();
+  }
+
+  function filterAndRenderList() {
+    const listEl = document.getElementById("calendar-list");
+    if (!listEl || !window.CALENDAR_OCCASIONS) return;
+    listEl.innerHTML = "";
+    
+    const filtered = window.CALENDAR_OCCASIONS.filter(occ => {
+      // 1. Type
+      if (activeCalType !== "all" && occ.type !== activeCalType) return false;
+
+      // 2. Branch
+      if (activeCalBranch !== "all") {
+        if (occ.type === "birthday" && occ.branch !== activeCalBranch) return false;
+        if (occ.type === "anniversary") {
+          const p1Branch = occ.person1.lastName === activeCalBranch;
+          const p2Branch = occ.person2.lastName === activeCalBranch;
+          if (!p1Branch && !p2Branch) return false;
+        }
+      }
+
+      // 3. Search query
+      if (calSearchQuery) {
+        const query = calSearchQuery.toLowerCase();
+        const enTitle = occ.titleEn.toLowerCase();
+        const mrTitle = occ.titleMr.toLowerCase();
+        if (!enTitle.includes(query) && !mrTitle.includes(query)) return false;
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div class="cal-empty">${window.CURRENT_LANG === "MR" ? "कोणतेही कार्यक्रम आढळले नाहीत." : "No occasions found."}</div>`;
+      return;
+    }
+
+    filtered.forEach(occ => {
+      const card = document.createElement("div");
+      card.className = "cal-event-card";
+      
+      const branchColors = {
+        'Sathawane': '#4a7c59',
+        'Waghmare': '#c8963e',
+        'Biradar': '#5c3d1e',
+        'Bisne': '#8d5b4c',
+        'Kalambe': '#5a789a'
+      };
+      const color = branchColors[occ.branch] || '#2D7A2D';
+      card.style.setProperty('--branch-color', color);
+
+      const isToday = occ.daysLeft === 0 || occ.daysLeft === 365;
+      const countdownClass = isToday ? "cal-countdown today" : "cal-countdown";
+      
+      let countdownText = "";
+      if (window.CURRENT_LANG === "MR") {
+        countdownText = isToday ? "आज! 🎂" : `${occ.daysLeft} दिवसात`;
+      } else {
+        countdownText = isToday ? "Today! 🎂" : `In ${occ.daysLeft} days`;
+      }
+
+      const title = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
+      
+      // Thumbnail representation
+      let thumbHtml = "";
+      if (occ.type === "birthday") {
+        thumbHtml = getPersonThumbHtml(occ.person);
+      } else {
+        thumbHtml = `
+          <div class="cal-card-thumb" style="position:relative; width:48px; height:48px; background:#eef1ea">
+            <span style="font-size: 20px;">💑</span>
+          </div>
+        `;
+      }
+
+      const dateText = window.CURRENT_LANG === "MR" 
+        ? `दिनांक: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`
+        : `Date: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`;
+
+      const wishText = getWishMessage(occ);
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(wishText)}`;
+
+      card.innerHTML = `
+        <div class="cal-card-top">
+          ${thumbHtml}
+          <div class="cal-card-meta">
+            <h3 class="cal-card-name">${escapeHtml(title)}</h3>
+            <div class="cal-card-type">
+              ${occ.type === "birthday" 
+                ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Birthday` 
+                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h8"/></svg> Anniversary`
+              }
+            </div>
+          </div>
+          <div class="${countdownClass}">${countdownText}</div>
+        </div>
+        <p class="cal-card-details">${escapeHtml(dateText)}</p>
+        <div class="cal-card-actions">
+          <a class="cal-action-btn wish-btn" href="${whatsappUrl}" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px;">
+              <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.333 4.966L2 22l5.222-1.37a9.954 9.954 0 0 0 4.79 1.222h.004c5.505 0 9.987-4.479 9.988-9.986.002-2.67-1.037-5.178-2.927-7.067C17.19 3.012 14.683 2 12.012 2zm5.72 13.916c-.244.686-1.42 1.26-1.95 1.343-.482.077-1.11.134-3.23-.746-2.716-1.125-4.464-3.896-4.6-4.077-.134-.18-1.096-1.458-1.096-2.781s.686-1.972.93-2.233c.244-.26 1.488-.26 1.626-.26.138 0 .285.01.408.03.122.02.285.04.448.43.163.39.57 1.385.62 1.484.05.1.08.21.01.34-.07.13-.105.21-.21.34l-.325.38c-.105.115-.215.24-.092.45.122.21.54.89 1.156 1.44.79.7 1.458.92 1.66 1.02.2.1.32.08.44-.06.12-.14.52-.61.66-.82.14-.2.285-.17.48-.1.196.07 1.238.58 1.452.69s.356.16.407.25c.052.09.052.53-.193 1.216z"/>
+            </svg>
+            <span>${window.CURRENT_LANG === "MR" ? "शुभेच्छा पाठवा" : "Send Wish"}</span>
+          </a>
+          <button class="cal-action-btn ics-single-btn" data-id="${occ.id}" data-type="${occ.type}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            <span>.ics</span>
+          </button>
+        </div>
+      `;
+      
+      card.querySelector(".ics-single-btn").addEventListener("click", () => {
+        downloadSingleICS(occ);
+      });
+
+      listEl.appendChild(card);
+    });
+  }
+
+  // Supporting Helper Functions
+  function getOrdinal(n) {
+    const s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  function formatDateLabel(date) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthsMr = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+    const m = date.getMonth();
+    const d = date.getDate();
+    return window.CURRENT_LANG === "MR" ? `${d} ${monthsMr[m]}` : `${d} ${months[m]}`;
+  }
+
+  function getWishMessage(occ) {
+    if (occ.type === "birthday") {
+      const name = occ.person.firstName;
+      const nameMr = occ.person.firstNameMr || name;
+      return window.CURRENT_LANG === "MR"
+        ? `प्रिय ${nameMr}, वाढदिवसाच्या खूप खूप शुभेच्छा! 🎂 देव तुम्हाला उदंड आयुष्य देवो हीच प्रार्थना!`
+        : `Happy Birthday, ${name}! 🎂 Wishing you a wonderful year ahead filled with joy, health, and success!`;
+    } else {
+      const name1 = occ.person1.firstName;
+      const name2 = occ.person2.firstName;
+      const name1Mr = occ.person1.firstNameMr || name1;
+      const name2Mr = occ.person2.firstNameMr || name2;
+      return window.CURRENT_LANG === "MR"
+        ? `प्रिय ${name1Mr} आणि ${name2Mr}, लग्नाच्या वाढदिवसाच्या हार्दिक शुभेच्छा! 💑 तुमची जोडी अशीच कायम आनंदी राहो हीच प्रार्थना!`
+        : `Happy Wedding Anniversary, ${name1} & ${name2}! 💑 Wishing you both a lifetime of love and happiness together!`;
+    }
+  }
+
+  function getPersonThumbHtml(p) {
+    const cl = "cal-card-thumb";
+    if (p.profilePhoto) {
+      const prefix = window.PHOTO_BASE_URL || "Family/Cropped/";
+      return `<img src="${prefix}${p.profilePhoto}" class="${cl}" alt="" loading="lazy">`;
+    }
+    const initials = (p.firstName[0] || "") + (p.lastName[0] || "");
+    const palette = ["#7AAD7A", "#A5D6A7", "#9EBE9C", "#C9B98E", "#E0AB73", "#D9886B", "#B79774"];
+    const idx = Math.abs(hashCode(p.id)) % palette.length;
+    return `<div class="${cl}" style="background:${palette[idx]}">${initials}</div>`;
+  }
+
+  function downloadSingleICS(occ) {
+    let dateStr = occ.dateStr.replace(/-/g, "");
+    let summary = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
+    let desc = occ.type === "birthday" ? `Birthday celebration for ${occ.person.firstName}` : `Wedding Anniversary for ${occ.person1.firstName} & ${occ.person2.firstName}`;
+    let uid = `${occ.type}_${occ.id}@familytree`;
+
+    let icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//The Family Tree//NONSGML Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`,
+      `DTSTART;VALUE=DATE:${dateStr}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${desc}`,
+      "RRULE:FREQ=YEARLY",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ];
+
+    const blob = new Blob([icsContent.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${summary.toLowerCase().replace(/[^a-z0-9]/g, "_")}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportToICS() {
+    const rawData = window.FAMILY_DATA || window.FAMILY;
+    if (!rawData) return;
+    
+    let icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//The Family Tree//NONSGML Calendar//EN",
+      "CALSCALE:GREGORIAN"
+    ];
+    
+    const events = [];
+    
+    // 1. Birthdays
+    rawData.persons.forEach(p => {
+      if (p.status !== "deceased" && p.birthDate) {
+        const dateStr = p.birthDate.replace(/-/g, "");
+        const name = p.name || `${p.firstName} ${p.lastName}`;
+        const nameMr = (window.CURRENT_LANG === "MR" && p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;
+        const displayName = window.CURRENT_LANG === "MR" ? nameMr : name;
+        
+        events.push({
+          uid: `birth_${p.id}@familytree`,
+          start: dateStr,
+          summary: window.CURRENT_LANG === "MR" ? `🎂 ${displayName} - वाढदिवस` : `🎂 ${displayName}'s Birthday`,
+          description: `Family Tree birthday anniversary for ${displayName}`
+        });
+      }
+    });
+    
+    // 2. Anniversaries
+    rawData.relationships.forEach(r => {
+      if (r.type === "marriage" && r.marriageDate) {
+        const p1 = rawData.persons.find(x => x.id === r.person1Id);
+        const p2 = rawData.persons.find(x => x.id === r.person2Id);
+        if (p1 && p2) {
+          const name1 = p1.name || `${p1.firstName} ${p1.lastName}`;
+          const name2 = p2.name || `${p2.firstName} ${p2.lastName}`;
+          const name1Mr = (window.CURRENT_LANG === "MR" && p1.firstNameMr) ? p1.firstNameMr : p1.firstName.split(" ")[0];
+          const name2Mr = (window.CURRENT_LANG === "MR" && p2.firstNameMr) ? p2.firstNameMr : p2.firstName.split(" ")[0];
+          
+          const displayName = window.CURRENT_LANG === "MR" 
+            ? `${name1Mr} आणि ${name2Mr}` 
+            : `${p1.firstName} & ${p2.firstName}`;
+          
+          events.push({
+            uid: `marriage_${r.id}@familytree`,
+            start: dateStr,
+            summary: window.CURRENT_LANG === "MR" ? `💑 ${displayName} - लग्नाचा वाढदिवस` : `💑 ${displayName}'s Wedding Anniversary`,
+            description: `Family Tree wedding anniversary for ${displayName}`
+          });
+        }
+      }
+    });
+    
+    events.forEach(e => {
+      icsContent.push("BEGIN:VEVENT");
+      icsContent.push(`UID:${e.uid}`);
+      icsContent.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`);
+      icsContent.push(`DTSTART;VALUE=DATE:${e.start}`);
+      icsContent.push(`SUMMARY:${e.summary}`);
+      icsContent.push(`DESCRIPTION:${e.description}`);
+      icsContent.push("RRULE:FREQ=YEARLY");
+      icsContent.push("END:VEVENT");
+    });
+    
+    icsContent.push("END:VCALENDAR");
+    
+    const blob = new Blob([icsContent.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `family_occasions_${window.CURRENT_LANG.toLowerCase()}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Setup search input and filter buttons listeners
+  const calSearchInput = document.getElementById("cal-search-input");
+  if (calSearchInput) {
+    calSearchInput.addEventListener("input", (e) => {
+      calSearchQuery = e.target.value;
+      filterAndRenderList();
+    });
+  }
+
+  document.querySelectorAll(".cal-type-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cal-type-btn").forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      activeCalType = btn.dataset.type;
+      filterAndRenderList();
+    });
+  });
+
+  const exportAllBtn = document.getElementById("cal-export-all-btn");
+  if (exportAllBtn) {
+    exportAllBtn.addEventListener("click", exportToICS);
+  }
 
   /* ============================================================
      INIT
