@@ -315,11 +315,10 @@ Mobile layout (768px breakpoint), 3-node centred view, swipe navigation, bottom 
 - Relationship calculator: "How are these two related?"
 - Leaflet.js map pin for birthplace (map panel only — nav button stays hidden)
 
-### 🔲 Phase 5 — Contribution Flow
-- Add member form (name, DOB, gender, relationship — mandatory only)
-- Photo upload → Cloudflare R2
-- CSV bulk import → preview → confirm → merge into family.json
-- Cloudflare Worker → GitHub API → auto-commit to main (no Git for users)
+### ✅ Phase 5 — Deprecated / Removed
+- *Replaced by Google Forms & Google Sheets sync pipeline.*
+- The current automated form responses process (`data/form-responses.csv` pulled and merged into `family.json`) satisfies the contribution flow requirement. In-app editor and Cloudflare Worker commits are deprecated to maintain a zero-cost, zero-server architecture.
+
 
 ### 🔲 Phase 6 — Calendar + Events + Invitations
 - Family calendar: occasions sorted by days-away
