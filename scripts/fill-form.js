@@ -296,48 +296,24 @@ async function uploadFile(page, pattern, filePath) {
   if (!filePath) return;
   const q = await findQuestion(page, pattern);
   if (!q) { console.log(`  ⚠️  Upload field not found: ${pattern}`); return; }
-  
-  const targetFileName = basename(filePath);
-
-  // Check if a file is already uploaded
-  const listItems = q.locator('[role="listitem"]');
-  if (await listItems.count() > 0) {
-    const existingName = await listItems.first().getAttribute('data-tooltip').catch(() => '');
-    if (existingName === targetFileName) {
-      console.log(`  📸  File already uploaded: ${targetFileName}`);
-      return;
-    } else {
-      console.log(`  📸  Different file uploaded (${existingName}). Removing it...`);
-      const removeBtn = q.locator('[aria-label="Remove file"]');
-      if (await removeBtn.count() > 0) {
-        await removeBtn.first().click();
-        await page.waitForTimeout(2000); // wait for removal animation
-      }
-    }
+  const fileIn = q.locator('input[type="file"]');
+  if (await fileIn.count()) {
+    await fileIn.first().setInputFiles(filePath);
+    await page.waitForTimeout(1500);
+    return;
   }
-
   try {
-    // Click "Add file" button
-    const addFileBtn = q.locator('span:has-text("Add file"), [aria-label="Add file"]').first();
-    await addFileBtn.click();
-
-    // Locate the Google Picker iframe
-    const pickerFrame = page.frameLocator('iframe[src*="docs.google.com/picker"]');
-    const fileInput = pickerFrame.locator('input[type="file"]');
-    
-    // Wait for the input to load and set the file
-    await fileInput.waitFor({ state: 'attached', timeout: 10000 });
-    await fileInput.setInputFiles(filePath);
-    
-    // Wait for file upload to complete and be attached back on the main page
-    await q.locator('[role="listitem"]').waitFor({ state: 'visible', timeout: 20000 });
-    console.log(`  📸  Uploaded and attached: ${targetFileName}`);
-  } catch (err) {
-    console.log(`  ⚠️  Upload failed for: ${pattern} (${err.message})`);
+    const [chooser] = await Promise.all([
+      page.waitForEvent('filechooser', { timeout: 5000 }),
+      q.locator('button, [role="button"]').first().click(),
+    ]);
+    await chooser.setFiles(filePath);
+    await page.waitForTimeout(2000);
+  } catch {
+    console.log(`  ⚠️  File chooser not triggered for: ${pattern}`);
     console.log(`       Upload manually: ${filePath}`);
   }
 }
-
 
 // ── Main loop ─────────────────────────────────────────────────────────────────
 // Uses the real Chrome browser (channel: 'chrome') so Google allows sign-in.
