@@ -455,6 +455,15 @@ family.persons.forEach((p) => {
 
 // Auto-generate/update logins for living members with correct naming conventions
 console.log('\n🔑 Regenerating / updating logins for living members...');
+const newAuthEntries = [];
+
+// Preserve the hardcoded admin login for Hitesh Sathawane
+const adminHash = '974447909d98279f6429b03355055fd113ccfb7628e501f897a4a68331d548f9';
+const adminEntry = authData.entries.find(e => e.hash === adminHash);
+if (adminEntry) {
+  newAuthEntries.push(adminEntry);
+}
+
 family.persons.forEach(p => {
   if (p.status !== 'deceased' && p.birthDate) {
     let loginLastName = p.lastName;
@@ -479,8 +488,13 @@ family.persons.forEach(p => {
     const normalised = (fullName.toLowerCase().replace(/\s+/g, '') + dobForHash).replace(/[^a-z0-9]/g, '');
     const hash = createHash('sha256').update(normalised).digest('hex');
     
-    const existing = authData.entries.find(e => e.hash === hash);
-    if (!existing) {
+    // If it is the admin hash itself, skip (already preserved above)
+    if (hash === adminHash) {
+      return;
+    }
+    
+    let matchedEntry = authData.entries.find(e => e.hash === hash);
+    if (!matchedEntry) {
       const maidenFullName = `${p.firstName} ${p.lastName}`.trim();
       const maidenNormalised = (maidenFullName.toLowerCase().replace(/\s+/g, '') + dobForHash).replace(/[^a-z0-9]/g, '');
       const maidenHash = createHash('sha256').update(maidenNormalised).digest('hex');
@@ -488,27 +502,40 @@ family.persons.forEach(p => {
       const existingMaiden = authData.entries.find(e => e.hash === maidenHash);
       if (existingMaiden) {
         console.log(`  🔄 Updating existing login from maiden name ${maidenFullName} to married name ${fullName}`);
-        existingMaiden.hash = hash;
-        existingMaiden.displayName = fullName;
+        matchedEntry = {
+          ...existingMaiden,
+          hash: hash,
+          displayName: fullName
+        };
       } else {
         const existingByName = authData.entries.find(e => e.displayName.toLowerCase() === fullName.toLowerCase());
         if (existingByName) {
-          existingByName.hash = hash;
+          matchedEntry = {
+            ...existingByName,
+            hash: hash
+          };
         } else {
-          authData.entries.push({
+          matchedEntry = {
             hash,
             role: 'viewer',
             branch: 'main',
             totpRequired: false,
             totpSecret: null,
             displayName: fullName
-          });
+          };
           console.log(`  🔑 Auto-created 'viewer' login for ${fullName}`);
         }
       }
     }
+    
+    // Push the resolved entry to newAuthEntries if not already added
+    if (matchedEntry && !newAuthEntries.some(e => e.hash === matchedEntry.hash)) {
+      newAuthEntries.push(matchedEntry);
+    }
   }
 });
+
+authData.entries = newAuthEntries;
 
 // Since authData might be updated, we will write it
 writeFileSync(authPath, JSON.stringify(authData, null, 2));

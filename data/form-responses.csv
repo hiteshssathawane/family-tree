@@ -1,3 +1,2 @@
 firstName,fatherName,motherName,lastName,gender,status,maritalStatus,spouseFirstName,spouseFatherName,spouseMotherName,spouseLastName,marriageDate,birthDate,birthPlace,deathDate,deathPlace,occupation,education,location,biography,commonName,firstNameMr,lastNameMr,profilePhoto,backgroundPhoto
 Hitesh,Shankar,Jyoti,Sathawane,X,living,unknown,Swati,Bhimrao,Chaya,Biradar,2015-05-01,1985-12-28,Nagpur,,,,,,,,हितेश,साठवणे,https://drive.google.com/open?id=1C_EwqPdgB-tpIp5XqDezIt0ScVAhLUhH,https://drive.google.com/open?id=1DbNDepy2UHoSmMEsNxpw0oZ02-E1ZAyh
-TestUser,Shankar,Jyoti,FormCheck,M,living,single,Hitesh,Shankar,Jyoti,Sathawane,2015-05-01,1999-12-31,Nagpur,,,,,Nagpur,,,टेस्टयुझर,फॉर्मचेक,,
