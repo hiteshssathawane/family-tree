@@ -38,13 +38,23 @@ jobs:
           npm run media:sync
 
       - name: Commit and Push Changes
+        id: commit_step
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/family.json data/auth.json data/form-responses.csv
           if git diff --staged --quiet; then
             echo "No changes to commit"
+            echo "committed=false" >> $GITHUB_OUTPUT
           else
             git commit -m "chore: auto-sync data from Google Sheets [skip ci]"
             git push
+            echo "committed=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Trigger Deploy Workflow
+        if: steps.commit_step.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy.yml --ref main
