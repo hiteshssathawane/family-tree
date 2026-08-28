@@ -18,7 +18,7 @@ const hiteshName = 'Hitesh Sathawane';
 const hiteshDobStr = '29121985';
 const hiteshDobFormatted = '29/12/1985';
 const hiteshId = 'HITESH_JYOTI_SHANKAR_SATHAWANE';
-const hiteshBirthDate = '1985-12-28';
+const hiteshBirthDate = '1985-12-29'; // must agree with hiteshDobStr above ('29121985')
 const hiteshNormalised = 'hiteshsathawane29121985';
 const hiteshHash = createHash('sha256').update(hiteshNormalised).digest('hex');
 
@@ -190,7 +190,8 @@ const newFamily = {
   persons: persons,
   relationships: [],
   events: [],
-  media: []
+  media: [],
+  scrapbook: {}
 };
 
 const newAuth = {

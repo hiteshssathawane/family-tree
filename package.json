@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "validate": "node scripts/validate.js",
+    "verify:pipeline": "node scripts/verify-pipeline.js",
     "setup:auth": "node scripts/setup-auth.js",
     "gedcom:in": "node scripts/gedcom-import.js",
     "gedcom:out": "node scripts/gedcom-export.js",

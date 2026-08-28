@@ -123,9 +123,11 @@ lines.slice(1).forEach((line, i) => {
     return;
   }
 
+  // Unknown must stay unknown. Guessing 'M' here used to silently mis-sex people and,
+  // worse, flipped their spouse to the opposite wrong gender further down.
   if (!['M','F','X'].includes(row.gender)) {
-    console.warn(`  ⚠️  Row ${i+2}: invalid gender '${row.gender}' — defaulting to M`);
-    row.gender = 'M';
+    console.warn(`  ⚠️  Row ${i+2}: unrecognised gender '${row.gender}' — recording as 'X' (unknown)`);
+    row.gender = 'X';
   }
 
   family.persons.push({
@@ -322,7 +324,11 @@ parsedRows.forEach((row) => {
     }
     
     if (!spouse) {
-      const sGender = row.gender === 'M' ? 'F' : 'M';
+      // Infer the spouse's gender only from a known one. The old `=== 'M' ? 'F' : 'M'`
+      // turned every unknown-gender member's wife into a male node.
+      const sGender = row.gender === 'M' ? 'F'
+                    : row.gender === 'F' ? 'M'
+                    : 'X';
       spouse = {
         id: exactId,
         firstName: sFirst,
@@ -457,11 +463,47 @@ family.persons.forEach((p) => {
 console.log('\n🔑 Regenerating / updating logins for living members...');
 const newAuthEntries = [];
 
-// Preserve the hardcoded admin login for Hitesh Sathawane
+// Preserve the hardcoded admin login for Hitesh Sathawane.
+//
+// This must never be conditional. The loop below skips whichever person hashes to
+// adminHash, on the assumption the entry was already preserved here. If auth.json had
+// been wiped, that assumption left ZERO admin entries and locked the owner out of the
+// app with no error anywhere. Rebuild it when it is absent.
 const adminHash = '974447909d98279f6429b03355055fd113ccfb7628e501f897a4a68331d548f9';
-const adminEntry = authData.entries.find(e => e.hash === adminHash);
-if (adminEntry) {
-  newAuthEntries.push(adminEntry);
+const adminEntry = authData.entries.find(e => e.hash === adminHash) || {
+  hash: adminHash,
+  role: 'admin',
+  branch: 'main',
+  totpRequired: false,
+  totpSecret: null,
+  displayName: 'Hitesh Sathawane'
+};
+if (!authData.entries.some(e => e.hash === adminHash)) {
+  console.log('  🛡️  Admin login was missing from auth.json — restored it.');
+}
+newAuthEntries.push(adminEntry);
+
+// One person must never end up with two logins. Ranked so that when the same displayName
+// resolves twice, the more privileged role survives rather than being downgraded.
+const ROLE_RANK = { admin: 3, contributor: 2, viewer: 1, guest: 0 };
+function addAuthEntry(entry) {
+  if (!entry) return;
+  if (newAuthEntries.some(e => e.hash === entry.hash)) return;
+
+  const name = String(entry.displayName || '').toLowerCase();
+  const clash = name && newAuthEntries.find(
+    e => String(e.displayName || '').toLowerCase() === name
+  );
+  if (clash) {
+    const keep = (ROLE_RANK[entry.role] ?? 0) > (ROLE_RANK[clash.role] ?? 0) ? entry.role : clash.role;
+    console.warn(
+      `  ⚠️  Duplicate login for "${entry.displayName}" (${clash.hash.slice(0, 12)}… vs ` +
+      `${entry.hash.slice(0, 12)}…) — keeping the first, role '${keep}'.`
+    );
+    clash.role = keep;
+    return;
+  }
+  newAuthEntries.push(entry);
 }
 
 family.persons.forEach(p => {
@@ -508,7 +550,9 @@ family.persons.forEach(p => {
           displayName: fullName
         };
       } else {
-        const existingByName = authData.entries.find(e => e.displayName.toLowerCase() === fullName.toLowerCase());
+        const existingByName = authData.entries.find(
+          e => String(e.displayName || '').toLowerCase() === fullName.toLowerCase()
+        );
         if (existingByName) {
           matchedEntry = {
             ...existingByName,
@@ -528,10 +572,7 @@ family.persons.forEach(p => {
       }
     }
     
-    // Push the resolved entry to newAuthEntries if not already added
-    if (matchedEntry && !newAuthEntries.some(e => e.hash === matchedEntry.hash)) {
-      newAuthEntries.push(matchedEntry);
-    }
+    addAuthEntry(matchedEntry);
   }
 });
 

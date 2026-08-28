@@ -24,6 +24,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Offline guard: date-timezone handling, required-column reconciliation and
+      # spouse-gender inference. Fails before touching the sheet if any regressed.
+      - name: Verify Pipeline Logic
+        run: npm run verify:pipeline
+
       - name: Pull Sheet Data
         env:
           GOOGLE_SHEET_URL: ${{ secrets.GOOGLE_SHEET_URL }}
