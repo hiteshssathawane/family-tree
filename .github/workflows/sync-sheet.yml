@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+  # The sync commit carries [skip ci], so the push cannot start deploy.yml on its own and
+  # the last step dispatches it explicitly. `gh workflow run` needs actions: write to do
+  # that — without it the dispatch fails 403 after the data has already been committed.
+  actions: write
 
 jobs:
   sync:
