@@ -31,9 +31,13 @@ Fix it without breaking existing functionality.
 3. NO paid services or APIs requiring keys
 4. ALWAYS run `node scripts/validate.js` after changing `family.json`
 5. NEVER commit passwords, phone numbers, or home addresses
-6. `index.html` is the entire app — never split into multiple files
+6. The app ships as **one deployed page**. Source lives in four files at the repo root —
+   `index.html` (markup, styles, auth/boot) plus `tree-helpers.js`, `tree-app.js` and the
+   generated `tree-data.js` — and `scripts/encrypt.js` inlines them into a single
+   `dist/index.html` at build time. Do not add a fifth runtime file, a bundler, or a module
+   graph; anything new goes into one of the four
 7. Use design tokens: `--family-green #1a3a2a`, `--family-gold #c8963e`, `--family-cream #faf6f0`, `--family-leaf #4a7c59`
-8. Map view is DISABLED (`mapView: false` in `config.json`) — do not re-enable it
+8. Map view is REMOVED — no Leaflet, no map panel, no map nav button. Do not reintroduce it
 9. After editing `index.html`, verify: `grep -c "unpkg\|cdnjs\|jsdelivr\|googleapis" index.html` → must return `0`
 10. **Single connected tree** — All surnames (Sathawane, Waghmare, etc.) live in one `family.json`. Never split by family name. Maternal/paternal branches are nodes in the same graph.
 
@@ -44,47 +48,67 @@ Fix it without breaking existing functionality.
 ```
 family-tree/
 ├── CLAUDE.md
+├── PLAN.md                       ← canonical status tracker (task IDs T-01…)
 ├── .claude/
 │   ├── settings.json
+│   ├── settings.local.json
 │   └── hooks.toml
+├── index.html                    ← markup, styles, auth + boot (root, not public/)
+├── tree-helpers.js               ← layout engine (levels, spans, spouse placement)
+├── tree-app.js                   ← rendering, profile panel, calendar, search
+├── tree-data.js                  ← GENERATED snapshot — never hand-edit
+├── manifest.json
+├── sw.js
+├── robots.txt
+├── assets/                       ← app images (silhouettes, mother.png)
 ├── data/
 │   ├── family.json               ← ALL family data (single connected tree)
 │   ├── family.schema.json
 │   ├── auth.json                 ← SHA-256 hashes + roles
-│   ├── config.json               ← Feature flags (mapView: false, etc.)
-│   └── i18n/
-│       ├── en.json
-│       └── mr.json
-├── media/
-│   └── {person-id}/profile.jpg
+│   ├── config.json               ← feature flags + deploy metadata (not read at runtime)
+│   ├── form-responses.csv        ← last pull from the Google Sheet
+│   └── i18n/                     ← en.json / mr.json — NOT loaded yet (see PLAN.md T-27)
 ├── vendor/                       ← ALL JS/CSS libraries (no CDN ever)
 │   ├── d3.min.js
 │   ├── flexsearch.bundle.js
-│   ├── leaflet.js
-│   ├── leaflet.css
 │   ├── fonts.css
 │   └── fonts/
 ├── scripts/
+│   ├── pull-sheet.js             ← Google Sheet → family.json + auth.json
+│   ├── sync-media.js             ← Drive photos → Cloudflare R2
+│   ├── fill-form.js              ← Playwright bulk form filler
+│   ├── generate-tree-data.js     ← family.json → tree-data.js
+│   ├── csv-import.js             ← CSV rows → persons + relationships
 │   ├── validate.js
+│   ├── verify-pipeline.js
 │   ├── setup-auth.js
 │   ├── gedcom-import.js
 │   ├── gedcom-export.js
-│   ├── csv-import.js
-│   ├── encrypt.js
-│   └── download-vendors.js
-├── public/
-│   ├── index.html                ← ENTIRE APP (single file)
-│   ├── manifest.json
-│   ├── sw.js
-│   └── icons/
+│   ├── clear-data.js
+│   ├── download-vendors.js
+│   ├── encrypt.js                ← bundles the root files → dist/index.html
+│   └── apps-script/              ← Code.gs for the Sheet Web App
+├── worker/                       ← Cloudflare Worker (Phase 5, deprecated — kept for reference)
+├── Family/Cropped/               ← source CSV + local photos for the bulk load
+├── scratch/                      ← throwaway probes; only load-bearing files survive cleanup
 ├── backups/                      ← index.html backups before major edits
+├── dist/                         ← BUILD OUTPUT, git-ignored — never commit
 ├── .github/
 │   └── workflows/
-│       ├── validate.yml
-│       └── deploy.yml
+│       ├── deploy.yml
+│       └── sync-sheet.yml
 ├── package.json
 └── README.md
 ```
+
+**How the page gets its data.** In local dev `index.html` loads `tree-helpers.js` →
+`tree-data.js` → `tree-app.js` as separate `<script>` tags. In the deployed build
+`scripts/encrypt.js` inlines `tree-helpers.js` and `tree-app.js` and injects
+`family.json` / `auth.json` as `window.FAMILY_DATA` / `window.AUTH_DATA`, sets
+`window.BUNDLED_MODE = true`, then StatiCrypts the result to `dist/index.html`.
+
+There is no `media/` directory and no `public/` directory. Photos live in Cloudflare R2 and
+`family.json` holds absolute `https://pub-….r2.dev/…` URLs.
 
 ---
 
@@ -100,7 +124,7 @@ family-tree/
 - User enters name + DOB → browser computes `SHA-256(lowercase(name) + DDMMYYYY)`
 - Compared against `data/auth.json`
 - Match → role assigned → session stored in `sessionStorage`
-- No match → Guest role (deceased ancestors only, no living member data)
+- No match → login refused ("Identity verification failed"). There is no guest tier
 
 ### Screenshot Deterrence
 - `@media print { body { display: none; } }`
@@ -176,7 +200,7 @@ Role       : admin
 **Relationship types**: `marriage` | `parent-child` | `adoption` | `step-parent`  
 **Event types**: `birth` | `death` | `marriage` | `education` | `career` | `migration` | `medical` | `award` | `reunion` | `other`  
 **Person status**: `living` | `deceased` | `unknown`  
-**Roles**: `admin` | `contributor` | `viewer` | `guest`
+**Roles**: `admin` | `contributor` | `viewer`
 
 ---
 
@@ -216,8 +240,7 @@ Admin panel (browser)
 |---|---|---|
 | D3.js | vendor/d3.min.js | Tree layout |
 | FlexSearch | vendor/flexsearch.bundle.js | Full-text search |
-| Leaflet.js | vendor/leaflet.js + leaflet.css | Maps (disabled, kept for Phase 4 birthplace pin) |
-| Playfair Display + Lato | vendor/fonts.css + vendor/fonts/ | Heritage fonts (offline) |
+| Cormorant Garamond + Inter | vendor/fonts.css + vendor/fonts/ | Heritage fonts (self-hosted, offline) |
 
 To add a library: `node scripts/download-vendors.js` or `curl` into `vendor/` — never use CDN.
 
@@ -226,21 +249,26 @@ To add a library: `node scripts/download-vendors.js` or `curl` into `vendor/` �
 ## Dev Commands
 
 ```bash
-node scripts/validate.js                              # Validate family.json
-node scripts/setup-auth.js "Hitesh Sathawane" "29121985"  # Generate hash for auth.json
-node scripts/gedcom-import.js file.ged                # Import GEDCOM
-node scripts/csv-import.js members.csv                # Bulk CSV import
-node scripts/encrypt.js                               # Encrypt (needs FAMILY_PASSWORD env)
+npm run validate                                      # Validate family.json
+npm run verify:pipeline                               # End-to-end pipeline assertions
+npm run sheet:pull                                    # Google Sheet → family.json (+ regenerates tree-data.js)
+npm run media:sync                                    # Drive photo URLs → Cloudflare R2
+npm run form:status | form:next | form:all            # Playwright bulk form filler
+npm run encrypt                                       # Bundle + StatiCrypt → dist/ (needs FAMILY_PASSWORD)
+npm run csv:import members.csv                        # Bulk CSV import
+npm run setup:auth "Hitesh Sathawane" "29121985"      # Generate hash for auth.json
+npm run gedcom:in file.ged                            # Import GEDCOM
 ```
+
+`sheet:pull` regenerates `tree-data.js` for you — never hand-edit that file, and never
+edit `family.json` without running `npm run validate` afterwards.
 
 ---
 
 ## Known Bugs (Fix When Encountered)
 
-- Logout button (`id="logout-btn"`) may be missing from header — add after `user-badge` div
-- Map nav button may still show despite `mapView:false` — hide it in `buildApp()`
-- Guest sees blank tree canvas — show `"Log in to see your family tree"` message in SVG
-- Leaflet.js may appear twice in `index.html` — remove duplicate script tag
+Open defects are tracked in **PLAN.md** with stable IDs — check there first. The old
+"logout button missing" note is resolved: the button is present at `index.html:3609`.
 
 ---
 
@@ -253,8 +281,8 @@ node scripts/encrypt.js                               # Encrypt (needs FAMILY_PA
 --family-bark:   #5c3d1e   /* Secondary text */
 --family-leaf:   #4a7c59   /* Parent lines, active states */
 --family-muted:  #9e9080   /* Tertiary text, hints */
---font-display:  'Playfair Display', Georgia, serif
---font-body:     'Lato', 'Helvetica Neue', sans-serif
+--font-display:  'Cormorant Garamond', Georgia, serif
+--font-body:     'Inter', system-ui, sans-serif
 ```
 
 ---
@@ -313,7 +341,7 @@ Mobile layout (768px breakpoint), 3-node centred view, swipe navigation, bottom 
 - Bio: birthplace, occupation, education, religion
 - Family tab: spouse, parents, children, sibling chips
 - Relationship calculator: "How are these two related?"
-- Leaflet.js map pin for birthplace (map panel only — nav button stays hidden)
+- Birthplace shown as text in the Bio tab (map view removed — no Leaflet)
 
 ### ✅ Phase 5 — Deprecated / Removed
 - *Replaced by Google Forms & Google Sheets sync pipeline.*

@@ -6,11 +6,9 @@
   <meta name="robots" content="noindex, nofollow" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>The Family Tree — Sign In</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet" />
+  <!-- Self-hosted Cormorant Garamond + Inter (CLAUDE.md rule 1: no CDN).
+       Regenerate with: node scripts/download-vendors.js -->
+  <link rel="stylesheet" href="vendor/fonts.css" />
   <style>
     :root {
       --bg: #ffffff;
@@ -2284,6 +2282,145 @@
     margin-right: 4px;
   }
 
+  /* Profile tabs — Timeline | Bio | Family */
+  .lb-tabs {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    padding: 12px 16px 0;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--paper);
+  }
+  .lb-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 8px 16px 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: color .12s ease, border-color .12s ease;
+  }
+  .lb-tab:hover { color: var(--ink-soft); }
+  .lb-tab.active {
+    color: var(--green-1);
+    border-bottom-color: var(--green-1);
+  }
+  .lb-tab:focus-visible { outline: 2px solid var(--green-2); outline-offset: -2px; }
+  .lb-tabpanel[hidden] { display: none; }
+  .lb-section { padding: 26px 24px 36px; }
+
+  .lb-sec-title {
+    font-family: "Inter", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+
+  /* Bio tab */
+  .lb-facts {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(96px, auto) 1fr;
+    gap: 10px 18px;
+    align-items: baseline;
+  }
+  .lb-facts dt {
+    font-family: "Inter", sans-serif;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-top: 3px;
+  }
+  .lb-facts dd {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 17px;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+  .lb-story {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+    font-family: "Cormorant Garamond", serif;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .lb-empty {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 18px 0;
+  }
+
+  /* Family tab */
+  .lb-fam-group { margin-bottom: 20px; }
+  .lb-fam-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .lb-relcalc {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .lb-relcalc-select {
+    width: 100%;
+    max-width: 340px;
+    padding: 8px 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper-pure);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .lb-relcalc-select:focus-visible { outline: 2px solid var(--green-2); outline-offset: 1px; }
+  .lb-relcalc-result { margin-top: 14px; }
+  .lb-relcalc-answer {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 20px;
+    line-height: 1.4;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .lb-relcalc-answer strong { color: var(--green-1); font-weight: 600; }
+  .lb-relcalc-chain {
+    margin-top: 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 11.5px;
+    line-height: 1.9;
+    color: var(--ink-soft);
+  }
+  .lb-relcalc-chain .arrow {
+    color: var(--ink-faint);
+    margin: 0 6px;
+  }
+  .lb-relcalc-chain .hop-rel {
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-right: 4px;
+  }
+
   /* Scrapbook timeline */
   .lb-timeline {
     padding: 26px 24px 36px;
@@ -2519,6 +2656,13 @@
     .lb-bio { font-size: 15px; }
     .lb-bio::before, .lb-bio::after { width: 18px; margin: 0 8px; }
     .lb-timeline { padding: 22px 14px 100px; }
+    .lb-section { padding: 22px 16px 100px; }
+    .lb-tabs { padding: 10px 8px 0; }
+    .lb-tab { padding: 8px 12px 10px; font-size: 10px; letter-spacing: 0.16em; }
+    .lb-facts { grid-template-columns: 1fr; gap: 2px 0; }
+    .lb-facts dt { padding-top: 12px; }
+    .lb-facts dd { padding-bottom: 2px; }
+    .lb-relcalc-select { max-width: none; }
     .scrap-card { padding: 12px 12px; }
     .status-pill { top: 102px; font-size: 11px; padding: 6px 10px 6px 10px; }
     .status-pill .bc-name { font-size: 13px; }
@@ -3563,12 +3707,44 @@
         <p class="lb-bio" id="lb-bio"></p>
       </div>
       <div class="lb-relations" id="lb-relations"></div>
-      <div class="lb-timeline">
-        <h3 class="lb-timeline-title" id="lb-timeline-title">A Life in Pictures</h3>
-        <div class="lb-timeline-sub">
-          <span class="sep"></span>Scrapbook<span class="sep"></span>
+
+      <div class="lb-tabs" id="lb-tabs" role="tablist" aria-label="Profile sections">
+        <button class="lb-tab active" data-lbtab="timeline" role="tab"
+                id="lb-tabbtn-timeline" aria-selected="true" aria-controls="lb-tab-timeline">Timeline</button>
+        <button class="lb-tab" data-lbtab="bio" role="tab"
+                id="lb-tabbtn-bio" aria-selected="false" aria-controls="lb-tab-bio">Bio</button>
+        <button class="lb-tab" data-lbtab="family" role="tab"
+                id="lb-tabbtn-family" aria-selected="false" aria-controls="lb-tab-family">Family</button>
+      </div>
+
+      <div class="lb-tabpanel active" id="lb-tab-timeline" role="tabpanel" aria-labelledby="lb-tabbtn-timeline">
+        <div class="lb-timeline">
+          <h3 class="lb-timeline-title" id="lb-timeline-title">A Life in Pictures</h3>
+          <div class="lb-timeline-sub">
+            <span class="sep"></span>Scrapbook<span class="sep"></span>
+          </div>
+          <div class="lb-timeline-list" id="lb-timeline-list"></div>
         </div>
-        <div class="lb-timeline-list" id="lb-timeline-list"></div>
+      </div>
+
+      <div class="lb-tabpanel" id="lb-tab-bio" role="tabpanel" aria-labelledby="lb-tabbtn-bio" hidden>
+        <div class="lb-section">
+          <dl class="lb-facts" id="lb-facts"></dl>
+          <div class="lb-story" id="lb-story"></div>
+        </div>
+      </div>
+
+      <div class="lb-tabpanel" id="lb-tab-family" role="tabpanel" aria-labelledby="lb-tabbtn-family" hidden>
+        <div class="lb-section">
+          <div class="lb-fam-groups" id="lb-fam-groups"></div>
+          <div class="lb-relcalc">
+            <h4 class="lb-sec-title" id="lb-relcalc-title">How are we related?</h4>
+            <select class="lb-relcalc-select" id="lb-relcalc-select" aria-labelledby="lb-relcalc-title">
+              <option value="">Choose a family member…</option>
+            </select>
+            <div class="lb-relcalc-result" id="lb-relcalc-result"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -10,27 +10,9 @@
       "hi"
     ]
   },
-  "branches": [
-    {
-      "id": "SATHAWANE",
-      "name": "Sathawane (Paternal)",
-      "color": "#4a7c59"
-    },
-    {
-      "id": "WAGHMARE",
-      "name": "Waghmare (Maternal)",
-      "color": "#c8963e"
-    },
-    {
-      "id": "BIRADAR",
-      "name": "Biradar (In-laws)",
-      "color": "#5c3d1e"
-    }
-  ],
   "media": {
     "provider": "cloudflare-r2",
-    "r2PublicUrl": "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com/family-tree",
-    "uploadPresetUrl": "REPLACE_WITH_CLOUDFLARE_R2_PUBLIC_BUCKET_URL",
+    "r2PublicUrl": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev",
     "maxPhotoSizeMB": 5,
     "allowedTypes": [
       "image/jpeg",
@@ -39,7 +21,7 @@
     ]
   },
   "github": {
-    "owner": "REPLACE_WITH_YOUR_GITHUB_USERNAME",
+    "owner": "hiteshssathawane",
     "repo": "family-tree",
     "branch": "main",
     "dataPath": "data/family.json"
@@ -50,7 +32,6 @@
   "features": {
     "totp": false,
     "multiLanguage": true,
-    "mapView": false,
     "calendarView": true,
     "adminPanel": true,
     "bulkImport": true,
@@ -60,7 +41,6 @@
     "printDisabled": true
   },
   "privacy": {
-    "guestSeesDeceasedOnly": true,
     "viewerHidesContactInfo": true,
     "viewerHidesFullAddress": true,
     "livingDOBVisibleToViewer": true

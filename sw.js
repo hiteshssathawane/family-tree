@@ -1,18 +1,22 @@
 // The Family Tree - Enhanced Service Worker (Phase 8)
-const CACHE_NAME = 'family-tree-v8';
+const CACHE_NAME = 'family-tree-v9';
 const STATIC_CACHE = [
   './',
   'index.html',
   'manifest.json',
   'vendor/d3.min.js',
   'vendor/flexsearch.bundle.js',
-  'vendor/leaflet.js',
-  'vendor/leaflet.css',
   'vendor/fonts.css',
-  'vendor/fonts/playfair-display-400.woff2',
-  'vendor/fonts/playfair-display-700.woff2',
-  'vendor/fonts/lato-400.woff2',
-  'vendor/fonts/lato-700.woff2'
+  // Variable faces, one file per family + style + subset. Must match what
+  // scripts/download-vendors.js actually wrote into vendor/fonts/ — a single
+  // missing entry rejects addAll() and aborts the whole install, which is how
+  // this worker silently never activated.
+  'vendor/fonts/cormorant-garamond-latin.woff2',
+  'vendor/fonts/cormorant-garamond-latin-ext.woff2',
+  'vendor/fonts/cormorant-garamond-italic-latin.woff2',
+  'vendor/fonts/cormorant-garamond-italic-latin-ext.woff2',
+  'vendor/fonts/inter-latin.woff2',
+  'vendor/fonts/inter-latin-ext.woff2'
 ];
 
 // Install event - cache static assets
@@ -29,7 +33,9 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (!cacheName.startsWith('family-tree-v8')) {
+          // Compare against CACHE_NAME, not a hardcoded version — the old
+          // literal meant bumping the version silently stopped cleaning up.
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })

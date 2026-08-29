@@ -35,6 +35,7 @@ const STATUS_ONLY = args.includes('--status');
 const RUN_ALL     = args.includes('--all');
 const RESET       = args.includes('--reset');
 const HEADLESS    = args.includes('--headless');
+const PHOTOS_ONLY = args.includes('--photos-only');
 const TARGET_IDX  = args.includes('--index') ? parseInt(args[args.indexOf('--index') + 1]) : null;
 const TARGET_NAME = args.includes('--name')  ? args[args.indexOf('--name')  + 1].toLowerCase() : null;
 
@@ -137,7 +138,13 @@ const eligible = rows
     const bg      = resolveImage(row['Background Picture']);
     return { row, idx, profile, bg, key: rowKey(row) };
   })
-  .filter(r => r.profile || r.bg);
+  // T-30: only 11 of 64 rows have a local image, and requiring one left the other 53 with
+  // no submission path at all. Uploads below are already conditional, so a photo-less row
+  // simply submits without one — far better than inventing placeholder images, which
+  // would write wrong faces into Drive, R2 and family.json.
+  // --photos-only restores the old behaviour for staging a photo-first run.
+  .filter(r => (r.row['First Name (English) *'] || '').trim())
+  .filter(r => PHOTOS_ONLY ? (r.profile || r.bg) : true);
 
 // ── Progress state ────────────────────────────────────────────────────────────
 if (RESET) {
@@ -147,7 +154,8 @@ const progress = loadProgress();
 
 // ── --status ──────────────────────────────────────────────────────────────────
 if (STATUS_ONLY) {
-  console.log(`\n📋  Form submission status (${eligible.length} rows with images):\n`);
+  const withImages = eligible.filter(e => e.profile || e.bg).length;
+  console.log(`\n📋  Form submission status (${eligible.length} rows, ${withImages} with images):\n`);
   eligible.forEach((e, i) => {
     const done = progress[e.key];
     const icon = done ? '✅' : '⏳';
@@ -168,8 +176,11 @@ if (TARGET_IDX !== null) {
   toProcess = eligible.filter(e =>
     e.row['First Name (English) *'].toLowerCase() === TARGET_NAME
   );
-} else if (DRY_RUN || RUN_ALL) {
-  // dry-run or --all: process all eligible rows (ignoring progress)
+} else if (RUN_ALL) {
+  // "submit ALL remaining unsubmitted rows" — it used to include completed ones, which
+  // re-submitted every finished member and re-uploaded their photos on each run.
+  toProcess = eligible.filter(e => !progress[e.key]);
+} else if (DRY_RUN) {
   toProcess = eligible;
 } else {
   // Default: ONE row — the next unsubmitted one
@@ -254,16 +265,49 @@ async function fillText(page, pattern, value) {
   else console.log(`  ⚠️  No input in: ${pattern}`);
 }
 
-async function clickRadio(page, pattern, optionText) {
-  if (!optionText) return;
-  const q = await findQuestion(page, pattern);
-  if (!q) { console.log(`  ⚠️  Radio not found: ${pattern}`); return; }
-  try { await q.getByText(optionText, { exact: true }).first().click(); }
-  catch {
-    const radio = q.locator('[role="radio"]').filter({ hasText: optionText }).first();
-    if (await radio.count()) await radio.click();
-    else console.log(`  ⚠️  Option "${optionText}" not found in: ${pattern}`);
+// Forms carries the option value on the radio's own data-value / aria-label; the radio
+// element itself has NO text. So `getByText('Male')` matched the sibling label span, and
+// `filter({ hasText })` over [role=radio] could never match at all.
+async function isRadioChecked(q, optionText) {
+  const checked = q.locator('[role="radio"][aria-checked="true"]');
+  const n = await checked.count();
+  for (let i = 0; i < n; i++) {
+    const el = checked.nth(i);
+    const val = (await el.getAttribute('data-value')) || (await el.getAttribute('aria-label')) || '';
+    if (val.trim() === optionText) return true;
   }
+  return false;
+}
+
+// Only ever called for required radio fields (Gender *, Status *, Marital Status *).
+// Must throw rather than warn-and-continue: a swallowed failure here previously let
+// the row reach Submit with that field blank, silently corrupting the imported data.
+//
+// Clicking is not enough — verify aria-checked actually flipped. The label-span click
+// above "succeeded" (the element existed and was clickable) while selecting nothing, so
+// the row submitted with Gender/Status/Marital Status blank and clickRadio never threw.
+// That only showed up headless: slowMo on a headed run hid the race.
+async function clickRadio(page, pattern, optionText) {
+  if (!optionText) throw new Error(`Required field has no value to submit: ${pattern}`);
+  const q = await findQuestion(page, pattern);
+  if (!q) throw new Error(`Radio question not found on form: ${pattern}`);
+
+  const candidates = [
+    q.locator(`[role="radio"][data-value="${optionText}"]`),
+    q.locator(`[role="radio"][aria-label="${optionText}"]`),
+    q.getByText(optionText, { exact: true }),
+  ];
+
+  for (const candidate of candidates) {
+    if (!(await candidate.count())) continue;
+    const el = candidate.first();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await el.click({ timeout: 5000 }).catch(() => {});
+      if (await isRadioChecked(q, optionText)) return;
+      await page.waitForTimeout(300);
+    }
+  }
+  throw new Error(`Radio option "${optionText}" never became selected in question: ${pattern}`);
 }
 
 async function fillDate(page, pattern, dateStr) {
@@ -292,27 +336,67 @@ async function fillDate(page, pattern, dateStr) {
   console.log(`  ⚠️  Cannot find date inputs for: ${pattern}`);
 }
 
+// Forms renders its uploader inside a cross-origin Drive picker iframe whose `name`
+// is regenerated every session, so it can never be addressed by a fixed selector —
+// find it by URL among the live frames instead.
+// Matching the first /picker frame is not enough: after an upload the spent picker
+// stays in the DOM, so the second upload kept binding to that dead frame and timed out
+// looking for a Browse button that was no longer there. Identify the live picker by
+// the presence of a visible Browse button instead.
+async function findLivePicker(page, timeoutMs = 45000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    for (const f of page.frames()) {
+      if (!/\/picker/.test(f.url())) continue;
+      const btn = f.getByRole('button', { name: 'Browse' }).first();
+      if (await btn.isVisible().catch(() => false)) return f;
+    }
+    await page.waitForTimeout(300);
+  }
+  return null;
+}
+
+// Throws rather than warn-and-continue, for the same reason clickRadio does, plus one
+// more: a failed upload leaves the picker modal covering the page, so the later Submit
+// click times out against the overlay. Warning here cost the photo AND the submission.
 async function uploadFile(page, pattern, filePath) {
   if (!filePath) return;
   const q = await findQuestion(page, pattern);
-  if (!q) { console.log(`  ⚠️  Upload field not found: ${pattern}`); return; }
-  const fileIn = q.locator('input[type="file"]');
-  if (await fileIn.count()) {
-    await fileIn.first().setInputFiles(filePath);
+  if (!q) throw new Error(`Upload field not found on form: ${pattern}`);
+
+  // Forms restores a saved draft on load, so a file left by an earlier run would
+  // otherwise ride along into this person's response.
+  const removeBtn = q.locator('[aria-label*="Remove" i], [data-tooltip*="Remove" i]');
+  while (await removeBtn.count()) {
+    console.log(`  🧹  Clearing a file left in the form draft`);
+    await removeBtn.first().click();
     await page.waitForTimeout(1500);
-    return;
   }
-  try {
-    const [chooser] = await Promise.all([
-      page.waitForEvent('filechooser', { timeout: 5000 }),
-      q.locator('button, [role="button"]').first().click(),
-    ]);
-    await chooser.setFiles(filePath);
-    await page.waitForTimeout(2000);
-  } catch {
-    console.log(`  ⚠️  File chooser not triggered for: ${pattern}`);
-    console.log(`       Upload manually: ${filePath}`);
-  }
+
+  // The button carries the question's own name ("Profile Picture"), not "Add file".
+  await q.getByRole('button', { name: pattern }).first()
+    .or(page.getByRole('button', { name: pattern }).first())
+    .click();
+
+  // The file input does not exist until Browse is clicked — this step is why every
+  // earlier attempt reported "no file inputs inside iframe".
+  const picker = await findLivePicker(page);
+  if (!picker) throw new Error(`Drive picker never opened for: ${pattern}`);
+
+  // Browse pops the native OS file dialog. Claim it as a Playwright filechooser so no
+  // OS-level window is left hanging over the page — relying on setInputFiles to win
+  // that race left a stray macOS dialog open on an earlier run.
+  const chooserPromise = page.waitForEvent('filechooser', { timeout: 15000 }).catch(() => null);
+  await picker.getByRole('button', { name: 'Browse' }).first().click();
+  const chooser = await chooserPromise;
+  if (chooser) await chooser.setFiles(filePath);
+  else await picker.locator('input[type="file"]').first().setInputFiles(filePath);
+
+  // Done only once Forms shows the file chip; without this, Submit races the upload.
+  await q.getByText(basename(filePath), { exact: false }).first()
+    .waitFor({ state: 'visible', timeout: 120000 })
+    .catch(() => { throw new Error(`Upload never completed for ${basename(filePath)} in: ${pattern}`); });
+  console.log(`  ✔   Attached ${basename(filePath)}`);
 }
 
 // ── Main loop ─────────────────────────────────────────────────────────────────
@@ -334,61 +418,68 @@ for (let i = 0; i < toProcess.length; i++) {
   console.log(`\n🧑  [${i + 1}/${toProcess.length}] ${key}`);
 
   const page = await context.newPage();
-  await page.goto(FORM_URL, { waitUntil: 'networkidle' });
-
-  await fillText(page,  'Mobile Number',           R['Mobile Number']);
-  await fillText(page,  'First Name.*English',     R['First Name (English) *']);
-  await fillText(page,  'First Name.*Marathi',     R['First Name (Marathi - पहिले नाव) *']);
-  await fillText(page,  'Last Name.*English',      R['Last Name (English) *']);
-  await fillText(page,  'Last Name.*Marathi',      R['Last Name (Marathi - आडनाव) *']);
-  await fillText(page,  'Alias',                   R['Alias']);
-  await fillText(page,  'Father Name',             R['Father Name (English) *']);
-  await fillText(page,  'Mother Name',             R['Mother Name (English) *']);
-  await fillText(page,  'Spouse First Name',       R['Spouse First Name (Mandatory if Married)']);
-  await fillText(page,  'Spouse Father Name',      R['Spouse Father Name']);
-  await fillText(page,  'Spouse Mother Name',      R['Spouse Mother Name']);
-  await fillText(page,  'Spouse Last Name',        R['Spouse Last Name']);
-  await fillText(page,  'Birth Place',             R['Birth Place *']);
-  await fillText(page,  'Death Place',             R['Death Place (If applicable, only if Status is Deceased)']);
-  await fillText(page,  'Occupation',              R['Occupation']);
-  await fillText(page,  'Education Details',       R['Education Details (Free text field for specific qualifications)']);
-  await fillText(page,  'Location.*City',          R['Location (Current City/Region) *']);
-  await fillText(page,  'Biography',               R['Biography']);
-
-  await clickRadio(page, 'Gender',         R['Gender *']);
-  await clickRadio(page, '^Status',        R['Status *']);
-  await clickRadio(page, 'Marital Status', R['Marital Status *']);
-
-  await fillDate(page, 'Marriage Date', R['Marriage Date']);
-  await fillDate(page, 'Birth Date',    R['Birth Date *']);
-  await fillDate(page, 'Death Date',    R['Death Date (If applicable, only if Status is Deceased)']);
-
-  if (profile) { console.log(`  📸  Uploading profile: ${basename(profile)}`); await uploadFile(page, 'Profile Picture', profile); }
-  if (bg)      { console.log(`  🖼️   Uploading bg: ${basename(bg)}`);           await uploadFile(page, 'Background Picture', bg); }
-
-  console.log(`  ✅  Submitting…`);
-  const submitBtn = page.getByRole('button', { name: /submit/i }).or(
-    page.locator('[value="Submit"], .freebirdFormviewerViewNavigationSubmitButton')
-  );
-  await submitBtn.first().click();
-
-  let submitted = false;
   try {
-    await page.waitForSelector('text=/response has been recorded|Thank you/i', { timeout: 10000 });
-    submitted = true;
-    console.log(`  🎉  Submitted!`);
-  } catch {
-    console.log(`  ⚠️  No confirmation — check the browser window`);
+    await page.goto(FORM_URL, { waitUntil: 'networkidle' });
+
+    await fillText(page,  'Mobile Number',           R['Mobile Number']);
+    await fillText(page,  'First Name.*English',     R['First Name (English) *']);
+    await fillText(page,  'First Name.*Marathi',     R['First Name (Marathi - पहिले नाव) *']);
+    await fillText(page,  'Last Name.*English',      R['Last Name (English) *']);
+    await fillText(page,  'Last Name.*Marathi',      R['Last Name (Marathi - आडनाव) *']);
+    await fillText(page,  'Alias',                   R['Alias']);
+    await fillText(page,  'Father Name',             R['Father Name (English) *']);
+    await fillText(page,  'Mother Name',             R['Mother Name (English) *']);
+    await fillText(page,  'Spouse First Name',       R['Spouse First Name (Mandatory if Married)']);
+    await fillText(page,  'Spouse Father Name',      R['Spouse Father Name']);
+    await fillText(page,  'Spouse Mother Name',      R['Spouse Mother Name']);
+    await fillText(page,  'Spouse Last Name',        R['Spouse Last Name']);
+    await fillText(page,  'Birth Place',             R['Birth Place *']);
+    await fillText(page,  'Death Place',             R['Death Place (If applicable, only if Status is Deceased)']);
+    await fillText(page,  'Occupation',              R['Occupation']);
+    await fillText(page,  'Education Details',       R['Education Details (Free text field for specific qualifications)']);
+    await fillText(page,  'Location.*City',          R['Location (Current City/Region) *']);
+    await fillText(page,  'Biography',               R['Biography']);
+
+    await clickRadio(page, 'Gender',         R['Gender *']);
+    await clickRadio(page, '^Status',        R['Status *']);
+    await clickRadio(page, 'Marital Status', R['Marital Status *']);
+
+    await fillDate(page, 'Marriage Date', R['Marriage Date']);
+    await fillDate(page, 'Birth Date',    R['Birth Date *']);
+    await fillDate(page, 'Death Date',    R['Death Date (If applicable, only if Status is Deceased)']);
+
+    if (profile) { console.log(`  📸  Uploading profile: ${basename(profile)}`); await uploadFile(page, 'Profile Picture', profile); }
+    if (bg)      { console.log(`  🖼️   Uploading bg: ${basename(bg)}`);           await uploadFile(page, 'Background Picture', bg); }
+
+    console.log(`  ✅  Submitting…`);
+    const submitBtn = page.getByRole('button', { name: /submit/i }).or(
+      page.locator('[value="Submit"], .freebirdFormviewerViewNavigationSubmitButton')
+    );
+    await submitBtn.first().click();
+
+    let submitted = false;
+    try {
+      await page.waitForSelector('text=/response has been recorded|Thank you/i', { timeout: 10000 });
+      submitted = true;
+      console.log(`  🎉  Submitted!`);
+    } catch {
+      console.log(`  ⚠️  No confirmation — check the browser window`);
+      if (!HEADLESS) await page.waitForTimeout(5000);
+    }
+
+    // Save progress immediately after each row
+    if (submitted) {
+      progress[key] = new Date().toISOString();
+      saveProgress(progress);
+    }
+  } catch (err) {
+    // A required field (Gender/Status/Marital Status/etc.) couldn't be set — do NOT
+    // submit this row. Better a row stuck pending than one silently corrupted.
+    console.log(`  ❌  Row aborted, NOT submitted: ${err.message}`);
     if (!HEADLESS) await page.waitForTimeout(5000);
+  } finally {
+    await page.close();
   }
-
-  // Save progress immediately after each row
-  if (submitted) {
-    progress[key] = new Date().toISOString();
-    saveProgress(progress);
-  }
-
-  await page.close();
 
   if (i < toProcess.length - 1) {
     console.log(`  ⏳  3 s before next…`);

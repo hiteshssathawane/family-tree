@@ -8,6 +8,7 @@ import { resolve } from 'path';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import 'dotenv/config'; // Loads variables from .env file if it exists
 import crypto from 'crypto';
+import { execSync } from 'child_process';
 
 const familyPath = resolve('data/family.json');
 
@@ -48,6 +49,13 @@ const r2 = new S3Client({
 
 const bucketName = process.env.CF_R2_BUCKET_NAME;
 const publicBaseUrl = process.env.CF_R2_PUBLIC_URL.replace(/\/$/, '');
+
+// Deleting the Drive original after a successful R2 upload is opt-in, and off by
+// default. The Apps Script Web App was published without Drive scope, so the
+// deleteFile action fails with a permission error until its owner re-authorises it.
+// Until that happens the originals stay in Drive and are cleared by hand — see
+// RUN_AND_TEST.md → "Google Drive cleanup (manual)".
+const DRIVE_CLEANUP = process.env.DRIVE_CLEANUP === '1';
 
 // Helper to extract File ID from Google Drive URL
 function extractGoogleDriveId(url) {
@@ -169,8 +177,8 @@ async function syncField(person, fieldName, filePrefix) {
         console.log(`   🚀 Success! Public URL: ${cfUrl}`);
         person[fieldName] = cfUrl;
 
-        // Request Google Drive to delete the file (disabled to avoid Drive permission errors)
-        // await deleteFromDriveViaAppsScript(fileId);
+        // Off unless DRIVE_CLEANUP=1 — see the note at the top of this file
+        if (DRIVE_CLEANUP) await deleteFromDriveViaAppsScript(fileId);
         return true;
       } catch (err) {
         console.error(`   ❌ Failed to sync media for ${person.firstName} [${fieldName}]: ${err.message}`);
@@ -212,8 +220,8 @@ async function syncScrapbook(family) {
                 entry.photos[photoIdx] = cfUrl;
                 updated = true;
 
-                // Request Google Drive to delete the file (disabled to avoid Drive permission errors)
-                // await deleteFromDriveViaAppsScript(fileId);
+                // Off unless DRIVE_CLEANUP=1 — see the note at the top of this file
+                if (DRIVE_CLEANUP) await deleteFromDriveViaAppsScript(fileId);
               } catch (err) {
                 console.error(`   ❌ Failed to sync scrapbook media for ${personId} (entry #${entryIdx + 1}, photo #${photoIdx + 1}): ${err.message}`);
               }
@@ -254,6 +262,13 @@ async function sync() {
     family.meta.updatedAt = new Date().toISOString().split('T')[0];
     writeFileSync(familyPath, JSON.stringify(family, null, 2), 'utf8');
     console.log('\n💾 Successfully updated family.json with new Cloudflare URLs!');
+
+    // The app renders tree-data.js, not family.json. `sheet:pull` regenerates it *before*
+    // this script rewrites the photo URLs, so without regenerating again the tree keeps
+    // pointing at Google Drive links that do not load publicly — family.json would hold
+    // 20 R2 URLs while the rendered app showed 20 dead Drive ones.
+    console.log('🌳 Regenerating tree-data.js so the app picks up the R2 URLs...');
+    execSync('node scripts/generate-tree-data.js', { stdio: 'inherit' });
   } else {
     console.log('\n✨ No pending Google Drive profile/background/scrapbook photos to migrate.');
   }

@@ -18,8 +18,7 @@
       "namePlaceholder": "Your full name (e.g. Vikram Sharma)",
       "dobPlaceholder": "Date of birth — DDMMYYYY (e.g. 04111972)",
       "hint": "Like your PAN card password — your name + birthday",
-      "button": "Confirm identity",
-      "guestLink": "Continue as guest (view ancestors only)"
+      "button": "Confirm identity"
     },
     "step3": {
       "heading": "One-time code",
@@ -111,7 +110,11 @@
       "firstName": "First name *",
       "lastName": "Last name *",
       "dob": "Date of birth (DDMMYYYY) *",
-      "roles": { "viewer": "Viewer", "contributor": "Contributor", "admin": "Admin" },
+      "roles": {
+        "viewer": "Viewer",
+        "contributor": "Contributor",
+        "admin": "Admin"
+      },
       "branch": "Branch",
       "photoUpload": "Drop profile photo here or tap to select",
       "photoHint": "Uploaded to Cloudflare R2 · max 5MB",
@@ -149,17 +152,12 @@
   },
   "errors": {
     "wrongPassword": "Incorrect family password. Please try again.",
-    "identityNotFound": "Name and date of birth not found. Check spelling or continue as guest.",
+    "identityNotFound": "Name and date of birth not found. Check spelling.",
     "wrongTotp": "Incorrect code. Please check Google Authenticator and try again.",
     "dataLoadFailed": "Could not load family data. Please refresh."
   },
   "loading": {
     "message": "Loading family data..."
-  },
-  "guest": {
-    "noAccess": "Guests can view deceased ancestors only.",
-    "login": "Log in",
-    "loginToSeeTree": "Log in to see your family tree"
   },
   "export": {
     "processing": "Processing...",

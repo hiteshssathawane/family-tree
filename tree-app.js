@@ -5,6 +5,78 @@ window.initTreeApp = function () {
   const F = window.FAMILY;
   const ME = F.ME;
 
+  // ---------- Branch colours ----------
+  // Allocated per surname at render time rather than read from a hand-kept
+  // list, so a new in-law family picks up a colour the moment it appears in
+  // the data. Anchored on the heritage design tokens so added branches stay
+  // in the family look.
+  const BRANCH_PALETTE = [
+    '#4a7c59', // --family-leaf
+    '#c8963e', // --family-gold
+    '#5c3d1e', // --family-bark
+    '#96566b', // muted rose
+    '#8d5b4c', // terracotta
+    '#5a789a', // slate blue
+    '#7d6291', // plum
+    '#a85751', // brick
+    '#2f6b6b', // deep teal
+    '#6d7f3f', // olive
+    '#9e9080', // --family-muted
+    '#4d5f8a'  // indigo
+  ];
+  const BRANCH_FALLBACK = '#2D7A2D';
+  let branchColorMap = null;
+
+  // Hashing gives each surname a preferred slot so it keeps its colour across
+  // reloads; walking the surnames in sorted order makes the collision fallback
+  // deterministic too, so the same data always paints the same colours.
+  // The root person's surname is pinned to the leaf green first, so the main
+  // line always reads as the family green rather than whatever it hashes to.
+  function buildBranchColorMap(persons, rootSurname) {
+    const map = {};
+    const taken = new Set();
+    const surnames = Array.from(new Set(
+      (persons || []).map(p => (p.lastName || '').trim()).filter(Boolean)
+    )).sort();
+
+    const root = (rootSurname || '').trim();
+    if (root && surnames.indexOf(root) !== -1) {
+      map[root] = BRANCH_PALETTE[0];
+      taken.add(0);
+    }
+
+    surnames.forEach(name => {
+      if (map[name]) return;
+      const key = name.toLowerCase();
+      let h = 2166136261;
+      for (let i = 0; i < key.length; i++) {
+        h ^= key.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      let idx = Math.abs(h) % BRANCH_PALETTE.length;
+      // Past the palette size colours must repeat, so only probe while free
+      // slots remain.
+      if (taken.size < BRANCH_PALETTE.length) {
+        while (taken.has(idx)) idx = (idx + 1) % BRANCH_PALETTE.length;
+        taken.add(idx);
+      }
+      map[name] = BRANCH_PALETTE[idx];
+    });
+    return map;
+  }
+
+  function getBranchColor(lastName) {
+    if (!branchColorMap) {
+      const raw = window.FAMILY_DATA || window.FAMILY || {};
+      const people = raw.persons || F.people || [];
+      const rootId = raw.meta && raw.meta.rootPersonId;
+      const root = rootId && people.find(p => p.id === rootId);
+      branchColorMap = buildBranchColorMap(people, root && root.lastName);
+    }
+    return branchColorMap[(lastName || '').trim()] || BRANCH_FALLBACK;
+  }
+  window.getBranchColor = getBranchColor;
+
   // ---------- View state ----------
   let view = { x: 0, y: 0, scale: 0.85 };
   const minScale = 0.25, maxScale = 1.75;
@@ -718,6 +790,216 @@ window.initTreeApp = function () {
   }
 
   /* ============================================================
+     PROFILE TABS — Timeline | Bio | Family
+     ============================================================ */
+  const MONTH_NAMES = ["January","February","March","April","May","June",
+                       "July","August","September","October","November","December"];
+
+  // family.json dates are ISO. Anything else (a bare year, a hand-typed value)
+  // is passed through rather than mangled into an invalid Date.
+  function formatFullDate(iso) {
+    if (!iso) return null;
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return String(iso);
+    const month = parseInt(m[2], 10);
+    if (month < 1 || month > 12) return String(iso);
+    return `${parseInt(m[3], 10)} ${MONTH_NAMES[month - 1]} ${m[1]}`;
+  }
+
+  function sentenceCase(s) {
+    if (!s) return null;
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  }
+
+  function personChipHtml(id, label) {
+    const p = F.byId[id];
+    if (!p) return "";
+    // An empty label means the surrounding heading already carries the relation.
+    const relHtml = label ? `<span class="lrc-rel">${escapeHtml(label)}</span>` : "";
+    return `<button class="lb-rel-chip" data-id="${id}">
+      ${thumbHtml(p, "lrc-thumb")}
+      ${relHtml}
+      <span>${escapeHtml(p.name.split(" ")[0])}</span>
+    </button>`;
+  }
+
+  // Every chip in the panel navigates the same way: close, then reopen on the
+  // target once the sheet has finished sliding out.
+  function bindPersonChips(root) {
+    root.querySelectorAll(".lb-rel-chip").forEach(el => {
+      el.addEventListener("click", () => {
+        const targetId = el.dataset.id;
+        closeLightbox();
+        setTimeout(() => openPerson(targetId), 280);
+      });
+    });
+  }
+
+  function renderBioTab(p) {
+    const facts = [];
+    const push = (label, value) => { if (value) facts.push([label, value]); };
+
+    if (p.hasBirthYear) push("Born", formatFullDate(p.birthDate));
+    push("Birthplace", p.birthPlace);
+    if (p.deceased) {
+      push("Passed away", formatFullDate(p.deathDate));
+      push("Place of passing", p.deathPlace);
+    }
+    push("Lives in", p.location);
+    push("Occupation", p.occupation);
+    push("Education", p.education);
+    push("Religion", p.religion);
+    push("Marital status", sentenceCase(p.maritalStatus));
+    push("Maiden name", p.maidenName);
+    push("Known as", p.commonName);
+
+    const factsEl = document.getElementById("lb-facts");
+    factsEl.innerHTML = facts
+      .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`)
+      .join("");
+
+    const storyEl = document.getElementById("lb-story");
+    if (p.biography) {
+      storyEl.innerHTML = `<h4 class="lb-sec-title">Life story</h4>${escapeHtml(p.biography)}`;
+    } else {
+      storyEl.innerHTML = "";
+    }
+
+    if (!facts.length && !p.biography) {
+      factsEl.innerHTML = "";
+      storyEl.innerHTML = `<div class="lb-empty">We haven't recorded anything about ${escapeHtml(p.name.split(" ")[0])} yet.</div>`;
+      storyEl.style.borderTop = "none";
+      storyEl.style.paddingTop = "0";
+    } else {
+      storyEl.style.borderTop = "";
+      storyEl.style.paddingTop = "";
+    }
+  }
+
+  function renderFamilyTab(p) {
+    const groups = [];
+
+    if (p.spouse && F.byId[p.spouse]) {
+      // The group heading already says Wife/Husband and there is only ever one chip
+      // under it, so repeating the word on the chip just reads as "HUSBAND HUSBAND
+      // Hitesh". Parents/Children keep their chip labels because those distinguish
+      // members within the group (Father vs Mother, Son vs Daughter).
+      groups.push({
+        title: p.gender === "m" ? "Wife" : "Husband",
+        members: [[p.spouse, ""]]
+      });
+    }
+
+    const parents = (p.parents || []).filter(id => F.byId[id]);
+    if (parents.length) {
+      groups.push({
+        title: "Parents",
+        members: parents.map(id => [id, F.byId[id].gender === "m" ? "Father" : "Mother"])
+      });
+    }
+
+    const siblings = (p.siblings || []).filter(id => F.byId[id]);
+    if (siblings.length) {
+      groups.push({
+        title: siblings.length === 1 ? "Sibling" : "Siblings",
+        members: siblings.map(id => [id, F.byId[id].gender === "m" ? "Brother" : "Sister"])
+      });
+    }
+
+    const children = (p.children || []).filter(id => F.byId[id]);
+    if (children.length) {
+      groups.push({
+        title: children.length === 1 ? "Child" : "Children",
+        members: children.map(id => [id, F.byId[id].gender === "m" ? "Son" : "Daughter"])
+      });
+    }
+
+    const groupsEl = document.getElementById("lb-fam-groups");
+    if (!groups.length) {
+      groupsEl.innerHTML = `<div class="lb-empty">No family links recorded for ${escapeHtml(p.name.split(" ")[0])} yet.</div>`;
+    } else {
+      groupsEl.innerHTML = groups.map(g => `
+        <div class="lb-fam-group">
+          <h4 class="lb-sec-title">${escapeHtml(g.title)}</h4>
+          <div class="lb-fam-chips">
+            ${g.members.map(([id, label]) => personChipHtml(id, label)).join("")}
+          </div>
+        </div>`).join("");
+      bindPersonChips(groupsEl);
+    }
+  }
+
+  /* ============================================================
+     RELATIONSHIP CALCULATOR (T-18)
+     ============================================================ */
+  const relCalcSelect = document.getElementById("lb-relcalc-select");
+  const relCalcResult = document.getElementById("lb-relcalc-result");
+  let relCalcPopulated = false;
+
+  function populateRelCalc() {
+    if (relCalcPopulated || !relCalcSelect) return;
+    const sorted = F.people.slice().sort((a, b) => a.name.localeCompare(b.name));
+    relCalcSelect.insertAdjacentHTML("beforeend", sorted.map(p =>
+      `<option value="${p.id}">${escapeHtml(p.name)}</option>`
+    ).join(""));
+    relCalcPopulated = true;
+  }
+
+  function renderRelCalc(otherId) {
+    if (!relCalcResult) return;
+    if (!otherId || !currentPersonId) { relCalcResult.innerHTML = ""; return; }
+
+    const subject = F.byId[currentPersonId];
+    const other   = F.byId[otherId];
+    const result  = F.relationshipBetween(currentPersonId, otherId);
+    if (!subject || !other || !result) { relCalcResult.innerHTML = ""; return; }
+
+    const subjectFirst = escapeHtml(subject.name.split(" ")[0]);
+    const otherFirst   = escapeHtml(other.name.split(" ")[0]);
+
+    let answer;
+    if (currentPersonId === otherId) {
+      answer = `That's ${subjectFirst} — the same person.`;
+    } else if (!result.connected) {
+      answer = `<strong>${otherFirst}</strong> has no recorded link to <strong>${subjectFirst}</strong> in the tree yet.`;
+    } else {
+      answer = `<strong>${otherFirst}</strong> is <strong>${subjectFirst}</strong>'s <strong>${escapeHtml(result.label)}</strong>.`;
+    }
+
+    // Show the working: the hop chain the answer was derived from.
+    let chainHtml = "";
+    const hops = result.chain.slice(0, 8);
+    if (hops.length > 1) {
+      chainHtml = `<div class="lb-relcalc-chain">${escapeHtml(subject.name)}` +
+        hops.map(h => `<span class="arrow">→</span><span class="hop-rel">${escapeHtml(h.rel)}</span>${escapeHtml(h.name)}`).join("") +
+        (result.chain.length > hops.length ? `<span class="arrow">→</span>…` : "") +
+        `</div>`;
+    }
+
+    relCalcResult.innerHTML = `<div class="lb-relcalc-answer">${answer}</div>${chainHtml}`;
+  }
+
+  if (relCalcSelect) {
+    relCalcSelect.addEventListener("change", () => renderRelCalc(relCalcSelect.value));
+  }
+
+  function switchProfileTab(name) {
+    document.querySelectorAll(".lb-tab").forEach(btn => {
+      const on = btn.dataset.lbtab === name;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".lb-tabpanel").forEach(panel => {
+      const on = panel.id === `lb-tab-${name}`;
+      panel.classList.toggle("active", on);
+      panel.hidden = !on;
+    });
+  }
+  document.querySelectorAll(".lb-tab").forEach(btn => {
+    btn.addEventListener("click", () => switchProfileTab(btn.dataset.lbtab));
+  });
+
+  /* ============================================================
      LIGHTBOX
      ============================================================ */
   function openPerson(id) {
@@ -737,9 +1019,11 @@ window.initTreeApp = function () {
 
     const life = document.getElementById("lb-life");
     const lifeParts = [];
-    lifeParts.push(p.birth ? `b. ${p.birth}` : "");
+    // p.birth carries a 1950 placeholder when the record has no DOB, so the
+    // year and the age are only printed when the birth date is real.
+    lifeParts.push(p.hasBirthYear ? `b. ${p.birth}` : "");
     if (p.deceased && p.death) lifeParts.push(`d. ${p.death}`);
-    else if (!p.deceased && p.birth) {
+    else if (!p.deceased && p.hasBirthYear) {
       const age = 2026 - p.birth;
       lifeParts.push(`${age} years`);
     }
@@ -811,13 +1095,15 @@ window.initTreeApp = function () {
         <span>${escapeHtml(rp.name.split(" ")[0])}</span>
       </button>`;
     }).join("");
-    relsEl.querySelectorAll(".lb-rel-chip").forEach(el => {
-      el.addEventListener("click", () => {
-        const targetId = el.dataset.id;
-        closeLightbox();
-        setTimeout(() => openPerson(targetId), 280);
-      });
-    });
+    bindPersonChips(relsEl);
+
+    // Bio + Family tabs, and the relationship calculator seeded on this person
+    renderBioTab(p);
+    renderFamilyTab(p);
+    populateRelCalc();
+    if (relCalcSelect) relCalcSelect.value = "";
+    renderRelCalc("");
+    switchProfileTab("timeline");
 
     // Timeline title
     document.getElementById("lb-timeline-title").textContent = id === ME
@@ -1159,15 +1445,7 @@ window.initTreeApp = function () {
       const card = document.createElement("div");
       card.className = "cal-event-card";
       
-      const branchColors = {
-        'Sathawane': '#4a7c59',
-        'Waghmare': '#c8963e',
-        'Biradar': '#5c3d1e',
-        'Bisne': '#8d5b4c',
-        'Kalambe': '#5a789a'
-      };
-      const color = branchColors[occ.branch] || '#2D7A2D';
-      card.style.setProperty('--branch-color', color);
+      card.style.setProperty('--branch-color', getBranchColor(occ.branch));
 
       const isToday = occ.daysLeft === 0 || occ.daysLeft === 365;
       const countdownClass = isToday ? "cal-countdown today" : "cal-countdown";

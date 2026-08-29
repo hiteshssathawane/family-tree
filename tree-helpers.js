@@ -230,6 +230,122 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     return null;
   }
 
+  /* ============================================================
+     RELATIONSHIP CALCULATOR — "how are these two related?"
+     ============================================================ */
+
+  // Shortest hop chain between two people. Blood edges are queued before the
+  // marriage edge so an equal-length path through a sibling wins over one
+  // through a spouse, which reads better in the explanation.
+  function relationPath(aId, bId) {
+    if (aId === bId) return [aId];
+    const q = [[aId, [aId]]];
+    const seen = new Set([aId]);
+    while (q.length) {
+      const [cur, path] = q.shift();
+      const p = byId[cur];
+      if (!p) continue;
+      const nbrs = [];
+      (p.parents  || []).forEach(x => nbrs.push(x));
+      (p.children || []).forEach(x => nbrs.push(x));
+      (p.siblings || []).forEach(x => nbrs.push(x));
+      if (p.spouse) nbrs.push(p.spouse);
+      for (const n of nbrs) {
+        if (!byId[n]) continue;
+        if (n === bId) return [...path, n];
+        if (!seen.has(n)) { seen.add(n); q.push([n, [...path, n]]); }
+      }
+    }
+    return null;
+  }
+
+  // Names a single hop, e.g. "mother" for the step from a child to its mother.
+  function stepName(fromId, toId) {
+    const from = byId[fromId], to = byId[toId];
+    if (!from || !to) return "relative";
+    if (from.spouse === toId)                   return to.gender === "m" ? "husband" : "wife";
+    if ((from.parents  || []).includes(toId))   return to.gender === "m" ? "father"  : "mother";
+    if ((from.children || []).includes(toId))   return to.gender === "m" ? "son"     : "daughter";
+    if ((from.siblings || []).includes(toId))   return to.gender === "m" ? "brother" : "sister";
+    return "relative";
+  }
+
+  function ordinal(n) {
+    return ["1st", "2nd", "3rd"][n - 1] || (n + "th");
+  }
+
+  // Names a blood relationship off the nearest shared ancestor: cousins when
+  // both sides descend at least two generations, grand-uncles and grand-nephews
+  // when one side is a child of that ancestor. Returns null for the close cases
+  // (parent, sibling, uncle, nephew) — labelFor already names those, in Marathi
+  // as well, and it names them better.
+  function collateralLabel(aId, bId) {
+    const other = byId[bId];
+    if (!other) return null;
+
+    const mine = new Set(ancestorsOf(aId));
+    let best = null, bestSum = Infinity;
+    ancestorsOf(bId).forEach(anc => {
+      if (!mine.has(anc)) return;
+      const du = distToAncestor(aId, anc);
+      const dd = distToAncestor(bId, anc);
+      if (du + dd < bestSum) { bestSum = du + dd; best = { du, dd }; }
+    });
+    if (!best) return null;
+
+    const { du, dd } = best;
+    if (du === 0 || dd === 0) return null;      // direct ancestor or descendant
+
+    if (du >= 2 && dd >= 2) {
+      const degree  = Math.min(du, dd) - 1;
+      const removed = Math.abs(du - dd);
+      let label = ordinal(degree) + " cousin";
+      if (removed === 1) label += " once removed";
+      else if (removed === 2) label += " twice removed";
+      else if (removed > 2) label += ` ${removed} times removed`;
+      return label;
+    }
+
+    // One side is a child of the shared ancestor, so this is an uncle/nephew
+    // relationship displaced by generations. gap 0 is the plain uncle or
+    // nephew that labelFor handles.
+    const gap = Math.max(du, dd) - 2;
+    if (gap <= 0) return null;
+    const greats = gap > 1 ? "Great-".repeat(gap - 1) : "";
+    const stem = greats ? "grand-" : "Grand-";
+    if (dd === 1) return greats + stem + (other.gender === "m" ? "uncle" : "aunt");
+    return greats + stem + (other.gender === "m" ? "nephew" : "niece");
+  }
+
+  // How is `bId` related to `aId`? Returns the term, plus the hop chain so the
+  // UI can show the working rather than just asserting an answer.
+  function relationshipBetween(aId, bId) {
+    const a = byId[aId], b = byId[bId];
+    if (!a || !b) return null;
+    if (aId === bId) {
+      return { label: "The same person", chain: [], viaMarriage: false, degrees: 0, connected: true };
+    }
+
+    const path = relationPath(aId, bId);
+    const chain = [];
+    if (path) {
+      for (let i = 1; i < path.length; i++) {
+        chain.push({ id: path[i], name: byId[path[i]].name, rel: stepName(path[i - 1], path[i]) });
+      }
+    }
+    const viaMarriage = chain.some(s => s.rel === "husband" || s.rel === "wife");
+
+    let label = labelFor(aId, bId);
+    if (label === "Family" || label === "Relative") {
+      const blood = collateralLabel(aId, bId);
+      if (blood) label = blood;
+      else if (!path) label = "No known connection";
+      else if (viaMarriage) label = "Related by marriage";
+    }
+
+    return { label, chain, viaMarriage, degrees: chain.length, connected: !!path };
+  }
+
   function tagMatches(viewerId, tag) {
     const v = byId[viewerId];
     if (!v) return [];
@@ -321,6 +437,8 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     scrapbook,
     labelFor,
     pathBetween,
+    relationPath,
+    relationshipBetween,
     tagMatches,
     TAGS,
     ME: initialMe
@@ -599,6 +717,8 @@ window.processRawFamilyData = function (rawData, initialMe) {
   const childGap = 100;
   const inLawExtraPadding = 560;
   const verticalLevelHeight = 450;
+  const inLawGap = 190;
+  const nodeHalfWidth = 85;
 
   function assignWidths(node) {
     if (!node) return;
@@ -667,12 +787,54 @@ window.processRawFamilyData = function (rawData, initialMe) {
     return m ? m.id : null;
   }
 
+  // Horizontal space already claimed on each level. In-law branches are parked
+  // beside the family they marry into, so without this they get dropped on top
+  // of whatever is already there — which is what crossed the maternal lines.
+  const levelSpans = {};
+
+  function reserveSpan(lvl, min, max) {
+    (levelSpans[lvl] = levelSpans[lvl] || []).push([min, max]);
+  }
+
+  // Widest already-claimed span on `fromLvl` or below that overlaps [min,max],
+  // or null when the range is clear. An in-law branch descends, so it has to
+  // clear every level from its own downwards, not just the one it sits on.
+  function findConflict(fromLvl, min, max) {
+    let hit = null;
+    Object.keys(levelSpans).forEach(key => {
+      if (Number(key) < fromLvl) return;
+      levelSpans[key].forEach(span => {
+        if (min < span[1] && max > span[0]) {
+          hit = hit
+            ? [Math.min(hit[0], span[0]), Math.max(hit[1], span[1])]
+            : [span[0], span[1]];
+        }
+      });
+    });
+    return hit;
+  }
+
+  // Slide an in-law branch further out along `dir` until its whole footprint
+  // clears everything already placed.
+  function findFreeCenter(desiredCenter, halfWidth, dir, fromLvl) {
+    let center = desiredCenter;
+    for (let guard = 0; guard < 200; guard++) {
+      const conflict = findConflict(fromLvl, center - halfWidth, center + halfWidth);
+      if (!conflict) break;
+      center = dir > 0
+        ? conflict[1] + halfWidth + inLawGap
+        : conflict[0] - halfWidth - inLawGap;
+    }
+    return center;
+  }
+
   function assignAbsoluteCoords(node, absX, lvl) {
     if (!node) return;
 
     if (node.type === 'single') {
       computedCoords[node.personId] = { x: absX, y: lvl * verticalLevelHeight };
       levels[node.personId] = lvl;
+      reserveSpan(lvl, absX - nodeHalfWidth, absX + nodeHalfWidth);
     } else {
       const husband = persons.find(x => x.id === node.husbandId);
       const wife = persons.find(x => x.id === node.wifeId);
@@ -711,14 +873,15 @@ window.processRawFamilyData = function (rawData, initialMe) {
           swap = true;
         }
       } else if (hParentX !== null) {
-        // 3. Fallback: Position descendant closer to their parents
-        if (hParentX > absX) {
-          swap = true;
-        }
+        // 3. Only the husband's branch is on canvas. The wife is an in-law
+        //    whose own branch has not been placed yet, so it will be parked on
+        //    her side of the couple. Put her on the outward side — away from
+        //    the husband's parents — so her branch lands in open space instead
+        //    of being driven back through his family.
+        swap = hParentX > absX;
       } else if (wParentX !== null) {
-        if (wParentX < absX) {
-          swap = true;
-        }
+        // 4. Mirror of 3, with the husband as the in-law.
+        swap = wParentX < absX;
       }
 
       const leftId = swap ? wife.id : husband.id;
@@ -728,6 +891,7 @@ window.processRawFamilyData = function (rawData, initialMe) {
       computedCoords[rightId] = { x: Math.round(absX + 90), y: lvl * verticalLevelHeight };
       levels[leftId] = lvl;
       levels[rightId] = lvl;
+      reserveSpan(lvl, absX - 90 - nodeHalfWidth, absX + 90 + nodeHalfWidth);
 
       node.children.forEach(c => {
         assignAbsoluteCoords(c, absX + c.relX, lvl + 1);
@@ -738,9 +902,11 @@ window.processRawFamilyData = function (rawData, initialMe) {
           const spouseCoord = computedCoords[il.spouseId];
           let spouseX = absX;
           if (spouseCoord) {
-            const isLeft = (il.spouseId === leftId);
-            const shift = Math.round(il.node.width / 2 + 190);
-            spouseX = isLeft ? (spouseCoord.x - shift) : (spouseCoord.x + shift);
+            const dir = (il.spouseId === leftId) ? -1 : 1;
+            const halfWidth = il.node.width / 2;
+            const desired = spouseCoord.x + dir * (halfWidth + inLawGap);
+            spouseX = Math.round(findFreeCenter(desired, halfWidth, dir, lvl - 1));
+            reserveSpan(lvl - 1, spouseX - halfWidth, spouseX + halfWidth);
           }
           assignAbsoluteCoords(il.node, spouseX, lvl - 1);
         });
@@ -817,11 +983,28 @@ window.processRawFamilyData = function (rawData, initialMe) {
       motherName: p.motherName || null,
       gender: (p.gender || 'm').toLowerCase(),
       birth: getBirthYear(p),
+      // getBirthYear() falls back to 1950 so the layout always has a year to
+      // sort on. Only 12 of 71 members have a real DOB, so the profile panel
+      // needs to know which years are real before it prints one.
+      hasBirthYear: !!p.birthDate,
       death: p.status === 'deceased' && p.deathDate ? parseInt(p.deathDate.split('-')[0]) : null,
       deceased: p.status === 'deceased',
       bio: p.biography || `A valued member of our family.`,
       photo: p.profilePhoto || null,
       backgroundPhoto: p.backgroundPhoto || null,
+      // Raw record fields the Bio tab renders. Kept null when absent so the
+      // panel can skip the row rather than print an empty label.
+      birthDate: p.birthDate || null,
+      birthPlace: p.birthPlace || null,
+      deathDate: p.deathDate || null,
+      deathPlace: p.deathPlace || null,
+      occupation: p.occupation || null,
+      education: p.education || null,
+      religion: p.religion || null,
+      location: p.location || null,
+      maritalStatus: p.maritalStatus || null,
+      maidenName: p.maidenName || null,
+      biography: p.biography || null,
       x: coords.x,
       y: coords.y,
       parents,

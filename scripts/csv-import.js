@@ -92,9 +92,26 @@ const formatDate = (d) => {
   return d;
 };
 
+// T-08: Google Forms appends a row per submission, so a member correcting their details
+// produces a second row with the same derived id. Keeping the FIRST occurrence meant the
+// stale row always won and the correction was silently dropped — there was no way to fix
+// a record through the form at all. Resolve each id to its LAST occurrence so that
+// resubmitting the form *is* the correction mechanism.
+const lastRowIndexById = new Map();
 lines.slice(1).forEach((line, i) => {
   const vals = parseCSVLine(line);
-  
+  if (vals.length > headers.length) return;
+  const r = {};
+  headers.forEach((h, j) => { r[h] = (vals[j] || '').trim(); });
+  if (!r.firstName || !r.lastName) return;
+  const id = `${r.firstName}_${r.motherName || ''}_${r.fatherName || ''}_${r.lastName}`
+    .toUpperCase().replace(/\s+/g, '');
+  lastRowIndexById.set(id, i);
+});
+
+lines.slice(1).forEach((line, i) => {
+  const vals = parseCSVLine(line);
+
   if (vals.length > headers.length) {
     console.warn(`  ⚠️  Row ${i+2}: too many columns (expected ${headers.length}, found ${vals.length}) — skipping`);
     skipped++;
@@ -117,6 +134,12 @@ lines.slice(1).forEach((line, i) => {
   const motherNameStr = row.motherName || '';
   row.id = `${row.firstName}_${motherNameStr}_${fatherNameStr}_${row.lastName}`.toUpperCase().replace(/\s+/g, '');
 
+  // Superseded by a later submission for the same person — that one carries the fix.
+  if (lastRowIndexById.get(row.id) !== i) {
+    console.log(`  ↻  ${row.firstName} ${row.lastName} — superseded by a later submission`);
+    skipped++;
+    return;
+  }
   if (addedIds.has(row.id)) {
     console.log(`  ℹ️  ${row.id} (${row.firstName} ${row.lastName}) duplicate in CSV — skipping`);
     skipped++;
@@ -485,7 +508,7 @@ newAuthEntries.push(adminEntry);
 
 // One person must never end up with two logins. Ranked so that when the same displayName
 // resolves twice, the more privileged role survives rather than being downgraded.
-const ROLE_RANK = { admin: 3, contributor: 2, viewer: 1, guest: 0 };
+const ROLE_RANK = { admin: 3, contributor: 2, viewer: 1 };
 function addAuthEntry(entry) {
   if (!entry) return;
   if (newAuthEntries.some(e => e.hash === entry.hash)) return;

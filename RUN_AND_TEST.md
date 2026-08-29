@@ -243,6 +243,23 @@ In a production deployment, this sync is triggered either manually or via a webh
 * **Commit**: Commits and pushes any modifications to `data/family.json`, `data/auth.json`, and `data/form-responses.csv` back to the GitHub repository.
 * **Redeploy Trigger**: Pushing these changes automatically kicks off the **Validate, Encrypt & Deploy** (`deploy.yml`) action to rebuild the live site.
 
+#### Google Drive cleanup (manual)
+`media:sync` copies each Form upload to R2 and rewrites the URL in `family.json`, but it
+**leaves the Drive original in place**. `sync-media.js` can ask the Apps Script Web App to
+trash it, and that path is switched off by default: the Web App was published without Drive
+scope, so `action=deleteFile` returns a permission error.
+
+Until someone re-authorises it, treat Drive cleanup as a manual chore — periodically empty
+the Form's upload folder once `family.json` shows every photo on a `pub-….r2.dev` URL. R2
+holds the only copy the app reads, so nothing in the tree breaks when the originals go.
+
+To enable the automatic path after re-authorising the Web App (open the Apps Script project
+→ **Deploy → Manage deployments**, re-deploy, and accept the Drive permission prompt):
+
+```bash
+DRIVE_CLEANUP=1 npm run media:sync
+```
+
 ---
 
 ## 🎨 Part 5: Testing & Debugging the Family Tree Layout Engine

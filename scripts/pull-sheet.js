@@ -346,7 +346,16 @@ async function run() {
 
       const ownerIdx = findHeaderIdx(sbHeaders, ['whom', 'about', 'member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
       const dateIdx = findHeaderIdx(sbHeaders, ['date', 'year'], ['timestamp', 'birth', 'death', 'marriage']);
-      const captionIdx = findHeaderIdx(sbHeaders, ['story', 'caption', 'description', 'text', 'details', 'memory']);
+      // The loose word "memory" also appears in the author column ("Who is writing this
+      // memory?") and the subject column ("Whom is this memory/event about?"), both of
+      // which sit *before* the story column and would win a single findIndex. So try the
+      // unambiguous words first and only fall back to the loose ones, excluding the
+      // wording that belongs to the other questions.
+      const captionExclude = ['writing', 'written', 'who is', 'whom', 'about', 'submitted', 'author', 'title', 'type of'];
+      let captionIdx = findHeaderIdx(sbHeaders, ['story', 'caption', 'description'], captionExclude);
+      if (captionIdx === -1) {
+        captionIdx = findHeaderIdx(sbHeaders, ['details', 'memory', 'text'], captionExclude);
+      }
       const photosIdx = findHeaderIdx(sbHeaders, ['photo', 'picture', 'image', 'upload', 'file']);
       const tagsIdx = findHeaderIdx(sbHeaders, ['tag', 'with', 'other']);
 
@@ -426,6 +435,13 @@ async function run() {
   // Validate the data integrity
   console.log('\n🔍 Running data validation...');
   execSync(`npm run validate`, { stdio: 'inherit' });
+
+  // The app renders tree-data.js, NOT data/family.json. Leaving this out meant every
+  // sync updated family.json while the UI kept rendering a stale snapshot — the app was
+  // showing 2026-05-23 test data (including junk "adsf"/"asdf" rows) no matter what the
+  // pipeline did. Regenerating here keeps the rendered tree and the data in step.
+  console.log('\n🌳 Regenerating tree-data.js for the app...');
+  execSync(`node scripts/generate-tree-data.js`, { stdio: 'inherit' });
 
   console.log('\n🎉 Update pipeline completed successfully!');
 }
