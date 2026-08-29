@@ -199,13 +199,20 @@ function verifySetup() {
   } else {
     var headers = out[0];
     var row = out[1];
+    // A present-but-empty required cell is its own failure mode: the column is fine, the
+    // form simply never captured an answer. That is how Gender reached the importer as
+    // '' and got defaulted to 'X', which then flipped the spouse's gender.
     ['Birth Date *', 'Marriage Date', 'Gender *', 'Marital Status *', 'Status *']
       .forEach(function (name) {
         var i = headers.indexOf(name);
-        Logger.log(i === -1
-          ? 'FAIL  Column not found: "' + name + '"'
-          : 'PASS  ' + name + ' = ' + JSON.stringify(row[i]));
-        if (i === -1) ok = false;
+        if (i === -1) {
+          Logger.log('FAIL  Column not found: "' + name + '"');
+          ok = false;
+        } else if (String(row[i]).trim() === '') {
+          Logger.log('WARN  ' + name + ' is EMPTY on the first data row — the form did not capture it.');
+        } else {
+          Logger.log('PASS  ' + name + ' = ' + JSON.stringify(row[i]));
+        }
       });
   }
 
