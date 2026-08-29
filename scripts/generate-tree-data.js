@@ -518,13 +518,21 @@ persons.forEach(p => {
   }
 
   if (timeline.length > 0) {
-    // Sort timeline chronologically by extracting the 4-digit year
-    const getYear = (d) => {
-      if (!d) return 0;
-      const match = String(d).match(/\b\d{4}\b/);
-      return match ? parseInt(match[0]) : 0;
+    // Sort chronologically. Two things the old year-only key got wrong:
+    //   - an undated entry ("Unknown Date") scored year 0 and sorted *above* the
+    //     person's own birth; it has no place in the story, so it goes last.
+    //   - two entries in the same year kept insertion order, so a January memory
+    //     landed after a November birth. Compare the full date when we have one.
+    // A bare year ("1995") sorts to the start of its year, ahead of dated entries.
+    const sortKey = (d) => {
+      if (!d) return Infinity;
+      const s = String(d).trim();
+      const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return Number(iso[1]) * 10000 + Number(iso[2]) * 100 + Number(iso[3]);
+      const year = s.match(/\b\d{4}\b/);
+      return year ? Number(year[0]) * 10000 : Infinity;
     };
-    timeline.sort((a, b) => getYear(a.date) - getYear(b.date));
+    timeline.sort((a, b) => sortKey(a.date) - sortKey(b.date));
 
     outputScrapbook[p.id] = timeline;
   }
