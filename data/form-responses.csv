@@ -9,7 +9,7 @@ Mahadeo,Sampathrao,Vatsala,Sathawane,M,living,married,Shaila,,,,,,Nagpur,,,,,,,,
 Sudhakar,Sampathrao,Vatsala,Sathawane,M,living,married,Meenakshi,,,,,,Nagpur,,,,,,,,सुधाकर,साठवणे,,
 Ratnakr,Sampathrao,Vatsala,Sathawane,M,living,married,Kalpana,,,,,,Nagpur,,,,,,,,रत्नाकर,साठवणे,,
 Alka,Sampathrao,Vatsala,Sathawane,F,living,married,Dhashrath,,,Kalambe,,,Nagpur,,,,,,,,अलका,साठवणे,,
-Kalindi,Bhaskarrao,Manaroma,Waghmare,F,living,married,Prakash,,,Bisne,,,Nagpur,,,,,,,,कालिंदी,वाघमारे,,
+Kalindi,Bhaskarrao,Manaroma,Waghmare,F,living,married,Prakashchandra,,,Bisne,,,Nagpur,,,,,,,,कालिंदी,वाघमारे,,
 Vijay,Bhaskarrao,Manaroma,Waghmare,M,living,married,Heera,,,,,,Nagpur,,,,,,,,विजय,वाघमारे,,
 Ajay,Bhaskarrao,Manaroma,Waghmare,M,living,married,Sangeeta,,,,,,Nagpur,,,,,,,,अजय,वाघमारे,,
 Shashi,Bhaskarrao,Manaroma,Waghmare,M,living,married,Bhavana,,,,,,Nagpur,,,,,,,,शशी,वाघमारे,https://drive.google.com/open?id=1opIa7Qii4y2vTJoPhB7mLT1F1D_NGYD0,https://drive.google.com/open?id=1HsYi-n9TQkXt1_TodykpS9R3TyydyKNo
@@ -44,8 +44,7 @@ Virika,Harshal,Shivani,Khonde,F,living,single,,,,,,,Nagpur,,,,,,,,विरि�
 Daksh,Harshal,Shivani,Khonde,M,living,single,,,,,,,Nagpur,,,,,,,,दक्ष,खोंडे,,
 Aarti,Prakashchandra,Kalindi,Bisne,F,living,married,Vishal,,,Pahune,,,Nagpur,,,,,,,Dolli,आरती,बिस्ने,,
 Amit,Prakashchandra,Kalindi,Bisne,M,living,married,Maithali,Yogeshwar,Ratna,Bharanpure,2005-12-25,,Nagpur,,,,,,,,अमित,बिस्ने,,
-Vishal,,,Pahune,M,living,married,Aarti,Prakash,Kalindi,Bisne,,,Nagpur,,,,,,,,विशाल,पाहुणे,,
-Maithali,,,,F,living,married,Amit,Prakash,Kalindi,Bisne,,,Nagpur,,,,,,,,मैथिली,,,
+Vishal,,,Pahune,M,living,married,Aarti,Prakashchandra,Kalindi,Bisne,,,Nagpur,,,,,,,,विशाल,पाहुणे,,
 Shresht,Vishal,Aarti,Pahune,M,living,single,,,,,,,Nagpur,,,,,,,,श्रेष्ठ,पाहुणे,,
 Shrimei,Vishal,Aarti,Pahune,F,living,single,,,,,,,Nagpur,,,,,,,,श्रीमी,पाहुणे,,
 Ananya,Amit,Maithali,Bisne,F,living,single,,,,,,2007-07-02,Nagpur,,,,,,,,अनन्या,बिस्ने,,
@@ -60,4 +59,7 @@ Vedant,Ajay,Sangeeta,Waghmare,M,living,single,,,,,,,Nagpur,,,,,,,,वेदा�
 Gaurav,,,Bhirud,M,living,married,Saurabhi,Ajay,Sangeeta,Waghmare,,,Nagpur,,,,,,,,गौरव,भिरुड,https://drive.google.com/open?id=1JhasQs93hOcPhXb6lsTGPTG85X4E1Ze2,https://drive.google.com/open?id=1r84SNKiK5uJDRw7Tqwfu5XK4oOjJb-n4
 Shashwat,,,Bavankar,M,living,married,Aishwarya,Ajay,Sangeeta,Waghmare,,,Nagpur,,,,,,,,शाश्वत,बावनकर,,
 Aryan,Shashi,Bhavana,Waghmare,M,living,single,,,,,,,Nagpur,,,,,,,,आर्यन,वाघमारे,,
+Shriya,Shashi,Bhavana,Waghmare,F,living,single,,,,,,,Nagpur,,,,,,,,श्रिया,वाघमारे,,
+Maithali,Yogeshwar,Ratna,Bharanpure,F,living,married,Amit,Prakashchandra,Kalindi,Bisne,2005-12-25,,Nagpur,,,,,,,,मैथिली,भरणपुरे,,
+Hitesh,Shankar,Jyoti,Sathawane,X,living,unknown,Swati,Bhimrao,Chaya,Biradar,2015-05-02,1985-12-29,Nagpur,,,,,,,,हितेश,साठवणे,https://drive.google.com/open?id=1LS0roAvRIH3BCRTCipYPxUXVE-Zan8wJ,https://drive.google.com/open?id=1hV2DpnudpTRcwcBjO0k10HGTxddzrlbU
 Hitesh,Shankar,Jyoti,Sathawane,M,living,married,Swati,Bhimrao,Chaya,Biradar,2015-05-02,1985-12-29,Nagpur,,,,,,,,हितेश,साठवणे,/Users/hiteshsathawane/Downloads/Family/Cropped/Hitesh.png,/Users/hiteshsathawane/Downloads/Family/Cropped/Hitesh_bg.png
