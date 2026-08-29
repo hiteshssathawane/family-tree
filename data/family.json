@@ -122,6 +122,33 @@
       "private": false
     },
     {
+      "id": "DHRUV_SWATI_HITESH_SATHAWANE",
+      "firstName": "Dhruv",
+      "fatherName": "Hitesh",
+      "motherName": "Swati",
+      "lastName": "Sathawane",
+      "maidenName": null,
+      "gender": "M",
+      "status": "living",
+      "maritalStatus": "single",
+      "birthDate": "2021-11-08",
+      "birthPlace": "Dombivli",
+      "deathDate": null,
+      "deathPlace": null,
+      "occupation": null,
+      "education": null,
+      "location": null,
+      "commonName": null,
+      "commonNameMr": null,
+      "firstNameMr": "ध्रुव",
+      "lastNameMr": "साठवणे",
+      "biography": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_dhruv_swati_hitesh_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_dhruv_swati_hitesh_sathawane.jpg",
+      "tags": [],
+      "private": false
+    },
+    {
       "id": "HITESH_JYOTI_SHANKAR_SATHAWANE",
       "firstName": "Hitesh",
       "fatherName": "Shankar",
@@ -314,6 +341,17 @@
       "notes": "Auto-created parental marriage link."
     },
     {
+      "id": "R_M_HITESH_JYOTI_SHANKAR_SATHAWANE_SWATI_CHAYA_BHIMRAO_BIRADAR",
+      "type": "marriage",
+      "person1Id": "HITESH_JYOTI_SHANKAR_SATHAWANE",
+      "person2Id": "SWATI_CHAYA_BHIMRAO_BIRADAR",
+      "startDate": null,
+      "endDate": null,
+      "endReason": null,
+      "place": null,
+      "notes": "Auto-created parental marriage link."
+    },
+    {
       "id": "R_M_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE_SHANKAR_VATSALA_SAMPATHRAO_SATHAWANE",
       "type": "marriage",
       "person1Id": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
@@ -323,17 +361,6 @@
       "endReason": null,
       "place": null,
       "notes": "Auto-created parental marriage link."
-    },
-    {
-      "id": "R_M_HITESH_JYOTI_SHANKAR_SATHAWANE_SWATI_CHAYA_BHIMRAO_BIRADAR",
-      "type": "marriage",
-      "person1Id": "HITESH_JYOTI_SHANKAR_SATHAWANE",
-      "person2Id": "SWATI_CHAYA_BHIMRAO_BIRADAR",
-      "startDate": "2015-05-02",
-      "endDate": null,
-      "endReason": null,
-      "place": null,
-      "notes": null
     },
     {
       "id": "R_PC_BHIMRAO___BIRADAR_SWATI_CHAYA_BHIMRAO_BIRADAR",
@@ -375,6 +402,20 @@
       "type": "parent-child",
       "parentId": "MANAROMA___WAGHMARE",
       "childId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_HITESH_JYOTI_SHANKAR_SATHAWANE_DHRUV_SWATI_HITESH_SATHAWANE",
+      "type": "parent-child",
+      "parentId": "HITESH_JYOTI_SHANKAR_SATHAWANE",
+      "childId": "DHRUV_SWATI_HITESH_SATHAWANE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_SWATI_CHAYA_BHIMRAO_BIRADAR_DHRUV_SWATI_HITESH_SATHAWANE",
+      "type": "parent-child",
+      "parentId": "SWATI_CHAYA_BHIMRAO_BIRADAR",
+      "childId": "DHRUV_SWATI_HITESH_SATHAWANE",
       "relation": "biological"
     },
     {
