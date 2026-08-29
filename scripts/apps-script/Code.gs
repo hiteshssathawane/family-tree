@@ -160,7 +160,59 @@ function triggerGitHubSync() {
   Logger.log('dispatch -> HTTP ' + response.getResponseCode() + ' ' + response.getContentText());
 }
 
-// ── 4. ONE-OFF MAINTENANCE HELPERS (run manually from the editor) ───────────────
+// ── 4. SETUP VERIFICATION (run manually from the editor) ────────────────────────
+
+/**
+ * Run this from the editor (select verifySetup → Run → Execution log) after pasting a
+ * new version. It proves, without deploying or touching GitHub, that:
+ *   · this script is actually bound to the spreadsheet
+ *   · both script properties exist
+ *   · date cells now leave here as yyyy-MM-dd in the sheet's timezone
+ */
+function verifySetup() {
+  var ok = true;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    Logger.log('FAIL  Not bound to a spreadsheet. This is a standalone script — open the');
+    Logger.log('      Sheet and use Extensions > Apps Script instead.');
+    return;
+  }
+  Logger.log('PASS  Bound to: "' + ss.getName() + '"');
+  Logger.log('      Timezone: ' + ss.getSpreadsheetTimeZone());
+
+  ['SHEET_SECRET', 'GITHUB_PAT'].forEach(function (key) {
+    if (props().getProperty(key)) {
+      Logger.log('PASS  Script property ' + key + ' is set.');
+    } else {
+      Logger.log('FAIL  Script property ' + key + ' is MISSING.');
+      ok = false;
+    }
+  });
+
+  var sheet = ss.getSheets()[0];
+  Logger.log('      First tab: "' + sheet.getName() + '"');
+
+  var out = readSheet(sheet, ss.getSpreadsheetTimeZone());
+  if (out.length < 2) {
+    Logger.log('WARN  No data rows to sample — sheet has headers only.');
+  } else {
+    var headers = out[0];
+    var row = out[1];
+    ['Birth Date *', 'Marriage Date', 'Gender *', 'Marital Status *', 'Status *']
+      .forEach(function (name) {
+        var i = headers.indexOf(name);
+        Logger.log(i === -1
+          ? 'FAIL  Column not found: "' + name + '"'
+          : 'PASS  ' + name + ' = ' + JSON.stringify(row[i]));
+        if (i === -1) ok = false;
+      });
+  }
+
+  Logger.log(ok ? '\nAll checks passed.' : '\nSomething above FAILED — fix before deploying.');
+}
+
+// ── 5. ONE-OFF MAINTENANCE HELPERS (run manually from the editor) ───────────────
 
 // Run once to grant the Drive scope the deleteFile branch needs.
 function authorizeDrive() {
