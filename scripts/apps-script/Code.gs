@@ -10,14 +10,24 @@
  *   The /exec URL is preserved, so the GOOGLE_SHEET_URL secret does not change.
  *
  * ── Setup that lives outside this file ─────────────────────────────────────────
- *   · Script property GITHUB_PAT  (Project Settings → Script Properties), repo scope
- *   · Installable trigger: triggerGitHubSync, from spreadsheet, on form submit.
- *     Must be installable — a simple onFormSubmit(e) cannot call UrlFetchApp.
+ *   Project Settings → Script Properties:
+ *     GITHUB_PAT      GitHub fine-grained PAT, contents:write on family-tree
+ *     SHEET_SECRET    must equal the GOOGLE_SHEET_SECRET GitHub Actions secret
+ *
+ *   Triggers (clock icon) → Add Trigger:
+ *     triggerGitHubSync · From spreadsheet · On form submit
+ *     Must be an INSTALLABLE trigger — a simple onFormSubmit(e) cannot call UrlFetchApp.
+ *
+ *   NEVER hardcode the PAT or the shared secret in this file. It is committed to a
+ *   public repository.
  */
 
-var SHARED_SECRET = 'MyFamilyTreeSecureToken2026'; // must match GOOGLE_SHEET_SECRET
 var GITHUB_OWNER = 'hiteshssathawane';
 var GITHUB_REPO = 'family-tree';
+
+function props() {
+  return PropertiesService.getScriptProperties();
+}
 
 // ── 1. DATA FETCHING AND DRIVE DELETION HANDLERS ────────────────────────────────
 
@@ -26,14 +36,29 @@ function doGet(e) {
   var timestamp = e.parameter.timestamp;
   var action = e.parameter.action;
 
-  if (!verifyToken(token, timestamp, SHARED_SECRET)) {
+  var secret = props().getProperty('SHEET_SECRET');
+  if (!secret) {
+    return json({ error: 'Script property SHEET_SECRET is not set.' });
+  }
+  if (!verifyToken(token, timestamp, secret)) {
     return json({ error: 'Unauthorized' });
   }
 
   if (action === 'deleteFile') {
     var fileId = e.parameter.fileId;
     try {
-      DriveApp.getFileById(fileId).setTrashed(true);
+      var file = DriveApp.getFileById(fileId);
+      try {
+        // Works when we own the file.
+        file.setTrashed(true);
+      } catch (trashErr) {
+        // Form uploads are owned by the submitter, not by us. We cannot trash those,
+        // but we can detach them from the upload folder so the folder stays clean.
+        var parents = file.getParents();
+        while (parents.hasNext()) {
+          parents.next().removeFile(file);
+        }
+      }
       return json({ success: true });
     } catch (err) {
       return json({ success: false, error: err.message });
@@ -52,6 +77,7 @@ function doGet(e) {
     return json({ error: 'Sheet not found: ' + sheetName });
   }
 
+  // Was: var data = sheet.getDataRange().getValues();
   return json(readSheet(sheet, ss.getSpreadsheetTimeZone()));
 }
 
@@ -60,16 +86,16 @@ function doGet(e) {
  *
  * Why this matters: a date-only cell is stored as midnight in the sheet's timezone and
  * comes back from getValues() as a JS Date — an absolute instant. JSON.stringify then
- * serialises it in UTC, so 29-Dec-1985 in IST (UTC+5:30) leaves here as
- * "1985-12-28T18:30:00.000Z". The Node runner used to read the UTC half of that and land
- * a day early on EVERY date. Because the family login hash is
- * SHA-256(name + DDMMYYYY), a one-day drift also minted duplicate, wrong-role logins.
+ * serialises it in UTC, so 29-Dec-1985 in IST (UTC+5:30) left here as
+ * "1985-12-28T18:30:00.000Z". The Node runner read the UTC half of that and landed a day
+ * early on EVERY date. Because the family login hash is SHA-256(name + DDMMYYYY), a
+ * one-day drift also minted duplicate, wrong-role logins.
  *
- * Formatting here — against getSpreadsheetTimeZone() — is self-configuring: it stays
- * correct even if the spreadsheet's timezone is ever changed.
+ * Formatting against getSpreadsheetTimeZone() is self-configuring: it stays correct even
+ * if the spreadsheet's timezone is ever changed.
  *
- * A cell that carries a real time of day (the form's own Timestamp column) keeps it, so
- * this is not a lossy transform for anything but the intended date-only fields.
+ * A cell carrying a real time of day (the form's own Timestamp column) keeps it, so this
+ * is not a lossy transform for anything but the intended date-only fields.
  */
 function readSheet(sheet, tz) {
   return sheet.getDataRange().getValues().map(function (row) {
@@ -77,8 +103,8 @@ function readSheet(sheet, tz) {
       if (!(cell instanceof Date)) return cell;
       var hms = Utilities.formatDate(cell, tz, 'HH:mm:ss');
       return (hms === '00:00:00')
-        ? Utilities.formatDate(cell, tz, 'yyyy-MM-dd')            // date-only cell
-        : Utilities.formatDate(cell, tz, "yyyy-MM-dd'T'HH:mm:ss"); // real timestamp
+        ? Utilities.formatDate(cell, tz, 'yyyy-MM-dd')             // date-only cell
+        : Utilities.formatDate(cell, tz, "yyyy-MM-dd'T'HH:mm:ss");  // real timestamp
     });
   });
 }
@@ -110,21 +136,50 @@ function verifyToken(token, timestamp, secret) {
 // starts .github/workflows/sync-sheet.yml.
 
 function triggerGitHubSync() {
-  var token = PropertiesService.getScriptProperties().getProperty('GITHUB_PAT');
-  if (!token) {
+  var githubToken = props().getProperty('GITHUB_PAT');
+  if (!githubToken) {
     throw new Error('Script property GITHUB_PAT is not set — cannot trigger the sync.');
   }
 
   var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/dispatches';
 
-  UrlFetchApp.fetch(url, {
+  var response = UrlFetchApp.fetch(url, {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      Authorization: 'Bearer ' + token,
+      Authorization: 'Bearer ' + githubToken,
       Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28'
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'Google-Apps-Script'
     },
-    payload: JSON.stringify({ event_type: 'sync-sheet' })
+    payload: JSON.stringify({ event_type: 'sync-sheet' }),
+    muteHttpExceptions: true
   });
+
+  // 204 No Content is success for repository_dispatch; anything else is worth seeing.
+  Logger.log('dispatch -> HTTP ' + response.getResponseCode() + ' ' + response.getContentText());
+}
+
+// ── 4. ONE-OFF MAINTENANCE HELPERS (run manually from the editor) ───────────────
+
+// Run once to grant the Drive scope the deleteFile branch needs.
+function authorizeDrive() {
+  DriveApp.getRootFolder();
+}
+
+// Scratch helper for debugging Drive permissions on a single file.
+function testDeleteManual() {
+  var testFileId = 'PASTE_A_FILE_ID_HERE';
+  try {
+    var file = DriveApp.getFileById(testFileId);
+    Logger.log('Found file: ' + file.getName());
+    var parents = file.getParents();
+    while (parents.hasNext()) {
+      var parent = parents.next();
+      parent.removeFile(file);
+      Logger.log('Removed from parent folder: ' + parent.getName());
+    }
+  } catch (e) {
+    Logger.log('Error encountered: ' + e.message);
+  }
 }
