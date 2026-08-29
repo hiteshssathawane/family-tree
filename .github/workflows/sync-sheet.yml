@@ -5,6 +5,15 @@ on:
     types: [sync-sheet]
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
+# Every Form submission fires its own repository_dispatch. During the 64-row bulk load on
+# 2026-08-29 that started 21 runs inside three minutes, which all raced on `git push` and
+# lost — 21 "all jobs have failed" emails for a load that had actually succeeded. The pull
+# is a full snapshot of the sheet, not an increment, so an in-flight run is always
+# redundant once a newer submission has arrived: cancel it and let the last one win.
+concurrency:
+  group: sync-sheet
+  cancel-in-progress: true
+
 permissions:
   contents: write
   # The sync commit carries [skip ci], so the push cannot start deploy.yml on its own and
