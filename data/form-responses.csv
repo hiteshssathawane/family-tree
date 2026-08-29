@@ -1,3 +1,4 @@
 firstName,fatherName,motherName,lastName,gender,status,maritalStatus,spouseFirstName,spouseFatherName,spouseMotherName,spouseLastName,marriageDate,birthDate,birthPlace,deathDate,deathPlace,occupation,education,location,biography,commonName,firstNameMr,lastNameMr,profilePhoto,backgroundPhoto
 Swati,Bhimrao,Chaya,Biradar,F,living,married,Hitesh,Shankar,Jyoti,Sathawane,2015-05-02,1991-07-01,Latur,,,,,,,,स्वाती,बिरादार,https://drive.google.com/open?id=1zf-FmeXqsv_MFovt4ekNTundrJ44gDsc,https://drive.google.com/open?id=16nUFd6XQMr3zRYzEQ_ty2Bee_DmMYvIF
+Sampathrao,,,Sathawane,M,deceased,married,Vatsala,,,,,,Bhandara,2001-11-26,,,,,,,संपतराव,साठवणे,,
 Hitesh,Shankar,Jyoti,Sathawane,M,living,married,Swati,Bhimrao,Chaya,Biradar,2015-05-02,1985-12-29,Nagpur,,,,,,,,हितेश,साठवणे,/Users/hiteshsathawane/Downloads/Family/Cropped/Hitesh.png,/Users/hiteshsathawane/Downloads/Family/Cropped/Hitesh_bg.png
