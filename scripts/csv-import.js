@@ -92,6 +92,32 @@ const formatDate = (d) => {
   return d;
 };
 
+// T-34: resolve a father/mother/spouse reference against an existing person by name
+// before minting a new composite id. Matching used to require the EXISTING record's
+// gender to already equal the role being resolved (e.g. father lookup required
+// x.gender === 'M') — but that gender can be wrong or 'X' on a person created from an
+// incomplete row, so a real match silently failed and a duplicate stub got created
+// instead (the root cause of the Hitesh/HITESH___SATHAWANE split). Gender is now used
+// only to disambiguate if more than one name match exists, never to block a match.
+//
+// lastName is optional: pass it for father/spouse, where the CSV assumes the person's
+// own lastName equals the child's (paternal surname). Omit it for mother — her own row
+// keeps her maiden lastName, which won't equal the child's paternal surname, so
+// requiring it here would break the very match this fix exists to make.
+function findExistingPerson(firstName, lastName, preferredGender) {
+  const fn = firstName.trim().toLowerCase();
+  const ln = lastName ? lastName.trim().toLowerCase() : null;
+  const candidates = family.persons.filter(x =>
+    x.firstName.trim().toLowerCase() === fn &&
+    (ln === null || x.lastName.trim().toLowerCase() === ln)
+  );
+  if (candidates.length <= 1) return candidates[0] || null;
+  const genderMatch = preferredGender && candidates.find(x => x.gender === preferredGender);
+  if (genderMatch) return genderMatch;
+  console.warn(`  ⚠️  Multiple existing persons named "${firstName}${lastName ? ' ' + lastName : ''}" — using the first match (${candidates[0].id}). Check for a real duplicate.`);
+  return candidates[0];
+}
+
 // T-08: Google Forms appends a row per submission, so a member correcting their details
 // produces a second row with the same derived id. Keeping the FIRST occurrence meant the
 // stale row always won and the correction was silently dropped — there was no way to fix
@@ -208,15 +234,8 @@ currentPersons.forEach((p) => {
     const fLast = p.lastName.trim();
     const fatherId = `${fFirst}___${fLast}`.toUpperCase().replace(/\s+/g, '');
     
-    father = family.persons.find(x => x.id === fatherId);
-    if (!father) {
-      father = family.persons.find(x => 
-        (x.gender === 'M' || x.gender === 'm') && 
-        x.firstName.toLowerCase() === fFirst.toLowerCase() && 
-        x.lastName.toLowerCase() === fLast.toLowerCase()
-      );
-    }
-    
+    father = family.persons.find(x => x.id === fatherId) || findExistingPerson(fFirst, fLast, 'M');
+
     if (!father) {
       father = {
         id: fatherId,
@@ -257,14 +276,8 @@ currentPersons.forEach((p) => {
     const mLast = p.lastName.trim();
     const motherId = `${mFirst}___${mLast}`.toUpperCase().replace(/\s+/g, '');
     
-    mother = family.persons.find(x => x.id === motherId);
-    if (!mother) {
-      mother = family.persons.find(x => 
-        (x.gender === 'F' || x.gender === 'f') && 
-        x.firstName.toLowerCase() === mFirst.toLowerCase()
-      );
-    }
-    
+    mother = family.persons.find(x => x.id === motherId) || findExistingPerson(mFirst, null, 'F');
+
     if (!mother) {
       mother = {
         id: motherId,
@@ -334,24 +347,16 @@ parsedRows.forEach((row) => {
     const sMother = (row.spouseMotherName || '').trim();
     
     const exactId = `${sFirst}_${sMother}_${sFather}_${sLast}`.toUpperCase().replace(/\s+/g, '');
-    
-    let spouse = family.persons.find(p => p.id === exactId);
+
+    // Infer the spouse's gender only from a known one. The old `=== 'M' ? 'F' : 'M'`
+    // turned every unknown-gender member's wife into a male node.
+    const sGender = row.gender === 'M' ? 'F'
+                  : row.gender === 'F' ? 'M'
+                  : null;
+
+    let spouse = family.persons.find(p => p.id === exactId) || findExistingPerson(sFirst, sLast, sGender);
+
     if (!spouse) {
-      const nameNorm = `${sFirst} ${sLast}`.toLowerCase();
-      const potential = family.persons.filter(p => 
-        `${p.firstName} ${p.lastName}`.toLowerCase() === nameNorm
-      );
-      if (potential.length === 1) {
-        spouse = potential[0];
-      }
-    }
-    
-    if (!spouse) {
-      // Infer the spouse's gender only from a known one. The old `=== 'M' ? 'F' : 'M'`
-      // turned every unknown-gender member's wife into a male node.
-      const sGender = row.gender === 'M' ? 'F'
-                    : row.gender === 'F' ? 'M'
-                    : 'X';
       spouse = {
         id: exactId,
         firstName: sFirst,
@@ -359,7 +364,7 @@ parsedRows.forEach((row) => {
         motherName: sMother,
         lastName: sLast,
         maidenName: null,
-        gender: sGender,
+        gender: sGender || 'X',
         status: 'living',
         maritalStatus: 'married',
         birthDate: null,
