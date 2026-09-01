@@ -12,6 +12,8 @@
  *   node scripts/fill-form.js --name Hitesh   # (re)submit a specific person by name
  *   node scripts/fill-form.js --index 2       # (re)submit a specific row by 0-based index
  *   node scripts/fill-form.js --reset         # clear all progress and start over
+ *   node scripts/fill-form.js --capture       # fill + press Submit, but abort the POST and
+ *                                             # print the entry.* payload (nothing is recorded)
  */
 
 import { chromium } from 'playwright';
@@ -36,6 +38,9 @@ const RUN_ALL     = args.includes('--all');
 const RESET       = args.includes('--reset');
 const HEADLESS    = args.includes('--headless');
 const PHOTOS_ONLY = args.includes('--photos-only');
+// Blank radios only ever showed up *after* a row had been written to the Sheet, so verifying
+// a fix meant polluting real data. --capture runs the whole real path and aborts the POST.
+const CAPTURE     = args.includes('--capture');
 const TARGET_IDX  = args.includes('--index') ? parseInt(args[args.indexOf('--index') + 1]) : null;
 const TARGET_NAME = args.includes('--name')  ? args[args.indexOf('--name')  + 1].toLowerCase() : null;
 
@@ -265,49 +270,70 @@ async function fillText(page, pattern, value) {
   else console.log(`  ⚠️  No input in: ${pattern}`);
 }
 
-// Forms carries the option value on the radio's own data-value / aria-label; the radio
-// element itself has NO text. So `getByText('Male')` matched the sibling label span, and
-// `filter({ hasText })` over [role=radio] could never match at all.
-async function isRadioChecked(q, optionText) {
-  const checked = q.locator('[role="radio"][aria-checked="true"]');
-  const n = await checked.count();
-  for (let i = 0; i < n; i++) {
-    const el = checked.nth(i);
-    const val = (await el.getAttribute('data-value')) || (await el.getAttribute('aria-label')) || '';
-    if (val.trim() === optionText) return true;
-  }
-  return false;
+// A radio question's entry id is buried in its data-params blob, as the first number of
+// the option list: [[416676068,[["Male",…],["Female",…]]. We need it because aria-checked
+// is NOT what Forms submits — the POST carries a hidden input[name="entry.<id>"], and that
+// input is the only trustworthy view of what the row will actually contain.
+const RADIO_ENTRY_ID = /,\[\[(\d{6,12}),\[\[/;
+async function radioEntryId(q, pattern) {
+  const params = await q.locator('[data-params]').first().getAttribute('data-params').catch(() => null);
+  const m = params && params.match(RADIO_ENTRY_ID);
+  if (!m) throw new Error(`Could not read the entry id for radio question: ${pattern}`);
+  return m[1];
+}
+
+// '' when the question is unanswered — Forms removes the hidden input entirely rather
+// than blanking it, so "absent" and "empty" mean the same thing here.
+async function submittedRadioValue(page, entryId) {
+  return page.evaluate(
+    id => document.querySelector(`input[name="entry.${id}"]`)?.value ?? '',
+    entryId
+  );
 }
 
 // Only ever called for required radio fields (Gender *, Status *, Marital Status *).
 // Must throw rather than warn-and-continue: a swallowed failure here previously let
 // the row reach Submit with that field blank, silently corrupting the imported data.
 //
-// Clicking is not enough — verify aria-checked actually flipped. The label-span click
-// above "succeeded" (the element existed and was clickable) while selecting nothing, so
-// the row submitted with Gender/Status/Marital Status blank and clickRadio never threw.
-// That only showed up headless: slowMo on a headed run hid the race.
+// The trap this replaces: Forms restores the previous response as a draft, so the option
+// we want is often ALREADY selected on load — and a Forms radio toggles, so clicking it
+// then DESELECTS it. The old code clicked unconditionally and verified aria-checked, which
+// tracks the toggle faithfully, so it happily confirmed a value it had just cleared.
+// Whichever of the three fields happened to carry over from the previous person came out
+// blank, which is how 10 rows reached the Sheet with no Gender/Status/Marital Status.
+// Hence: read the submitted value first, and click only when it is wrong.
 async function clickRadio(page, pattern, optionText) {
   if (!optionText) throw new Error(`Required field has no value to submit: ${pattern}`);
   const q = await findQuestion(page, pattern);
   if (!q) throw new Error(`Radio question not found on form: ${pattern}`);
+  const entryId = await radioEntryId(q, pattern);
 
   const candidates = [
     q.locator(`[role="radio"][data-value="${optionText}"]`),
     q.locator(`[role="radio"][aria-label="${optionText}"]`),
-    q.getByText(optionText, { exact: true }),
   ];
 
-  for (const candidate of candidates) {
-    if (!(await candidate.count())) continue;
-    const el = candidate.first();
-    for (let attempt = 0; attempt < 3; attempt++) {
-      await el.click({ timeout: 5000 }).catch(() => {});
-      if (await isRadioChecked(q, optionText)) return;
-      await page.waitForTimeout(300);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const current = await submittedRadioValue(page, entryId);
+    if (current === optionText) return;
+
+    // Clicking a *different* option switches cleanly; only a same-value click toggles off.
+    // So there is always exactly one useful click to make from here.
+    let clicked = false;
+    for (const candidate of candidates) {
+      if (!(await candidate.count())) continue;
+      await candidate.first().click({ timeout: 5000 }).catch(() => {});
+      clicked = true;
+      break;
     }
+    if (!clicked) throw new Error(`Radio option "${optionText}" does not exist in question: ${pattern}`);
+    await page.waitForTimeout(300);
   }
-  throw new Error(`Radio option "${optionText}" never became selected in question: ${pattern}`);
+
+  const final = await submittedRadioValue(page, entryId);
+  throw new Error(
+    `Radio "${pattern}" would submit ${JSON.stringify(final)} instead of ${JSON.stringify(optionText)}`
+  );
 }
 
 async function fillDate(page, pattern, dateStr) {
@@ -418,6 +444,13 @@ for (let i = 0; i < toProcess.length; i++) {
   console.log(`\n🧑  [${i + 1}/${toProcess.length}] ${key}`);
 
   const page = await context.newPage();
+  let captured = null;
+  if (CAPTURE) {
+    await page.route('**/formResponse*', async route => {
+      captured = route.request().postData();
+      await route.abort('failed');
+    });
+  }
   try {
     await page.goto(FORM_URL, { waitUntil: 'networkidle' });
 
@@ -440,22 +473,47 @@ for (let i = 0; i < toProcess.length; i++) {
     await fillText(page,  'Location.*City',          R['Location (Current City/Region) *']);
     await fillText(page,  'Biography',               R['Biography']);
 
-    await clickRadio(page, 'Gender',         R['Gender *']);
-    await clickRadio(page, '^Status',        R['Status *']);
-    await clickRadio(page, 'Marital Status', R['Marital Status *']);
+    const radios = [
+      ['Gender',         R['Gender *']],
+      ['^Status',        R['Status *']],
+      ['Marital Status', R['Marital Status *']],
+    ];
+    for (const [pattern, value] of radios) await clickRadio(page, pattern, value);
 
     await fillDate(page, 'Marriage Date', R['Marriage Date']);
     await fillDate(page, 'Birth Date',    R['Birth Date *']);
     await fillDate(page, 'Death Date',    R['Death Date (If applicable, only if Status is Deceased)']);
 
-    if (profile) { console.log(`  📸  Uploading profile: ${basename(profile)}`); await uploadFile(page, 'Profile Picture', profile); }
-    if (bg)      { console.log(`  🖼️   Uploading bg: ${basename(bg)}`);           await uploadFile(page, 'Background Picture', bg); }
+    // Forms writes an uploaded file to Drive the moment it lands, so a --capture run that
+    // never completes the POST would leave an orphan there. Skip uploads unless asked.
+    const doUploads = !CAPTURE || args.includes('--with-photos');
+    if (!doUploads && (profile || bg)) console.log(`  ⏭   Skipping uploads (--capture)`);
+    if (doUploads && profile) { console.log(`  📸  Uploading profile: ${basename(profile)}`); await uploadFile(page, 'Profile Picture', profile); }
+    if (doUploads && bg)      { console.log(`  🖼️   Uploading bg: ${basename(bg)}`);           await uploadFile(page, 'Background Picture', bg); }
+
+    // Dates and the Drive picker run after the radios and both re-render parts of the form,
+    // so re-assert the three required radios here. clickRadio is a no-op when the value is
+    // already right, and throws if it cannot be restored — either way the row never reaches
+    // Submit with one of them blank again.
+    for (const [pattern, value] of radios) await clickRadio(page, pattern, value);
 
     console.log(`  ✅  Submitting…`);
     const submitBtn = page.getByRole('button', { name: /submit/i }).or(
       page.locator('[value="Submit"], .freebirdFormviewerViewNavigationSubmitButton')
     );
     await submitBtn.first().click();
+
+    if (CAPTURE) {
+      await page.waitForTimeout(2500);
+      if (!captured) console.log('  ❌  No formResponse request was fired');
+      else {
+        console.log('  📦  Captured payload (NOT submitted):');
+        for (const [k, v] of new URLSearchParams(captured)) {
+          if (k.startsWith('entry.') && !k.endsWith('_sentinel')) console.log(`      ${k} = ${JSON.stringify(v)}`);
+        }
+      }
+      continue;
+    }
 
     let submitted = false;
     try {

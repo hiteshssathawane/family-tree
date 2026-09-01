@@ -66,9 +66,23 @@ if (persons.length > 0 && !ids.includes(data.meta.rootPersonId)) {
 persons.filter(p => p.status === 'deceased' && !p.deathDate)
   .forEach(p => warnings.push(`${p.id} (${p.firstName} ${p.lastName}) is deceased but has no deathDate`));
 
-// Living with death date
-persons.filter(p => p.status === 'living' && p.deathDate)
-  .forEach(p => errors.push(`${p.id} (${p.firstName} ${p.lastName}) is living but has a deathDate`));
+// Death date on anyone not marked deceased. Was `status === 'living'`, which missed the
+// 'unknown' case entirely — the exact state a blank Status radio now produces.
+persons.filter(p => p.status !== 'deceased' && p.deathDate)
+  .forEach(p => errors.push(`${p.id} (${p.firstName} ${p.lastName}) has a deathDate but status is "${p.status}"`));
+
+// A sheet that lost its radio answers imports as a wall of X/unknown and still passes every
+// structural check, so report the shape of the import rather than only per-person faults.
+const unanswered = {
+  gender: persons.filter(p => p.gender === 'X').length,
+  status: persons.filter(p => p.status === 'unknown').length,
+  maritalStatus: persons.filter(p => p.maritalStatus === 'unknown').length,
+};
+Object.entries(unanswered)
+  .filter(([, n]) => n > 0)
+  .forEach(([field, n]) => warnings.push(
+    `${n} of ${persons.length} persons have no ${field} — check the form's radio answers reached the Sheet`
+  ));
 
 // Print results
 if (warnings.length) {

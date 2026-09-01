@@ -237,32 +237,46 @@ async function run() {
       }
     };
 
+    // Owner-chosen defaults for an unanswered required radio: Male / Active / Single.
+    // They exist because the Form's radios can come back blank, not because the answer
+    // is genuinely unknown — so every one of them is reported below, never silent.
+    const rawDeathDate = getVal('Death Date (If applicable, only if Status is Deceased)');
+
     // Gender Mapping
     const rawGender = getVal('Gender *');
-    warnBlank('Gender *', rawGender, 'X');
+    warnBlank('Gender *', rawGender, 'M (default)');
     let gender = String(rawGender).trim();
     if (gender.toLowerCase().startsWith('m')) gender = 'M';
     else if (gender.toLowerCase().startsWith('f')) gender = 'F';
-    else gender = 'X';
+    else gender = 'M';
 
     // Status Mapping
     const rawStatus = getVal('Status *');
-    warnBlank('Status *', rawStatus, 'living');
     let status = String(rawStatus).trim().toLowerCase();
-    // The form offers Active / Deceased / Unknown; "Active" means living.
+    // The form offers Active / Deceased; "Active" means living.
     if (status.startsWith('liv') || status.startsWith('act')) status = 'living';
     else if (status.startsWith('dec')) status = 'deceased';
-    else status = 'living';
+    else if (String(rawDeathDate ?? '').trim()) {
+      // The default cannot be allowed to contradict a death date sitting on the same row.
+      // Defaulting these to 'living' is what made csv-import delete the date — which is how
+      // Jyoti was imported as alive, with the contradiction validate.js exists to catch
+      // destroyed on the way in.
+      warnBlank('Status *', rawStatus, 'deceased (death date present)');
+      status = 'deceased';
+    } else {
+      warnBlank('Status *', rawStatus, 'living (default)');
+      status = 'living';
+    }
 
     // Marital Status Mapping
     const rawMarital = getVal('Marital Status *');
-    warnBlank('Marital Status *', rawMarital, 'unknown');
+    warnBlank('Marital Status *', rawMarital, 'single (default)');
     let maritalStatus = String(rawMarital).trim().toLowerCase();
     if (maritalStatus.startsWith('marr')) maritalStatus = 'married';
     else if (maritalStatus.startsWith('sing')) maritalStatus = 'single';
     else if (maritalStatus.startsWith('div')) maritalStatus = 'divorced';
     else if (maritalStatus.startsWith('wid')) maritalStatus = 'widowed';
-    else maritalStatus = 'unknown';
+    else maritalStatus = 'single';
 
     const mappedRow = {
       firstName: firstName,
@@ -345,6 +359,11 @@ async function run() {
       };
 
       const ownerIdx = findHeaderIdx(sbHeaders, ['whom', 'about', 'member', 'person', 'name'], ['tag', 'other', 'spouse', 'father', 'mother']);
+      // Fallback owner: "Who is writing this memory?" — when the submitter is also the
+      // subject (the common case for now, since the subject dropdown is what silently
+      // drops its value on submit), this still resolves the entry to the right person
+      // instead of discarding it.
+      const writerIdx = findHeaderIdx(sbHeaders, ['writing', 'who is'], ['whom', 'about']);
       const dateIdx = findHeaderIdx(sbHeaders, ['date', 'year'], ['timestamp', 'birth', 'death', 'marriage']);
       // The loose word "memory" also appears in the author column ("Who is writing this
       // memory?") and the subject column ("Whom is this memory/event about?"), both of
@@ -374,7 +393,7 @@ async function run() {
         });
 
         sbRows.forEach(row => {
-          const ownerVal = row[ownerIdx];
+          const ownerVal = row[ownerIdx] || (writerIdx !== -1 ? row[writerIdx] : '');
           if (!ownerVal) return;
 
           const ownerKey = String(ownerVal).toLowerCase().replace(/\s+/g, '');

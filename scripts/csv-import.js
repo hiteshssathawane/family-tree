@@ -186,13 +186,19 @@ lines.slice(1).forEach((line, i) => {
     motherName: row.motherName || '',
     lastName: row.lastName,
     maidenName: row.maidenName || null,
+    // Defaults match pull-sheet.js: Male / Active / Single. A death date still overrides
+    // the status default, so an import can never mark a person with a death date alive.
     gender: row.gender || 'M',
-    status: row.status || 'living',
-    maritalStatus: row.maritalStatus || 'unknown',
+    status: row.status || (formatDate(row.deathDate) ? 'deceased' : 'living'),
+    maritalStatus: row.maritalStatus || 'single',
     birthDate: formatDate(row.birthDate),
     birthPlace: row.birthPlace || null,
-    deathDate: row.status === 'living' ? null : formatDate(row.deathDate),
-    deathPlace: row.status === 'living' ? null : (row.deathPlace || null),
+    // Never discard a death date on the strength of the status field. This used to read
+    // `row.status === 'living' ? null : …`, so one blank Status radio erased the date —
+    // and erased the very contradiction validate.js exists to catch. Keep both and let
+    // validation report the conflict instead of silently resolving it.
+    deathDate: formatDate(row.deathDate),
+    deathPlace: row.deathPlace || null,
     occupation: row.occupation || null,
     education: row.education || null,
     location: row.location || null,
