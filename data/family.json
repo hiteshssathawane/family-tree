@@ -176,6 +176,33 @@
       "private": false
     },
     {
+      "id": "SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
+      "firstName": "Sampathrao",
+      "fatherName": "Sampathrao",
+      "motherName": "Vatsala",
+      "lastName": "Sathawane",
+      "maidenName": null,
+      "gender": "X",
+      "status": "living",
+      "maritalStatus": "unknown",
+      "birthDate": null,
+      "birthPlace": "Bhandara",
+      "deathDate": null,
+      "deathPlace": null,
+      "occupation": null,
+      "education": null,
+      "location": null,
+      "commonName": null,
+      "commonNameMr": null,
+      "firstNameMr": "संपतराव",
+      "lastNameMr": "साठवणे",
+      "biography": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sampathrao_vatsala_sampathrao_sathawane.png",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sampathrao_vatsala_sampathrao_sathawane.png",
+      "tags": [],
+      "private": false
+    },
+    {
       "id": "SHANKAR___SATHAWANE",
       "firstName": "Shankar",
       "fatherName": "",
@@ -515,6 +542,17 @@
       "notes": null
     },
     {
+      "id": "R_M_SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE_VATSALA___SATHAWANE",
+      "type": "marriage",
+      "person1Id": "SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
+      "person2Id": "VATSALA___SATHAWANE",
+      "startDate": null,
+      "endDate": null,
+      "endReason": null,
+      "place": null,
+      "notes": null
+    },
+    {
       "id": "R_PC_SHANKAR___SATHAWANE_HITESH_JYOTI_SHANKAR_SATHAWANE",
       "type": "parent-child",
       "parentId": "SHANKAR___SATHAWANE",
@@ -596,6 +634,20 @@
       "type": "parent-child",
       "parentId": "SWATI___SATHAWANE",
       "childId": "ARJUN_SWATI_HITESH_SATHAWANE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_SAMPATHRAO___SATHAWANE_SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
+      "type": "parent-child",
+      "parentId": "SAMPATHRAO___SATHAWANE",
+      "childId": "SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_VATSALA___SATHAWANE_SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
+      "type": "parent-child",
+      "parentId": "VATSALA___SATHAWANE",
+      "childId": "SAMPATHRAO_VATSALA_SAMPATHRAO_SATHAWANE",
       "relation": "biological"
     }
   ],
