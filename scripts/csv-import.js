@@ -8,6 +8,10 @@ import { createHash } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 
+// Keep in step with window.UNKNOWN_BIRTH_DATE in tree-helpers.js — the runtime uses it
+// to keep this placeholder out of the profile panel, the calendar and the .ics feed.
+const UNKNOWN_BIRTH_DATE = '1970-01-01';
+
 const csvFile  = process.argv[2];
 const dataPath = resolve('data/family.json');
 const authPath = resolve('data/auth.json');
@@ -191,7 +195,11 @@ lines.slice(1).forEach((line, i) => {
     gender: row.gender || 'M',
     status: row.status || (formatDate(row.deathDate) ? 'deceased' : 'living'),
     maritalStatus: row.maritalStatus || 'single',
-    birthDate: formatDate(row.birthDate),
+    // Identity is SHA-256(name + DDMMYYYY), so a member with no DOB gets no hash and
+    // cannot log in at all. The placeholder gives them one. It is a login token, not a
+    // birth date: tree-helpers.js reports hasBirthYear false for it, and the calendar
+    // raises no birthday and writes no .ics event for it, so it never renders as a fact.
+    birthDate: formatDate(row.birthDate) || UNKNOWN_BIRTH_DATE,
     birthPlace: row.birthPlace || null,
     // Never discard a death date on the strength of the status field. This used to read
     // `row.status === 'living' ? null : …`, so one blank Status radio erased the date —

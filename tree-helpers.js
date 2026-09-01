@@ -1,3 +1,13 @@
+// A member with no known date of birth still needs a login, because identity is
+// SHA-256(name + DDMMYYYY). csv-import.js writes this placeholder so a hash can exist
+// at all. It is a login token, NOT a fact about the person — nothing may render it as a
+// birth date, raise it as a birthday, or export it to a calendar.
+window.UNKNOWN_BIRTH_DATE = '1970-01-01';
+window.isUnknownBirthDate = function (d) {
+  return !!d && String(d).slice(0, 10) === window.UNKNOWN_BIRTH_DATE;
+};
+const isUnknownBirthDate = window.isUnknownBirthDate;
+
 window.buildFamilyTree = function (people, scrapbook, initialMe) {
   // Build lookup
   const byId = {};
@@ -986,7 +996,9 @@ window.processRawFamilyData = function (rawData, initialMe) {
       // getBirthYear() falls back to 1950 so the layout always has a year to
       // sort on. Only 12 of 71 members have a real DOB, so the profile panel
       // needs to know which years are real before it prints one.
-      hasBirthYear: !!p.birthDate,
+      // UNKNOWN_BIRTH_DATE is a login placeholder, not a fact about the person, so it
+      // must read as "no birth year" everywhere the UI states one.
+      hasBirthYear: !!p.birthDate && !isUnknownBirthDate(p.birthDate),
       death: p.status === 'deceased' && p.deathDate ? parseInt(p.deathDate.split('-')[0]) : null,
       deceased: p.status === 'deceased',
       bio: p.biography || `A valued member of our family.`,

@@ -2914,6 +2914,38 @@
     height: 12px;
   }
 
+  /* Remembrance (punyatithi) — red, and visually distinct from every celebration
+     card it sits between in the same days-away list. */
+  .cal-event-card.cal-remembrance {
+    background: #fdf7f7;
+    border-color: #e6c9c9;
+  }
+
+  .cal-event-card.cal-remembrance .cal-card-name,
+  .cal-event-card.cal-remembrance .cal-card-type {
+    color: #9b2c2c;
+  }
+
+  .cal-event-card.cal-remembrance .cal-countdown {
+    background: #f5e0e0;
+    color: #9b2c2c;
+  }
+
+  /* Marks any card about someone who has died, including their birth anniversary. */
+  .cal-memorial-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #f5e0e0;
+    color: #9b2c2c;
+    font-size: 10px;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+
   /* Countdown badge */
   .cal-countdown {
     padding: 4px 8px;
@@ -3529,20 +3561,20 @@
       <!-- Step 1: Family Password -->
       <div class="form-step active" id="step1">
         <div class="field">
-          <label for="familyPassword">Family Password</label>
+          <label for="familyPassword">Family Password <span style="color:var(--family-muted);font-weight:400;">/ कुटुंबाचा पासवर्ड</span></label>
           <input id="familyPassword" type="password" placeholder="••••••••" required />
         </div>
-        <button class="signin" type="button" onclick="nextStep()">CONTINUE</button>
+        <button class="signin" type="button" onclick="nextStep()">CONTINUE <span style="opacity:.75;">/ पुढे जा</span></button>
       </div>
 
       <!-- Step 2: Name & DOB -->
       <div class="form-step" id="step2">
         <div class="field">
-          <label for="fullName">Full Name</label>
+          <label for="fullName">Full Name <span style="color:var(--family-muted);font-weight:400;">/ पूर्ण नाव</span></label>
           <input id="fullName" type="text" placeholder="Your Name" required />
         </div>
         <div class="field">
-          <label for="dob">Date of Birth</label>
+          <label for="dob">Date of Birth <span style="color:var(--family-muted);font-weight:400;">/ जन्मतारीख</span></label>
           <div class="dob-container">
             <input id="dob" type="text" placeholder="dd/mm/yyyy" pattern="\d{2}/\d{2}/\d{4}" maxlength="10"
               oninput="formatDOB(this)" required />
@@ -3555,7 +3587,7 @@
             </div>
           </div>
         </div>
-        <button class="signin" type="button" onclick="nextStep2()">CONTINUE</button>
+        <button class="signin" type="button" onclick="nextStep2()">CONTINUE <span style="opacity:.75;">/ पुढे जा</span></button>
       </div>
 
     </form>
@@ -3565,8 +3597,8 @@
   <div id="app-container" style="display: none;">
     <!-- Top Tabs (Desktop tab navigation) -->
     <nav class="top-tabs" id="topTabs">
-      <button class="active" id="tab-tree" data-tab="tree">Family Tree</button>
-      <button id="tab-calendar" data-tab="calendar">Calendar</button>
+      <button class="active" id="tab-tree" data-tab="tree" data-i18n="nav.tree">Family Tree</button>
+      <button id="tab-calendar" data-tab="calendar" data-i18n="nav.calendar">Calendar</button>
     </nav>
 
 
@@ -3596,6 +3628,7 @@
         </svg>
         <input id="search" class="search-input" type="text"
                placeholder="Search by name… (try “mother”, “aunt”, or a name)"
+               data-i18n-placeholder="nav.search"
                autocomplete="off" spellcheck="false" />
         <button class="search-clear" id="search-clear" aria-label="Clear search">✕</button>
         <div class="search-dropdown" id="search-dropdown"></div>
@@ -3623,7 +3656,7 @@
        ============================================================ -->
   <div class="calendar-panel" id="calendar-panel" style="display: none;">
     <div class="calendar-header">
-      <h2 class="cal-title" id="cal-panel-title">Upcoming Occasions</h2>
+      <h2 class="cal-title" id="cal-panel-title" data-i18n="calendar.title">Upcoming Occasions</h2>
       <button class="cal-export-btn" id="cal-export-all-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -3642,8 +3675,9 @@
       </div>
       <div class="cal-type-filters">
         <button class="cal-type-btn active" data-type="all" id="cal-type-all">All</button>
-        <button class="cal-type-btn" data-type="birthday" id="cal-type-birthdays">Birthdays</button>
-        <button class="cal-type-btn" data-type="anniversary" id="cal-type-anniversaries">Anniversaries</button>
+        <button class="cal-type-btn" data-type="birthday" id="cal-type-birthdays" data-i18n="calendar.filters.birthdays">Birthdays</button>
+        <button class="cal-type-btn" data-type="anniversary" id="cal-type-anniversaries" data-i18n="calendar.filters.anniversaries">Anniversaries</button>
+        <button class="cal-type-btn" data-type="remembrance" id="cal-type-remembrance" data-i18n="calendar.filters.remembrance">Remembrance</button>
       </div>
     </div>
 
@@ -3710,11 +3744,11 @@
 
       <div class="lb-tabs" id="lb-tabs" role="tablist" aria-label="Profile sections">
         <button class="lb-tab active" data-lbtab="timeline" role="tab"
-                id="lb-tabbtn-timeline" aria-selected="true" aria-controls="lb-tab-timeline">Timeline</button>
+                id="lb-tabbtn-timeline" aria-selected="true" aria-controls="lb-tab-timeline" data-i18n="profile.tabs.timeline">Timeline</button>
         <button class="lb-tab" data-lbtab="bio" role="tab"
-                id="lb-tabbtn-bio" aria-selected="false" aria-controls="lb-tab-bio">Bio</button>
+                id="lb-tabbtn-bio" aria-selected="false" aria-controls="lb-tab-bio" data-i18n="profile.tabs.bio">Bio</button>
         <button class="lb-tab" data-lbtab="family" role="tab"
-                id="lb-tabbtn-family" aria-selected="false" aria-controls="lb-tab-family">Family</button>
+                id="lb-tabbtn-family" aria-selected="false" aria-controls="lb-tab-family" data-i18n="profile.tabs.family">Family</button>
       </div>
 
       <div class="lb-tabpanel active" id="lb-tab-timeline" role="tabpanel" aria-labelledby="lb-tabbtn-timeline">

@@ -62,10 +62,13 @@
       "birthplace": "जन्मस्थान",
       "died": "निधन",
       "deathPlace": "निधनस्थान",
+      "livesIn": "राहतात",
       "occupation": "व्यवसाय",
       "education": "शिक्षण",
       "religion": "धर्म",
-      "maidenName": "माहेरचे आडनाव"
+      "maritalStatus": "वैवाहिक स्थिती",
+      "maidenName": "माहेरचे आडनाव",
+      "knownAs": "म्हणून ओळखले जातात"
     },
     "relationships": {
       "spouse": "जोडीदार",
@@ -73,6 +76,8 @@
       "children": "मुले",
       "siblings": "भाऊ-बहीण"
     },
+    "lifeStory": "जीवनकथा",
+    "emptyState": "{name} बद्दल अद्याप काही नोंदवलेले नाही.",
     "noEvents": "अद्याप कोणतेही प्रसंग नोंदवले नाहीत."
   },
   "calendar": {
@@ -83,7 +88,8 @@
       "birthdays": "वाढदिवस",
       "anniversaries": "लग्नवर्धापनदिन",
       "deathAnniversaries": "पुण्यतिथी",
-      "reunions": "कुटुंब मेळावा"
+      "reunions": "कुटुंब मेळावा",
+      "remembrance": "पुण्यतिथी"
     },
     "daysAway": "दिवस बाकी",
     "today": "आजच!",
@@ -98,20 +104,51 @@
   },
   "admin": {
     "title": "व्यवस्थापन",
+    "stats": {
+      "members": "सदस्य",
+      "events": "घटना",
+      "photos": "फोटो",
+      "pendingPRs": "प्रलंबित PRs"
+    },
     "addMember": {
       "title": "सदस्य जोडा",
       "subtitle": "केवळ आवश्यक माहिती — बाकी नंतर भरता येईल",
       "firstName": "पहिले नाव *",
       "lastName": "आडनाव *",
       "dob": "जन्मतारीख (DDMMYYYY) *",
-      "submit": "वंशवृक्षात जोडा → GitHub PR"
+      "submit": "वंशवृक्षात जोडा → GitHub PR",
+      "roles": {
+        "viewer": "दर्शक",
+        "contributor": "योगदानकर्ता",
+        "admin": "व्यवस्थापक"
+      },
+      "branch": "शाखा",
+      "photoUpload": "प्रोफाइल फोटो येथे टाका किंवा निवडण्यासाठी टॅप करा",
+      "photoHint": "Cloudflare R2 वर अपलोड · कमाल 5MB"
     },
     "bulkImport": {
       "title": "एकत्र आयात (CSV)",
       "subtitle": "एकाच वेळी अनेक सदस्य आयात करा",
       "downloadTemplate": "CSV नमुना डाउनलोड करा",
       "uploadCSV": "भरलेला CSV अपलोड करा",
-      "confirm": "वंशवृक्षात आयात करा"
+      "confirm": "वंशवृक्षात आयात करा",
+      "pasteCSV": "किंवा CSV डेटा येथे पेस्ट करा",
+      "preview": "पूर्वावलोकन",
+      "instructions": "Excel किंवा Google Sheets मध्ये नमुना भरा. आवश्यक रकाने: id, firstName, lastName, gender, status. बाकी सर्व ऐच्छिक."
+    },
+    "totp": {
+      "title": "TOTP सेटअप",
+      "subtitle": "कुटुंबातील सदस्याला एकदा स्कॅन करण्यासाठी QR code तयार करा",
+      "namePlaceholder": "सदस्याचे नाव",
+      "dobPlaceholder": "जन्म तारीख",
+      "generate": "QR code तयार करा",
+      "instructions": "WhatsApp द्वारे QR स्क्रीनशॉट पाठवा. सदस्य Google Authenticator मध्ये एकदा स्कॅन करतील."
+    },
+    "importExport": {
+      "title": "आयात / निर्यात",
+      "importCsv": "CSV आयात करा",
+      "downloadJson": "family.json डाउनलोड करा",
+      "exportGedcom": "GEDCOM (.ged) निर्यात करा"
     }
   },
   "security": {

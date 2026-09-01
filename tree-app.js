@@ -1,6 +1,43 @@
 /* ============================================================
    THE FAMILY TREE — Canvas app
    ============================================================ */
+
+// ---------- i18n (T-27b) ----------
+// window.I18N_DATA = { en: {...}, mr: {...} } is set by tree-data.js (dev) or
+// encrypt.js's bundled injection (production) — same pattern as FAMILY_DATA.
+// Dotted key path, e.g. t('admin.stats.members'). Falls back to English, then
+// to the path itself, so a missing key degrades to a visible key name rather
+// than blank/undefined text.
+function t(path, fallback) {
+  const data = window.I18N_DATA;
+  if (!data) return fallback || path;
+  const lang = (window.CURRENT_LANG === 'MR') ? 'mr' : 'en';
+  const lookup = (dict) => path.split('.').reduce(
+    (o, k) => (o && o[k] !== undefined) ? o[k] : undefined, dict
+  );
+  const value = lookup(data[lang]);
+  if (value !== undefined) return value;
+  const enValue = lookup(data.en);
+  return enValue !== undefined ? enValue : (fallback || path);
+}
+window.t = t;
+
+// Walks every [data-i18n] / [data-i18n-placeholder] / [data-i18n-title] element
+// and sets its text/attribute from the current language. Called on login and
+// again whenever the language toggle fires.
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+}
+window.applyI18n = applyI18n;
+
 window.initTreeApp = function () {
   const F = window.FAMILY;
   const ME = F.ME;
@@ -143,6 +180,8 @@ window.initTreeApp = function () {
         const modalDisplayName = (lang === "MR" && p.nameMr) ? p.nameMr : p.name;
         document.getElementById("lb-name").innerHTML =
           escapeHtml(modalDisplayName) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
+        renderBioTab(p);
+        renderFamilyTab(p);
       }
     }
     // Update calendar panel if it is visible
@@ -150,6 +189,7 @@ window.initTreeApp = function () {
     if (calendarEl && calendarEl.style.display !== "none") {
       renderCalendar();
     }
+    applyI18n();
   };
 
   /* ============================================================
@@ -839,19 +879,19 @@ window.initTreeApp = function () {
     const facts = [];
     const push = (label, value) => { if (value) facts.push([label, value]); };
 
-    if (p.hasBirthYear) push("Born", formatFullDate(p.birthDate));
-    push("Birthplace", p.birthPlace);
+    if (p.hasBirthYear) push(t("profile.fields.born"), formatFullDate(p.birthDate));
+    push(t("profile.fields.birthplace"), p.birthPlace);
     if (p.deceased) {
-      push("Passed away", formatFullDate(p.deathDate));
-      push("Place of passing", p.deathPlace);
+      push(t("profile.fields.died"), formatFullDate(p.deathDate));
+      push(t("profile.fields.deathPlace"), p.deathPlace);
     }
-    push("Lives in", p.location);
-    push("Occupation", p.occupation);
-    push("Education", p.education);
-    push("Religion", p.religion);
-    push("Marital status", sentenceCase(p.maritalStatus));
-    push("Maiden name", p.maidenName);
-    push("Known as", p.commonName);
+    push(t("profile.fields.livesIn"), p.location);
+    push(t("profile.fields.occupation"), p.occupation);
+    push(t("profile.fields.education"), p.education);
+    push(t("profile.fields.religion"), p.religion);
+    push(t("profile.fields.maritalStatus"), sentenceCase(p.maritalStatus));
+    push(t("profile.fields.maidenName"), p.maidenName);
+    push(t("profile.fields.knownAs"), p.commonName);
 
     const factsEl = document.getElementById("lb-facts");
     factsEl.innerHTML = facts
@@ -860,14 +900,15 @@ window.initTreeApp = function () {
 
     const storyEl = document.getElementById("lb-story");
     if (p.biography) {
-      storyEl.innerHTML = `<h4 class="lb-sec-title">Life story</h4>${escapeHtml(p.biography)}`;
+      storyEl.innerHTML = `<h4 class="lb-sec-title">${escapeHtml(t("profile.lifeStory"))}</h4>${escapeHtml(p.biography)}`;
     } else {
       storyEl.innerHTML = "";
     }
 
     if (!facts.length && !p.biography) {
       factsEl.innerHTML = "";
-      storyEl.innerHTML = `<div class="lb-empty">We haven't recorded anything about ${escapeHtml(p.name.split(" ")[0])} yet.</div>`;
+      const emptyMsg = t("profile.emptyState").replace("{name}", p.name.split(" ")[0]);
+      storyEl.innerHTML = `<div class="lb-empty">${escapeHtml(emptyMsg)}</div>`;
       storyEl.style.borderTop = "none";
       storyEl.style.paddingTop = "0";
     } else {
@@ -1296,6 +1337,7 @@ window.initTreeApp = function () {
     const typeAll = document.getElementById("cal-type-all");
     const typeBirthdays = document.getElementById("cal-type-birthdays");
     const typeAnniversaries = document.getElementById("cal-type-anniversaries");
+    const typeRemembrance = document.getElementById("cal-type-remembrance");
 
     if (window.CURRENT_LANG === "MR") {
       if (panelTitle) panelTitle.textContent = "कुटुंब दिनदर्शिका";
@@ -1304,6 +1346,7 @@ window.initTreeApp = function () {
       if (typeAll) typeAll.textContent = "सर्व";
       if (typeBirthdays) typeBirthdays.textContent = "वाढदिवस";
       if (typeAnniversaries) typeAnniversaries.textContent = "लग्नाचे वाढदिवस";
+      if (typeRemembrance) typeRemembrance.textContent = "पुण्यतिथी";
       const mnavCal = document.getElementById("mnav-calendar-label");
       if (mnavCal) mnavCal.textContent = "दिनदर्शिका";
     } else {
@@ -1313,6 +1356,7 @@ window.initTreeApp = function () {
       if (typeAll) typeAll.textContent = "All";
       if (typeBirthdays) typeBirthdays.textContent = "Birthdays";
       if (typeAnniversaries) typeAnniversaries.textContent = "Anniversaries";
+      if (typeRemembrance) typeRemembrance.textContent = "Remembrance";
       const mnavCal = document.getElementById("mnav-calendar-label");
       if (mnavCal) mnavCal.textContent = "Calendar";
     }
@@ -1346,22 +1390,57 @@ window.initTreeApp = function () {
     // Gather occasions
     const occasions = [];
 
-    // 1. Birthdays (living members only)
+    // 1. Birthdays — deceased members included, flagged so the card can mark them and
+    //    never offer a birthday wish. A deceased person's entry reads as a birth
+    //    anniversary rather than a birthday. The 1970-01-01 login placeholder is not a
+    //    birth date and must never surface as one.
     rawData.persons.forEach(p => {
-      if (p.status !== "deceased" && p.birthDate) {
+      if (p.birthDate && !isUnknownBirthDate(p.birthDate)) {
         const startYear = parseInt(p.birthDate.split("-")[0]);
         const calc = calculateNextOccur(p.birthDate, startYear);
         if (calc) {
+          const gone = p.status === "deceased";
           occasions.push({
             id: p.id,
             person: p,
             type: "birthday",
+            isDeceased: gone,
+            noIcs: gone,
             dateStr: p.birthDate,
             daysLeft: calc.daysLeft,
             milestone: calc.milestone,
             branch: p.lastName,
-            titleEn: `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birthday`,
-            titleMr: `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांचा ${calc.milestone}वा वाढदिवस`,
+            titleEn: gone
+              ? `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birth Anniversary`
+              : `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birthday`,
+            titleMr: gone
+              ? `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${calc.milestone}वी जयंती`
+              : `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांचा ${calc.milestone}वा वाढदिवस`,
+            dateLabel: formatDateLabel(calc.nextOcc)
+          });
+        }
+      }
+    });
+
+    // 1b. Death anniversaries (punyatithi). Owner's call: shown as an alert in red,
+    //     never exported to .ics and never given a "send wish" action.
+    rawData.persons.forEach(p => {
+      if (p.status === "deceased" && p.deathDate) {
+        const startYear = parseInt(p.deathDate.split("-")[0]);
+        const calc = calculateNextOccur(p.deathDate, startYear);
+        if (calc) {
+          occasions.push({
+            id: `death_${p.id}`,
+            person: p,
+            type: "remembrance",
+            isDeceased: true,
+            noIcs: true,
+            dateStr: p.deathDate,
+            daysLeft: calc.daysLeft,
+            milestone: calc.milestone,
+            branch: p.lastName,
+            titleEn: `${p.firstName} ${p.lastName} — ${getOrdinal(calc.milestone)} Remembrance`,
+            titleMr: `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${calc.milestone}वी पुण्यतिथी`,
             dateLabel: formatDateLabel(calc.nextOcc)
           });
         }
@@ -1417,7 +1496,7 @@ window.initTreeApp = function () {
 
       // 2. Branch
       if (activeCalBranch !== "all") {
-        if (occ.type === "birthday" && occ.branch !== activeCalBranch) return false;
+        if ((occ.type === "birthday" || occ.type === "remembrance") && occ.branch !== activeCalBranch) return false;
         if (occ.type === "anniversary") {
           const p1Branch = occ.person1.lastName === activeCalBranch;
           const p2Branch = occ.person2.lastName === activeCalBranch;
@@ -1443,25 +1522,30 @@ window.initTreeApp = function () {
 
     filtered.forEach(occ => {
       const card = document.createElement("div");
-      card.className = "cal-event-card";
-      
-      card.style.setProperty('--branch-color', getBranchColor(occ.branch));
+      // A remembrance is styled in red and keeps the branch colour off the card, so it
+      // never reads as a celebration alongside the birthdays it sits between.
+      card.className = occ.type === "remembrance" ? "cal-event-card cal-remembrance" : "cal-event-card";
+
+      card.style.setProperty('--branch-color', occ.type === "remembrance" ? "#9b2c2c" : getBranchColor(occ.branch));
 
       const isToday = occ.daysLeft === 0 || occ.daysLeft === 365;
       const countdownClass = isToday ? "cal-countdown today" : "cal-countdown";
-      
+
+      // 🎂 is wrong on any card for someone who has died — both the remembrance and the
+      // birth anniversary of a deceased member.
+      const todayIcon = occ.isDeceased ? "🕯" : "🎂";
       let countdownText = "";
       if (window.CURRENT_LANG === "MR") {
-        countdownText = isToday ? "आज! 🎂" : `${occ.daysLeft} दिवसात`;
+        countdownText = isToday ? `आज! ${todayIcon}` : `${occ.daysLeft} दिवसात`;
       } else {
-        countdownText = isToday ? "Today! 🎂" : `In ${occ.daysLeft} days`;
+        countdownText = isToday ? `Today! ${todayIcon}` : `In ${occ.daysLeft} days`;
       }
 
       const title = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
       
       // Thumbnail representation
       let thumbHtml = "";
-      if (occ.type === "birthday") {
+      if (occ.type === "birthday" || occ.type === "remembrance") {
         thumbHtml = getPersonThumbHtml(occ.person);
       } else {
         thumbHtml = `
@@ -1475,41 +1559,54 @@ window.initTreeApp = function () {
         ? `दिनांक: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`
         : `Date: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`;
 
-      const wishText = getWishMessage(occ);
+      // No "Send Wish" for anyone who has died — not on a remembrance, and not on a
+      // birth anniversary either. A WhatsApp "Happy Birthday" to a deceased relative is
+      // the single worst thing this calendar could do.
+      const canWish = !occ.isDeceased;
+      const wishText = canWish ? getWishMessage(occ) : "";
       const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(wishText)}`;
+
+      const typeChip = occ.type === "remembrance"
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 3c1.5 2 3 3.5 3 5.5a3 3 0 0 1-6 0C9 6.5 10.5 5 12 3zM8 21h8M12 14v7"/></svg> ${window.CURRENT_LANG === "MR" ? "पुण्यतिथी" : "Remembrance"}`
+        : occ.type === "birthday"
+          ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> ${occ.isDeceased ? (window.CURRENT_LANG === "MR" ? "जयंती" : "Birth Anniversary") : (window.CURRENT_LANG === "MR" ? "वाढदिवस" : "Birthday")}`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h8"/></svg> ${window.CURRENT_LANG === "MR" ? "लग्नाचा वाढदिवस" : "Anniversary"}`;
+
+      // The marker the owner asked for: every card about a deceased member says so.
+      const memorialChip = occ.isDeceased
+        ? `<span class="cal-memorial-chip">🕯 ${window.CURRENT_LANG === "MR" ? "स्मरणार्थ" : "In Memory"}</span>`
+        : "";
 
       card.innerHTML = `
         <div class="cal-card-top">
           ${thumbHtml}
           <div class="cal-card-meta">
             <h3 class="cal-card-name">${escapeHtml(title)}</h3>
-            <div class="cal-card-type">
-              ${occ.type === "birthday" 
-                ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Birthday` 
-                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h8"/></svg> Anniversary`
-              }
-            </div>
+            <div class="cal-card-type">${typeChip}${memorialChip}</div>
           </div>
           <div class="${countdownClass}">${countdownText}</div>
         </div>
         <p class="cal-card-details">${escapeHtml(dateText)}</p>
         <div class="cal-card-actions">
+          ${!canWish ? "" : `
           <a class="cal-action-btn wish-btn" href="${whatsappUrl}" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px;">
               <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.333 4.966L2 22l5.222-1.37a9.954 9.954 0 0 0 4.79 1.222h.004c5.505 0 9.987-4.479 9.988-9.986.002-2.67-1.037-5.178-2.927-7.067C17.19 3.012 14.683 2 12.012 2zm5.72 13.916c-.244.686-1.42 1.26-1.95 1.343-.482.077-1.11.134-3.23-.746-2.716-1.125-4.464-3.896-4.6-4.077-.134-.18-1.096-1.458-1.096-2.781s.686-1.972.93-2.233c.244-.26 1.488-.26 1.626-.26.138 0 .285.01.408.03.122.02.285.04.448.43.163.39.57 1.385.62 1.484.05.1.08.21.01.34-.07.13-.105.21-.21.34l-.325.38c-.105.115-.215.24-.092.45.122.21.54.89 1.156 1.44.79.7 1.458.92 1.66 1.02.2.1.32.08.44-.06.12-.14.52-.61.66-.82.14-.2.285-.17.48-.1.196.07 1.238.58 1.452.69s.356.16.407.25c.052.09.052.53-.193 1.216z"/>
             </svg>
             <span>${window.CURRENT_LANG === "MR" ? "शुभेच्छा पाठवा" : "Send Wish"}</span>
-          </a>
+          </a>`}
+          ${occ.noIcs ? "" : `
           <button class="cal-action-btn ics-single-btn" data-id="${occ.id}" data-type="${occ.type}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             <span>.ics</span>
-          </button>
+          </button>`}
         </div>
       `;
-      
-      card.querySelector(".ics-single-btn").addEventListener("click", () => {
+
+      // Both action buttons are conditional now, so this listener must not assume one.
+      card.querySelector(".ics-single-btn")?.addEventListener("click", () => {
         downloadSingleICS(occ);
       });
 
@@ -1562,6 +1659,9 @@ window.initTreeApp = function () {
   }
 
   function downloadSingleICS(occ) {
+    // Belt and braces: the button is not rendered for these, but a remembrance or a
+    // deceased member's birth anniversary must never reach a calendar file.
+    if (occ.noIcs) return;
     let dateStr = occ.dateStr.replace(/-/g, "");
     let summary = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
     let desc = occ.type === "birthday" ? `Birthday celebration for ${occ.person.firstName}` : `Wedding Anniversary for ${occ.person1.firstName} & ${occ.person2.firstName}`;
@@ -1605,9 +1705,11 @@ window.initTreeApp = function () {
     
     const events = [];
     
-    // 1. Birthdays
+    // 1. Birthdays. Living members only, and never the 1970-01-01 login placeholder —
+    //    the feed is for celebrations, so remembrances and birth anniversaries of the
+    //    deceased are deliberately absent.
     rawData.persons.forEach(p => {
-      if (p.status !== "deceased" && p.birthDate) {
+      if (p.status !== "deceased" && p.birthDate && !isUnknownBirthDate(p.birthDate)) {
         const dateStr = p.birthDate.replace(/-/g, "");
         const name = p.name || `${p.firstName} ${p.lastName}`;
         const nameMr = (window.CURRENT_LANG === "MR" && p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;

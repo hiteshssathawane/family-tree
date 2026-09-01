@@ -60,12 +60,15 @@
     "fields": {
       "born": "Born",
       "birthplace": "Birthplace",
-      "died": "Died",
-      "deathPlace": "Death place",
+      "died": "Passed away",
+      "deathPlace": "Place of passing",
+      "livesIn": "Lives in",
       "occupation": "Occupation",
       "education": "Education",
       "religion": "Religion",
-      "maidenName": "Maiden name"
+      "maritalStatus": "Marital status",
+      "maidenName": "Maiden name",
+      "knownAs": "Known as"
     },
     "relationships": {
       "spouse": "Spouse / Partner",
@@ -73,6 +76,8 @@
       "children": "Children",
       "siblings": "Siblings"
     },
+    "lifeStory": "Life story",
+    "emptyState": "We haven't recorded anything about {name} yet.",
     "noEvents": "No events recorded yet."
   },
   "calendar": {
@@ -83,7 +88,8 @@
       "birthdays": "Birthdays",
       "anniversaries": "Anniversaries",
       "deathAnniversaries": "Death anniversaries",
-      "reunions": "Reunions"
+      "reunions": "Reunions",
+      "remembrance": "Remembrance"
     },
     "daysAway": "days away",
     "today": "Today!",
