@@ -426,11 +426,20 @@ console.log('\n🚸 Processing parent-child relationships...');
 family.persons.forEach((p) => {
   let father = null;
   if (p.fatherName) {
-    father = family.persons.find(f => 
-      f.gender === 'M' && 
-      f.firstName.toLowerCase() === p.fatherName.toLowerCase() && 
+    // Gender disambiguates here, it must never block. T-34 removed exactly this condition
+    // from findExistingPerson but left it standing in this second pass, so a father whose
+    // own gender is 'X' — every person whose Gender radio came back blank — matched nothing
+    // and the edge was dropped in silence. That is why Dhruv and Arjun had no parents at
+    // all while the Sheet named Hitesh and Swati for both.
+    // Self-exclusion is required, not defensive: the data really does contain
+    // "Sampathrao, father Sampathrao, Sathawane", who would otherwise father himself.
+    const fCandidates = family.persons.filter(f =>
+      f.id !== p.id &&
+      f.firstName.toLowerCase() === p.fatherName.toLowerCase() &&
       f.lastName.toLowerCase() === p.lastName.toLowerCase()
     );
+    const males = fCandidates.filter(f => f.gender === 'M');
+    father = (males.length ? males : fCandidates)[0] || null;
     if (father) {
       const exists = family.relationships.some(r => 
         r.type === 'parent-child' && 
@@ -452,10 +461,15 @@ family.persons.forEach((p) => {
 
   if (p.motherName) {
     let mother = null;
-    const candidates = family.persons.filter(m => 
-      m.gender === 'F' && 
+    // Same rule as the father lookup above: prefer 'F', but fall back to the unfiltered
+    // pool rather than dropping the edge when gender is unknown. lastName is deliberately
+    // not required — her own row keeps her maiden surname.
+    const allCandidates = family.persons.filter(m =>
+      m.id !== p.id &&
       m.firstName.toLowerCase() === p.motherName.toLowerCase()
     );
+    const females = allCandidates.filter(m => m.gender === 'F');
+    const candidates = females.length ? females : allCandidates;
     if (candidates.length === 1) {
       mother = candidates[0];
     } else if (candidates.length > 1) {
