@@ -327,6 +327,59 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     return greats + stem + (other.gender === "m" ? "nephew" : "niece");
   }
 
+  // The best *blood* term for b as seen from a, or null when the two share no
+  // ancestor. labelFor's own fallbacks ("Family", "Relative") are not answers, so
+  // they are treated as a miss and handed to collateralLabel.
+  function bloodLabel(aId, bId) {
+    const direct = labelFor(aId, bId);
+    if (direct && direct !== "Family" && direct !== "Relative") return direct;
+    return collateralLabel(aId, bId);
+  }
+
+  // T-18a. Both blood resolvers key off a shared ancestor, so for anyone who married
+  // into the tree — Swati, whose Biradar line shares no ancestor with the Sathawanes —
+  // every answer used to collapse to "Related by marriage". Compose *through* the
+  // marriage hop instead: describe the person relative to the spouse, then say whose
+  // spouse that is.
+  //
+  //   a married in    → "<husband|wife>'s <label(spouse, b)>"   e.g. husband's maternal cousin
+  //   b married in    → "<label(a, b's spouse)>'s <husband|wife>" e.g. maternal cousin's wife
+  //
+  // `depth` caps how many marriage hops a single answer may cross. At 2 it covers
+  // "my husband's brother's wife" and stops before the chain stops being a relationship
+  // anyone would recognise. Recursion can bounce back to the original pair, but that
+  // call only ever finds the same blood miss and unwinds, so it terminates on depth.
+  function composedLabel(aId, bId, depth) {
+    const direct = bloodLabel(aId, bId);
+    if (direct) return direct;
+    if (depth <= 0) return null;
+
+    const a = byId[aId], b = byId[bId];
+
+    if (a && a.spouse && a.spouse !== bId && byId[a.spouse]) {
+      const inner = composedLabel(a.spouse, bId, depth - 1);
+      if (inner) {
+        const term = byId[a.spouse].gender === "m" ? "Husband" : "Wife";
+        return `${term}'s ${inner}`;
+      }
+    }
+
+    if (b && b.spouse && b.spouse !== aId && byId[b.spouse]) {
+      const inner = composedLabel(aId, b.spouse, depth - 1);
+      if (inner) {
+        const term = b.gender === "m" ? "Husband" : "Wife";
+        return `${inner}'s ${term}`;
+      }
+    }
+
+    return null;
+  }
+
+  // Labels that are a statement about the pair rather than a noun phrase naming b.
+  // "Aarti is Swati's Related by marriage." is what slotting one of these into the
+  // sentence template produces, so the UI needs to know to phrase them separately.
+  const NON_NOUN_LABELS = new Set(["Related by marriage", "No known connection", "Family", "Relative"]);
+
   // How is `bId` related to `aId`? Returns the term, plus the hop chain so the
   // UI can show the working rather than just asserting an answer.
   function relationshipBetween(aId, bId) {
@@ -347,13 +400,17 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
 
     let label = labelFor(aId, bId);
     if (label === "Family" || label === "Relative") {
-      const blood = collateralLabel(aId, bId);
-      if (blood) label = blood;
+      const composed = composedLabel(aId, bId, 2);
+      if (composed) label = composed;
       else if (!path) label = "No known connection";
       else if (viaMarriage) label = "Related by marriage";
     }
 
-    return { label, chain, viaMarriage, degrees: chain.length, connected: !!path };
+    // True only when the label still is not a noun phrase naming b, so the sentence
+    // template can fall back rather than producing "X is Y's Related by marriage."
+    const isNounPhrase = !NON_NOUN_LABELS.has(label);
+
+    return { label, chain, viaMarriage, isNounPhrase, degrees: chain.length, connected: !!path };
   }
 
   function tagMatches(viewerId, tag) {
@@ -1031,13 +1088,31 @@ window.processRawFamilyData = function (rawData, initialMe) {
   const outputScrapbook = {};
   persons.forEach(p => {
     const timeline = [];
-    if (p.birthDate) {
+    // UNKNOWN_BIRTH_DATE is a login placeholder, not a fact — must not surface as an entry.
+    if (p.birthDate && !isUnknownBirthDate(p.birthDate)) {
       timeline.push({
         date: p.birthDate,
         caption: `${p.firstName} ${p.lastName} was born${p.birthPlace ? ' in ' + p.birthPlace : ''}.`,
         tags: [],
         photos: [null]
       });
+    }
+
+    const spouseRel = relationships.find(r =>
+      r.type === 'marriage' &&
+      (r.person1Id === p.id || r.person2Id === p.id)
+    );
+    if (spouseRel && spouseRel.startDate) {
+      const spouseId = spouseRel.person1Id === p.id ? spouseRel.person2Id : spouseRel.person1Id;
+      const spouse = persons.find(x => x.id === spouseId);
+      if (spouse) {
+        timeline.push({
+          date: spouseRel.startDate,
+          caption: `${p.firstName} ${p.lastName} married ${spouse.firstName} ${spouse.lastName}${spouseRel.place ? ' in ' + spouseRel.place : ''}.`,
+          tags: [],
+          photos: [null]
+        });
+      }
     }
 
     // Merge custom scrapbook entries
@@ -1056,7 +1131,10 @@ window.processRawFamilyData = function (rawData, initialMe) {
         date: p.deathDate,
         caption: `${p.firstName} ${p.lastName} passed away${p.deathPlace ? ' in ' + p.deathPlace : ''}.`,
         tags: [],
-        photos: [null]
+        photos: [null],
+        // Styled distinctly downstream — same "remembrance" treatment as the
+        // calendar's punyatithi cards, not a plain life-event entry.
+        remembrance: true
       });
     }
 

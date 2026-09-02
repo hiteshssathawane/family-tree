@@ -425,6 +425,18 @@ parsedRows.forEach((row) => {
         notes: null
       });
       console.log(`  💍 Added marriage: ${row.firstName} & ${spouse.firstName}`);
+    } else {
+      // The parental pass above runs first and links a couple the moment a *child's*
+      // row names them as father + mother — but a child's row carries no marriage
+      // date, so that link is minted with startDate: null. When the couple's own row
+      // arrives here it found `exists` and returned, dropping the date on the floor:
+      // every anniversary in the tree was lost this way. Backfill instead of skipping.
+      const startDate = formatDate(row.marriageDate) || null;
+      if (startDate && !exists.startDate) {
+        exists.startDate = startDate;
+        if (exists.notes === 'Auto-created parental marriage link.') exists.notes = null;
+        console.log(`  💍 Backfilled marriage date for ${row.firstName} & ${spouse.firstName}: ${startDate}`);
+      }
     }
   }
 });

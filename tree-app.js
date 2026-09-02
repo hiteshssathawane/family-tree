@@ -2,41 +2,12 @@
    THE FAMILY TREE — Canvas app
    ============================================================ */
 
-// ---------- i18n (T-27b) ----------
-// window.I18N_DATA = { en: {...}, mr: {...} } is set by tree-data.js (dev) or
-// encrypt.js's bundled injection (production) — same pattern as FAMILY_DATA.
-// Dotted key path, e.g. t('admin.stats.members'). Falls back to English, then
-// to the path itself, so a missing key degrades to a visible key name rather
-// than blank/undefined text.
-function t(path, fallback) {
-  const data = window.I18N_DATA;
-  if (!data) return fallback || path;
-  const lang = (window.CURRENT_LANG === 'MR') ? 'mr' : 'en';
-  const lookup = (dict) => path.split('.').reduce(
-    (o, k) => (o && o[k] !== undefined) ? o[k] : undefined, dict
-  );
-  const value = lookup(data[lang]);
-  if (value !== undefined) return value;
-  const enValue = lookup(data.en);
-  return enValue !== undefined ? enValue : (fallback || path);
-}
-window.t = t;
-
-// Walks every [data-i18n] / [data-i18n-placeholder] / [data-i18n-title] element
-// and sets its text/attribute from the current language. Called on login and
-// again whenever the language toggle fires.
-function applyI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
-  });
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    el.title = t(el.getAttribute('data-i18n-title'));
-  });
-}
-window.applyI18n = applyI18n;
+// ---------- i18n (T-27a/T-27b) ----------
+// `t(key)` and `applyI18n()` are defined in index.html's boot script, not here:
+// this file is only fetched after login in dev mode, and the login screen needs
+// them first. They are globals, so the bare `t(...)` calls below resolve to them.
+const t = window.t;
+const applyI18n = window.applyI18n;
 
 window.initTreeApp = function () {
   const F = window.FAMILY;
@@ -926,7 +897,7 @@ window.initTreeApp = function () {
       // Hitesh". Parents/Children keep their chip labels because those distinguish
       // members within the group (Father vs Mother, Son vs Daughter).
       groups.push({
-        title: p.gender === "m" ? "Wife" : "Husband",
+        title: p.gender === "m" ? t("profile.terms.wife") : t("profile.terms.husband"),
         members: [[p.spouse, ""]]
       });
     }
@@ -934,30 +905,31 @@ window.initTreeApp = function () {
     const parents = (p.parents || []).filter(id => F.byId[id]);
     if (parents.length) {
       groups.push({
-        title: "Parents",
-        members: parents.map(id => [id, F.byId[id].gender === "m" ? "Father" : "Mother"])
+        title: t("profile.terms.parents"),
+        members: parents.map(id => [id, F.byId[id].gender === "m" ? t("profile.terms.father") : t("profile.terms.mother")])
       });
     }
 
     const siblings = (p.siblings || []).filter(id => F.byId[id]);
     if (siblings.length) {
       groups.push({
-        title: siblings.length === 1 ? "Sibling" : "Siblings",
-        members: siblings.map(id => [id, F.byId[id].gender === "m" ? "Brother" : "Sister"])
+        title: siblings.length === 1 ? t("profile.terms.sibling") : t("profile.terms.siblings"),
+        members: siblings.map(id => [id, F.byId[id].gender === "m" ? t("profile.terms.brother") : t("profile.terms.sister")])
       });
     }
 
     const children = (p.children || []).filter(id => F.byId[id]);
     if (children.length) {
       groups.push({
-        title: children.length === 1 ? "Child" : "Children",
-        members: children.map(id => [id, F.byId[id].gender === "m" ? "Son" : "Daughter"])
+        title: children.length === 1 ? t("profile.terms.child") : t("profile.terms.children"),
+        members: children.map(id => [id, F.byId[id].gender === "m" ? t("profile.terms.son") : t("profile.terms.daughter")])
       });
     }
 
     const groupsEl = document.getElementById("lb-fam-groups");
     if (!groups.length) {
-      groupsEl.innerHTML = `<div class="lb-empty">No family links recorded for ${escapeHtml(p.name.split(" ")[0])} yet.</div>`;
+      const noLinks = t("profile.noFamilyLinks").replace("{name}", p.name.split(" ")[0]);
+      groupsEl.innerHTML = `<div class="lb-empty">${escapeHtml(noLinks)}</div>`;
     } else {
       groupsEl.innerHTML = groups.map(g => `
         <div class="lb-fam-group">
@@ -1000,9 +972,15 @@ window.initTreeApp = function () {
 
     let answer;
     if (currentPersonId === otherId) {
-      answer = `That's ${subjectFirst} — the same person.`;
+      answer = escapeHtml(t("profile.relCalc.samePerson").replace("{name}", subject.name.split(" ")[0]));
     } else if (!result.connected) {
-      answer = `<strong>${otherFirst}</strong> has no recorded link to <strong>${subjectFirst}</strong> in the tree yet.`;
+      answer = escapeHtml(t("profile.relCalc.noLink"))
+        .replace("{other}", `<strong>${otherFirst}</strong>`)
+        .replace("{subject}", `<strong>${subjectFirst}</strong>`);
+    } else if (!result.isNounPhrase) {
+      // "Related by marriage" is a statement about the pair, not a name for the person,
+      // so it gets its own sentence instead of being slotted in after the possessive.
+      answer = `<strong>${otherFirst}</strong> and <strong>${subjectFirst}</strong> are <strong>${escapeHtml(result.label.toLowerCase())}</strong>.`;
     } else {
       answer = `<strong>${otherFirst}</strong> is <strong>${subjectFirst}</strong>'s <strong>${escapeHtml(result.label)}</strong>.`;
     }
@@ -1159,7 +1137,10 @@ window.initTreeApp = function () {
     } else {
       entries.forEach(e => {
         const card = document.createElement("div");
-        card.className = "scrap-card";
+        card.className = e.remembrance ? "scrap-card remembrance" : "scrap-card";
+        const memorialChip = e.remembrance
+          ? `<span class="scrap-memorial-chip">🕯 ${window.CURRENT_LANG === "MR" ? "स्मरणार्थ" : "In Memory"}</span>`
+          : "";
         const photos = (e.photos || []).slice(0, 3);
         const photosHtml = photos.length ? `
           <div class="scrap-photos count-${photos.length}">
@@ -1187,7 +1168,7 @@ window.initTreeApp = function () {
             }).join("")}
           </div>` : "";
         card.innerHTML = `
-          <div class="scrap-date">${e.date}</div>
+          <div class="scrap-date">${e.date}${memorialChip}</div>
           ${photosHtml}
           <p class="scrap-caption">${escapeHtml(e.caption)}</p>
           ${tagsHtml}
@@ -1405,7 +1386,6 @@ window.initTreeApp = function () {
             person: p,
             type: "birthday",
             isDeceased: gone,
-            noIcs: gone,
             dateStr: p.birthDate,
             daysLeft: calc.daysLeft,
             milestone: calc.milestone,
@@ -1434,7 +1414,6 @@ window.initTreeApp = function () {
             person: p,
             type: "remembrance",
             isDeceased: true,
-            noIcs: true,
             dateStr: p.deathDate,
             daysLeft: calc.daysLeft,
             milestone: calc.milestone,
@@ -1449,24 +1428,30 @@ window.initTreeApp = function () {
 
     // 2. Anniversaries
     rawData.relationships.forEach(r => {
-      if (r.type === "marriage" && r.marriageDate) {
+      const wedDate = marriageDateOf(r);
+      if (r.type === "marriage" && wedDate) {
         const p1 = rawData.persons.find(x => x.id === r.person1Id);
         const p2 = rawData.persons.find(x => x.id === r.person2Id);
         if (p1 && p2) {
-          const startYear = parseInt(r.marriageDate.split("-")[0]);
-          const calc = calculateNextOccur(r.marriageDate, startYear);
+          const startYear = parseInt(wedDate.split("-")[0]);
+          const calc = calculateNextOccur(wedDate, startYear);
           if (calc) {
             const branch = p1.lastName || p2.lastName;
             const p1NameMr = p1.firstNameMr || p1.firstName.split(" ")[0];
             const p2NameMr = p2.firstNameMr || p2.firstName.split(" ")[0];
-            
+            // Same rule the birthday cards follow: once a spouse has died the couple's
+            // date is a remembrance of the marriage. The card stays and can still be
+            // added to a calendar; what it loses is the "Send Wish" button.
+            const widowed = p1.status === "deceased" || p2.status === "deceased";
+
             occasions.push({
               id: r.id,
               relationship: r,
               person1: p1,
               person2: p2,
               type: "anniversary",
-              dateStr: r.marriageDate,
+              isDeceased: widowed,
+              dateStr: wedDate,
               daysLeft: calc.daysLeft,
               milestone: calc.milestone,
               branch: branch,
@@ -1595,13 +1580,12 @@ window.initTreeApp = function () {
             </svg>
             <span>${window.CURRENT_LANG === "MR" ? "शुभेच्छा पाठवा" : "Send Wish"}</span>
           </a>`}
-          ${occ.noIcs ? "" : `
           <button class="cal-action-btn ics-single-btn" data-id="${occ.id}" data-type="${occ.type}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             <span>.ics</span>
-          </button>`}
+          </button>
         </div>
       `;
 
@@ -1615,6 +1599,17 @@ window.initTreeApp = function () {
   }
 
   // Supporting Helper Functions
+
+  // The wedding date on a marriage relationship. The schema field is `startDate` and
+  // that is the only one the Sheet → csv-import pipeline ever writes; the calendar and
+  // the .ics export both used to read a `marriageDate` that no record has, so every
+  // anniversary in the tree was silently invisible. `marriageDate` is still accepted
+  // second for any hand-authored or GEDCOM-imported record that carries it.
+  function marriageDateOf(r) {
+    if (!r) return null;
+    return r.startDate || r.marriageDate || null;
+  }
+
   function getOrdinal(n) {
     const s = ["th", "st", "nd", "rd"], v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -1659,12 +1654,20 @@ window.initTreeApp = function () {
   }
 
   function downloadSingleICS(occ) {
-    // Belt and braces: the button is not rendered for these, but a remembrance or a
-    // deceased member's birth anniversary must never reach a calendar file.
-    if (occ.noIcs) return;
     let dateStr = occ.dateStr.replace(/-/g, "");
     let summary = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
-    let desc = occ.type === "birthday" ? `Birthday celebration for ${occ.person.firstName}` : `Wedding Anniversary for ${occ.person1.firstName} & ${occ.person2.firstName}`;
+    // A remembrance carries `person`, not `person1`/`person2`, and the old ternary
+    // reached straight for `occ.person1.firstName` on anything that was not a birthday.
+    let desc;
+    if (occ.type === "remembrance") {
+      desc = `Remembrance for ${occ.person.firstName} ${occ.person.lastName}`;
+    } else if (occ.type === "birthday") {
+      desc = occ.isDeceased
+        ? `Birth anniversary of ${occ.person.firstName}`
+        : `Birthday celebration for ${occ.person.firstName}`;
+    } else {
+      desc = `Wedding Anniversary for ${occ.person1.firstName} & ${occ.person2.firstName}`;
+    }
     let uid = `${occ.type}_${occ.id}@familytree`;
 
     let icsContent = [
@@ -1705,9 +1708,9 @@ window.initTreeApp = function () {
     
     const events = [];
     
-    // 1. Birthdays. Living members only, and never the 1970-01-01 login placeholder —
-    //    the feed is for celebrations, so remembrances and birth anniversaries of the
-    //    deceased are deliberately absent.
+    // 1. Birthdays. Living members only, and never the 1970-01-01 login placeholder.
+    //    A deceased member's date reaches the feed through section 3 as a remembrance,
+    //    so it is never phrased as a birthday here.
     rawData.persons.forEach(p => {
       if (p.status !== "deceased" && p.birthDate && !isUnknownBirthDate(p.birthDate)) {
         const dateStr = p.birthDate.replace(/-/g, "");
@@ -1724,21 +1727,24 @@ window.initTreeApp = function () {
       }
     });
     
-    // 2. Anniversaries
+    // 2. Anniversaries. Two bugs lived here: the date was read from `marriageDate`,
+    //    which the pipeline never writes, and `start` referenced a `dateStr` that only
+    //    exists inside the birthday callback above — so the day this block ever did run
+    //    it would have thrown a ReferenceError instead of exporting anything.
     rawData.relationships.forEach(r => {
-      if (r.type === "marriage" && r.marriageDate) {
+      const wedDate = marriageDateOf(r);
+      if (r.type === "marriage" && wedDate) {
         const p1 = rawData.persons.find(x => x.id === r.person1Id);
         const p2 = rawData.persons.find(x => x.id === r.person2Id);
-        if (p1 && p2) {
-          const name1 = p1.name || `${p1.firstName} ${p1.lastName}`;
-          const name2 = p2.name || `${p2.firstName} ${p2.lastName}`;
+        if (p1 && p2 && p1.status !== "deceased" && p2.status !== "deceased") {
+          const dateStr = wedDate.replace(/-/g, "");
           const name1Mr = (window.CURRENT_LANG === "MR" && p1.firstNameMr) ? p1.firstNameMr : p1.firstName.split(" ")[0];
           const name2Mr = (window.CURRENT_LANG === "MR" && p2.firstNameMr) ? p2.firstNameMr : p2.firstName.split(" ")[0];
-          
-          const displayName = window.CURRENT_LANG === "MR" 
-            ? `${name1Mr} आणि ${name2Mr}` 
+
+          const displayName = window.CURRENT_LANG === "MR"
+            ? `${name1Mr} आणि ${name2Mr}`
             : `${p1.firstName} & ${p2.firstName}`;
-          
+
           events.push({
             uid: `marriage_${r.id}@familytree`,
             start: dateStr,
@@ -1748,7 +1754,26 @@ window.initTreeApp = function () {
         }
       }
     });
-    
+
+    // 3. Remembrances (punyatithi). A quiet yearly reminder is the whole point of the
+    //    date, so it belongs in the feed — what a deceased member must never get is a
+    //    "Send Wish" button, and that stays suppressed on the card.
+    rawData.persons.forEach(p => {
+      if (p.status === "deceased" && p.deathDate) {
+        const dateStr = p.deathDate.replace(/-/g, "");
+        const name = p.name || `${p.firstName} ${p.lastName}`;
+        const nameMr = (p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;
+        const displayName = window.CURRENT_LANG === "MR" ? nameMr : name;
+
+        events.push({
+          uid: `death_${p.id}@familytree`,
+          start: dateStr,
+          summary: window.CURRENT_LANG === "MR" ? `🕯 ${displayName} - पुण्यतिथी` : `🕯 ${displayName} — Remembrance`,
+          description: `Family Tree remembrance for ${displayName}`
+        });
+      }
+    });
+
     events.forEach(e => {
       icsContent.push("BEGIN:VEVENT");
       icsContent.push(`UID:${e.uid}`);

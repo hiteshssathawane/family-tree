@@ -82,6 +82,8 @@ try {
   // Load the data and scripts to inline
   const authJson = readFileSync(resolve('data/auth.json'), 'utf8');
   const familyJson = readFileSync(resolve('data/family.json'), 'utf8');
+  const enI18nJson = readFileSync(resolve('data/i18n/en.json'), 'utf8');
+  const mrI18nJson = readFileSync(resolve('data/i18n/mr.json'), 'utf8');
   const helpersJs = readFileSync(resolve('tree-helpers.js'), 'utf8');
   const appJs = readFileSync(resolve('tree-app.js'), 'utf8');
 
@@ -91,6 +93,7 @@ try {
     window.BUNDLED_MODE = true;
     window.AUTH_DATA = ${authJson.trim()};
     window.FAMILY_DATA = ${familyJson.trim()};
+    window.I18N_DATA = { en: ${enI18nJson.trim()}, mr: ${mrI18nJson.trim()} };
   </script>
   <script>
     ${helpersJs}

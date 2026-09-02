@@ -3,11 +3,15 @@ import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 
 const familyPath = resolve('data/family.json');
+const enI18nPath = resolve('data/i18n/en.json');
+const mrI18nPath = resolve('data/i18n/mr.json');
 const outputPath = resolve('tree-data.js');
 
 console.log('🌳 Generating tree-data.js with Auto-Layout...');
 
 const family = JSON.parse(readFileSync(familyPath, 'utf8'));
+const i18nEn = JSON.parse(readFileSync(enI18nPath, 'utf8'));
+const i18nMr = JSON.parse(readFileSync(mrI18nPath, 'utf8'));
 const persons = family.persons;
 const relationships = family.relationships;
 
@@ -545,6 +549,7 @@ const jsContent = `/* ==========================================================
    ============================================================ */
 
 window.FAMILY_DATA = ${JSON.stringify(family, null, 2)};
+window.I18N_DATA = { en: ${JSON.stringify(i18nEn, null, 2)}, mr: ${JSON.stringify(i18nMr, null, 2)} };
 `;
 
 writeFileSync(outputPath, jsContent);

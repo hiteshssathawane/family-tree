@@ -1,7 +1,9 @@
 {
   "app": {
     "name": "The Family Tree",
-    "tagline": "Our Heritage"
+    "tagline": "Our Heritage",
+    "wordmark": "The Family Tree",
+    "wordmarkTagline": "where every leaf remembers"
   },
   "login": {
     "title": "The Family Tree",
@@ -33,7 +35,12 @@
     "calendar": "Calendar",
     "map": "Map",
     "admin": "Admin",
-    "search": "Search family members…"
+    "search": "Search family members…",
+    "logout": "Logout",
+    "profile": "Profile",
+    "searchShort": "Search",
+    "signInScreen": "Sign-in screen",
+    "switchLanguage": "Switch Language"
   },
   "tree": {
     "viewModes": {
@@ -48,7 +55,9 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "fit": "Fit to screen",
-      "print": "Print tree"
+      "print": "Print tree",
+      "centerMe": "Center on me",
+      "clearSearch": "Clear search"
     }
   },
   "profile": {
@@ -78,7 +87,31 @@
     },
     "lifeStory": "Life story",
     "emptyState": "We haven't recorded anything about {name} yet.",
-    "noEvents": "No events recorded yet."
+    "noEvents": "No events recorded yet.",
+    "timelineTitle": "A Life in Pictures",
+    "scrapbook": "Scrapbook",
+    "noFamilyLinks": "No family links recorded for {name} yet.",
+    "relCalc": {
+      "title": "How are we related?",
+      "choose": "Choose a family member…",
+      "samePerson": "That's {name} — the same person.",
+      "noLink": "{other} has no recorded link to {subject} in the tree yet."
+    },
+    "terms": {
+      "husband": "Husband",
+      "wife": "Wife",
+      "father": "Father",
+      "mother": "Mother",
+      "brother": "Brother",
+      "sister": "Sister",
+      "son": "Son",
+      "daughter": "Daughter",
+      "sibling": "Sibling",
+      "siblings": "Siblings",
+      "child": "Child",
+      "children": "Children",
+      "parents": "Parents"
+    }
   },
   "calendar": {
     "title": "Family calendar",
@@ -89,7 +122,8 @@
       "anniversaries": "Anniversaries",
       "deathAnniversaries": "Death anniversaries",
       "reunions": "Reunions",
-      "remembrance": "Remembrance"
+      "remembrance": "Remembrance",
+      "all": "All"
     },
     "daysAway": "days away",
     "today": "Today!",
@@ -100,7 +134,9 @@
       "marriage": "Anniversary",
       "death": "Death anniversary",
       "reunion": "Reunion"
-    }
+    },
+    "exportAll": "Export Calendar (.ics)",
+    "searchPlaceholder": "Search occasions…"
   },
   "admin": {
     "title": "Admin panel",
@@ -169,5 +205,15 @@
     "processing": "Processing...",
     "complete": "Export complete!",
     "failed": "Export failed. Please try again."
+  },
+  "loginForm": {
+    "familyPassword": "Family Password",
+    "fullName": "Full Name",
+    "namePlaceholder": "Your Name",
+    "dateOfBirth": "Date of Birth",
+    "continue": "CONTINUE",
+    "dedicationLine1": "Dedicated to my beloved mother,",
+    "dedicationName": "Baby",
+    "dedicationLine2": "Forever in our hearts"
   }
 }

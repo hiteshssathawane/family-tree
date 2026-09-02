@@ -1,7 +1,9 @@
 {
   "app": {
     "name": "आपले कुटुंब",
-    "tagline": "आपली परंपरा"
+    "tagline": "आपली परंपरा",
+    "wordmark": "आपले कुटुंब",
+    "wordmarkTagline": "जिथे प्रत्येक पान आठवण जपते"
   },
   "login": {
     "title": "आपले कुटुंब",
@@ -33,7 +35,12 @@
     "calendar": "दिनदर्शिका",
     "map": "नकाशा",
     "admin": "व्यवस्थापन",
-    "search": "कुटुंब सदस्य शोधा…"
+    "search": "कुटुंब सदस्य शोधा…",
+    "logout": "लॉग आउट",
+    "profile": "प्रोफाइल",
+    "searchShort": "शोध",
+    "signInScreen": "प्रवेश पडदा",
+    "switchLanguage": "भाषा बदला"
   },
   "tree": {
     "viewModes": {
@@ -48,7 +55,9 @@
       "zoomIn": "मोठे करा",
       "zoomOut": "लहान करा",
       "fit": "स्क्रीनवर बसवा",
-      "print": "छापा"
+      "print": "छापा",
+      "centerMe": "माझ्यावर केंद्रित करा",
+      "clearSearch": "शोध पुसा"
     }
   },
   "profile": {
@@ -78,7 +87,31 @@
     },
     "lifeStory": "जीवनकथा",
     "emptyState": "{name} बद्दल अद्याप काही नोंदवलेले नाही.",
-    "noEvents": "अद्याप कोणतेही प्रसंग नोंदवले नाहीत."
+    "noEvents": "अद्याप कोणतेही प्रसंग नोंदवले नाहीत.",
+    "timelineTitle": "चित्रांतील जीवनप्रवास",
+    "scrapbook": "स्मृतिपुस्तक",
+    "noFamilyLinks": "{name} यांच्यासाठी अद्याप कोणतेही कौटुंबिक नाते नोंदवलेले नाही.",
+    "relCalc": {
+      "title": "आपले नाते काय आहे?",
+      "choose": "कुटुंबातील सदस्य निवडा…",
+      "samePerson": "हे {name} च आहेत — तीच व्यक्ती.",
+      "noLink": "{other} यांचा {subject} यांच्याशी वंशवृक्षात अद्याप कोणताही संबंध नोंदवलेला नाही."
+    },
+    "terms": {
+      "husband": "पती",
+      "wife": "पत्नी",
+      "father": "वडील",
+      "mother": "आई",
+      "brother": "भाऊ",
+      "sister": "बहीण",
+      "son": "मुलगा",
+      "daughter": "मुलगी",
+      "sibling": "भावंड",
+      "siblings": "भावंडे",
+      "child": "अपत्य",
+      "children": "मुले",
+      "parents": "आई-वडील"
+    }
   },
   "calendar": {
     "title": "कुटुंब दिनदर्शिका",
@@ -89,7 +122,8 @@
       "anniversaries": "लग्नवर्धापनदिन",
       "deathAnniversaries": "पुण्यतिथी",
       "reunions": "कुटुंब मेळावा",
-      "remembrance": "पुण्यतिथी"
+      "remembrance": "पुण्यतिथी",
+      "all": "सर्व"
     },
     "daysAway": "दिवस बाकी",
     "today": "आजच!",
@@ -100,7 +134,9 @@
       "marriage": "लग्नवर्धापनदिन",
       "death": "पुण्यतिथी",
       "reunion": "कुटुंब मेळावा"
-    }
+    },
+    "exportAll": "दिनदर्शिका निर्यात करा (.ics)",
+    "searchPlaceholder": "प्रसंग शोधा…"
   },
   "admin": {
     "title": "व्यवस्थापन",
@@ -169,5 +205,15 @@
     "processing": "प्रक्रिया करत आहे...",
     "complete": "निर्यात पूर्ण!",
     "failed": "निर्यात अयशस्वी. कृपया पुन्हा प्रयत्न करा."
+  },
+  "loginForm": {
+    "familyPassword": "कुटुंबाचा पासवर्ड",
+    "fullName": "पूर्ण नाव",
+    "namePlaceholder": "तुमचे नाव",
+    "dateOfBirth": "जन्मतारीख",
+    "continue": "पुढे जा",
+    "dedicationLine1": "माझ्या प्रिय आईला समर्पित,",
+    "dedicationName": "बेबी",
+    "dedicationLine2": "आमच्या हृदयात कायम"
   }
 }
