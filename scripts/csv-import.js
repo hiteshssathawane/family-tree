@@ -122,11 +122,77 @@ function findExistingPerson(firstName, lastName, preferredGender) {
   return candidates[0];
 }
 
+// A married woman is one person under two surnames: her husband names her by her maiden
+// name in his Spouse fields, while her own Form row carries the married name she signs
+// and logs in with. findExistingPerson keys on the surname, so those two never met and
+// she entered the tree twice — one node holding her details, the other holding the
+// marriage.
+//
+// Parents are the part of an identity that marriage does not change, so match on
+// first name + father + mother and ignore the surname entirely. Both parent names must
+// be present on both sides: every auto-created stub has blank parents, and matching on
+// a blank would collapse every unrelated "Swati" in the tree into one person. A known
+// gender that disagrees also blocks the match.
+function findPersonByParents(firstName, fatherName, motherName, preferredGender) {
+  const fn = (firstName || '').trim().toLowerCase();
+  const fa = (fatherName || '').trim().toLowerCase();
+  const mo = (motherName || '').trim().toLowerCase();
+  if (!fn || !fa || !mo) return null;
+
+  const candidates = family.persons.filter(x => {
+    if (x.firstName.trim().toLowerCase() !== fn) return false;
+    if ((x.fatherName || '').trim().toLowerCase() !== fa) return false;
+    if ((x.motherName || '').trim().toLowerCase() !== mo) return false;
+    // 'X' is "not recorded", so it never contradicts anything.
+    if (preferredGender && x.gender && x.gender !== 'X' && preferredGender !== 'X' &&
+        x.gender !== preferredGender) return false;
+    return true;
+  });
+  return candidates[0] || null;
+}
+
+// Identity is the maiden surname; the husband's surname is a display name derived
+// downstream (tree-helpers.js renders "Swati Sathawane (Biradar)", and csv-import's own
+// login pass hashes the married name). So when the two rows disagree about a wife's
+// surname, the maiden one is simply whichever is NOT her husband's — no extra Form
+// question needed, and it is the same answer whichever row arrived first.
+function reconcileMaidenName(wife, husbandLastName, otherLastName) {
+  const husband = (husbandLastName || '').trim();
+  const other = (otherLastName || '').trim();
+  if (!husband || !other) return;
+  if (other.toLowerCase() === husband.toLowerCase()) return;
+
+  const current = (wife.lastName || '').trim();
+  if (current.toLowerCase() === husband.toLowerCase()) {
+    // She is stored under her married name — swap identity back to the maiden one.
+    wife.lastName = other;
+    wife.maidenName = other;
+    console.log(`  👰 ${wife.firstName}: identity set to maiden name '${other}' (displays as '${husband}')`);
+  } else if (!wife.maidenName) {
+    wife.maidenName = current;
+  }
+}
+
 // T-08: Google Forms appends a row per submission, so a member correcting their details
 // produces a second row with the same derived id. Keeping the FIRST occurrence meant the
 // stale row always won and the correction was silently dropped — there was no way to fix
 // a record through the form at all. Resolve each id to its LAST occurrence so that
 // resubmitting the form *is* the correction mechanism.
+//
+// The key deliberately drops the surname when both parents are known, because a woman
+// who resubmits after her wedding files the same identity under a new last name. Keyed
+// on the surname those are two people; keyed on her parents they are one, and the later
+// row still wins. Rows with an incomplete parent pair keep the surname in the key —
+// without it, two unrelated members sharing a first name would supersede each other.
+function identityKey(r) {
+  const father = (r.fatherName || '').trim();
+  const mother = (r.motherName || '').trim();
+  const stem = father && mother
+    ? `${r.firstName}_${mother}_${father}`
+    : `${r.firstName}_${mother}_${father}_${r.lastName}`;
+  return stem.toUpperCase().replace(/\s+/g, '');
+}
+
 const lastRowIndexById = new Map();
 lines.slice(1).forEach((line, i) => {
   const vals = parseCSVLine(line);
@@ -134,9 +200,7 @@ lines.slice(1).forEach((line, i) => {
   const r = {};
   headers.forEach((h, j) => { r[h] = (vals[j] || '').trim(); });
   if (!r.firstName || !r.lastName) return;
-  const id = `${r.firstName}_${r.motherName || ''}_${r.fatherName || ''}_${r.lastName}`
-    .toUpperCase().replace(/\s+/g, '');
-  lastRowIndexById.set(id, i);
+  lastRowIndexById.set(identityKey(r), i);
 });
 
 lines.slice(1).forEach((line, i) => {
@@ -165,7 +229,7 @@ lines.slice(1).forEach((line, i) => {
   row.id = `${row.firstName}_${motherNameStr}_${fatherNameStr}_${row.lastName}`.toUpperCase().replace(/\s+/g, '');
 
   // Superseded by a later submission for the same person — that one carries the fix.
-  if (lastRowIndexById.get(row.id) !== i) {
+  if (lastRowIndexById.get(identityKey(row)) !== i) {
     console.log(`  ↻  ${row.firstName} ${row.lastName} — superseded by a later submission`);
     skipped++;
     return;
@@ -230,6 +294,29 @@ lines.slice(1).forEach((line, i) => {
 });
 
 // Auto-create parents for any person who lists fatherName/motherName but lacks those nodes in the database
+// Settle every wife's surname BEFORE parents are auto-created. The parent pass names a
+// father from the child's own surname, so running it while a woman is still stored under
+// her married name gives her parents the husband's surname — Swati's father came out as
+// "Bhimrao Sathawane" instead of "Bhimrao Biradar". Only a husband's row carries the
+// maiden name (his Spouse Last Name), which is why this cannot be done from her row alone.
+console.log('\n👰 Reconciling maiden surnames...');
+parsedRows.forEach((row) => {
+  if (!row.spouseFirstName) return;
+  const sGender = row.gender === 'M' ? 'F' : row.gender === 'F' ? 'M' : null;
+  if (sGender !== 'F') return;
+
+  const sFirst = row.spouseFirstName.trim();
+  const sLast = (row.spouseLastName || '').trim() || row.lastName.trim();
+  const sFather = (row.spouseFatherName || '').trim();
+  const sMother = (row.spouseMotherName || '').trim();
+  const exactId = `${sFirst}_${sMother}_${sFather}_${sLast}`.toUpperCase().replace(/\s+/g, '');
+
+  const wife = family.persons.find(p => p.id === exactId)
+    || findExistingPerson(sFirst, sLast, 'F')
+    || findPersonByParents(sFirst, sFather, sMother, 'F');
+  if (wife) reconcileMaidenName(wife, row.lastName, sLast);
+});
+
 console.log('\n🚸 Auto-detecting and creating missing parents...');
 const currentPersons = [...family.persons];
 currentPersons.forEach((p) => {
@@ -368,7 +455,17 @@ parsedRows.forEach((row) => {
                   : row.gender === 'F' ? 'M'
                   : null;
 
-    let spouse = family.persons.find(p => p.id === exactId) || findExistingPerson(sFirst, sLast, sGender);
+    // Third resolution step: the same person under a different surname. This is the one
+    // that stops a wife entering the tree twice — once as her husband names her (maiden)
+    // and once as she names herself (married).
+    let spouse = family.persons.find(p => p.id === exactId)
+      || findExistingPerson(sFirst, sLast, sGender)
+      || findPersonByParents(sFirst, sFather, sMother, sGender);
+
+    if (spouse && sGender === 'F') {
+      // `row` is the husband here, so his lastName is the married surname.
+      reconcileMaidenName(spouse, row.lastName, sLast);
+    }
 
     if (!spouse) {
       spouse = {
