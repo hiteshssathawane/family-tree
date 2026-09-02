@@ -18,3 +18,8 @@ backups/
 # Playwright session (contains Google login cookies — never commit)
 .playwright-session/
 .form-progress.json
+
+# Source photos and the bulk-load CSV. The repo is public and
+# "Family Details.csv" carries mobile numbers (CLAUDE.md rule 5).
+# Photos live in Cloudflare R2; family.json holds their public URLs.
+Family/
