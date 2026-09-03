@@ -441,6 +441,24 @@ currentPersons.forEach((p) => {
 
 console.log('\n🔗 Processing marriages...');
 parsedRows.forEach((row) => {
+  // A spouse is only real if the member says they have one. The Spouse fields are optional
+  // and sit below Marital Status on the Form, so a stale or mistyped name there used to
+  // mint a whole person plus a marriage for someone who had marked themselves Single.
+  //
+  // Only an explicit "single" blocks it. Divorced and widowed still get their spouse — the
+  // marriage happened, and the tree is a record of what was. A blank Marital Status does
+  // not block either: a named spouse is the stronger evidence of the two, so it is trusted
+  // and reported rather than silently dropped.
+  const marital = String(row.maritalStatus || '').trim().toLowerCase();
+  if (row.spouseFirstName && marital === 'single') {
+    console.log(`  ⏭️  ${row.firstName} ${row.lastName} is marked Single but names a spouse (${row.spouseFirstName.trim()}) — skipping the spouse node and the marriage.`);
+    skipped++;
+    return;
+  }
+  if (row.spouseFirstName && !marital) {
+    console.warn(`  ⚠️  ${row.firstName} ${row.lastName}: Marital Status is blank but a spouse (${row.spouseFirstName.trim()}) is named — trusting the spouse.`);
+  }
+
   if (row.spouseFirstName) {
     const sFirst = row.spouseFirstName.trim();
     const sLast = (row.spouseLastName || '').trim() || row.lastName.trim();

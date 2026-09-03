@@ -288,13 +288,24 @@ async function run() {
 
     // Marital Status Mapping
     const rawMarital = getVal('Marital Status *');
-    warnBlank('Marital Status *', rawMarital, 'single (default)');
+    const namedSpouse = String(getVal('Spouse First Name (Mandatory if Married)') ?? '').trim();
     let maritalStatus = String(rawMarital).trim().toLowerCase();
     if (maritalStatus.startsWith('marr')) maritalStatus = 'married';
     else if (maritalStatus.startsWith('sing')) maritalStatus = 'single';
     else if (maritalStatus.startsWith('div')) maritalStatus = 'divorced';
     else if (maritalStatus.startsWith('wid')) maritalStatus = 'widowed';
-    else maritalStatus = 'single';
+    else if (namedSpouse) {
+      // Defaulting a blank radio to 'single' is not harmless any more: csv-import now skips
+      // the spouse node and the marriage for anyone marked single, so a dropped radio would
+      // silently delete a real husband or wife from the tree. A named spouse is the stronger
+      // evidence of the two — trust it, and say so.
+      console.warn(`  ⚠️  ${who}: "Marital Status *" is blank but a spouse (${namedSpouse}) is named — using 'married', not the 'single' default.`);
+      maritalStatus = 'married';
+    }
+    else {
+      warnBlank('Marital Status *', rawMarital, 'single (default)');
+      maritalStatus = 'single';
+    }
 
     const mappedRow = {
       firstName: firstName,

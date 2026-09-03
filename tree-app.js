@@ -1664,8 +1664,13 @@ window.initTreeApp = function () {
   function getPersonThumbHtml(p) {
     const cl = "cal-card-thumb";
     if (p.profilePhoto) {
-      const prefix = window.PHOTO_BASE_URL || "Family/Cropped/";
-      return `<img src="${prefix}${p.profilePhoto}" class="${cl}" alt="" loading="lazy">`;
+      // Used as-is, exactly like thumbHtml does for the tree nodes. This used to prepend
+      // `window.PHOTO_BASE_URL || "Family/Cropped/"`, but photos live in R2 and family.json
+      // stores absolute https://pub-….r2.dev/… URLs, so the prefix produced
+      // "Family/Cropped/https://…" and broke every calendar photo. PHOTO_BASE_URL was never
+      // defined anywhere either, so the fallback always won — and Family/ is gitignored and
+      // never deployed, so there was nothing behind it to find.
+      return `<img src="${escapeHtml(p.profilePhoto)}" class="${cl}" alt="" loading="lazy">`;
     }
     const initials = (p.firstName[0] || "") + (p.lastName[0] || "");
     const palette = ["#7AAD7A", "#A5D6A7", "#9EBE9C", "#C9B98E", "#E0AB73", "#D9886B", "#B79774"];
