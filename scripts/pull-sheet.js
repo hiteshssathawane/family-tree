@@ -253,8 +253,26 @@ async function run() {
     // Status Mapping
     const rawStatus = getVal('Status *');
     let status = String(rawStatus).trim().toLowerCase();
+    // A living person cannot hold a death date. The Form's Death Date question is optional
+    // and sits below Status, so a stray click on the picker (or browser autofill) drops
+    // today's date into it while Status still reads Active — a contradiction validate.js
+    // rejects, which fails the whole sync on one bad cell.
+    //
+    // Unlike the Jyoti case below, the status here was *explicitly chosen by a human*, so
+    // it wins over a date nobody meant to enter. The date is dropped rather than obeyed,
+    // and reported by name so a genuine deceased member marked Active is still visible
+    // rather than silently resurrected.
     // The form offers Active / Deceased; "Active" means living.
-    if (status.startsWith('liv') || status.startsWith('act')) status = 'living';
+    if (status.startsWith('liv') || status.startsWith('act')) {
+      status = 'living';
+      const strayDeathDate = String(rawDeathDate ?? '').trim();
+      if (strayDeathDate) {
+        console.warn(
+          `  ⚠️  ${who}: Status is "Active" but a Death Date (${strayDeathDate}) is set — ` +
+          `ignoring the date. If this member is deceased, change Status on the sheet.`
+        );
+      }
+    }
     else if (status.startsWith('dec')) status = 'deceased';
     else if (String(rawDeathDate ?? '').trim()) {
       // The default cannot be allowed to contradict a death date sitting on the same row.
@@ -293,8 +311,11 @@ async function run() {
       marriageDate: formatDate(getVal('Marriage Date')),
       birthDate: formatDate(getVal('Birth Date *')),
       birthPlace: getVal('Birth Place *'),
-      deathDate: formatDate(getVal('Death Date (If applicable, only if Status is Deceased)')),
-      deathPlace: getVal('Death Place (If applicable, only if Status is Deceased)'),
+      // Blanked for a living member — see the Status mapping above. Death place goes with
+      // the date: a living person has neither, and leaving the place behind would put an
+      // orphaned "died at" on a living profile.
+      deathDate: status === 'living' ? '' : formatDate(getVal('Death Date (If applicable, only if Status is Deceased)')),
+      deathPlace: status === 'living' ? '' : getVal('Death Place (If applicable, only if Status is Deceased)'),
       occupation: getVal('Occupation'),
       education: getVal('Education Details (Free text field for specific qualifications)'),
       location: getVal('Location (Current City/Region) *'),
