@@ -112,7 +112,7 @@ try {
   console.log('🔐 Encrypting with staticrypt...');
   // staticrypt uses --directory to set output folder and outputs file with input filename
   execSync(
-    `npx staticrypt "${tempHtml}" --password "${password}" --directory "${distDir}" --remember 1 --short --template "scripts/password_template.html"`,
+    `npx staticrypt "${tempHtml}" --password "${password}" --directory "${distDir}" --remember false --short --template "scripts/password_template.html"`,
     { stdio: 'inherit' }
   );
 
