@@ -1168,7 +1168,7 @@ window.initTreeApp = function () {
             }).join("")}
           </div>` : "";
         card.innerHTML = `
-          <div class="scrap-date">${e.date}${memorialChip}</div>
+          <div class="scrap-date">${formatScrapDate(e.date)}${memorialChip}</div>
           ${photosHtml}
           <p class="scrap-caption">${escapeHtml(e.caption)}</p>
           ${tagsHtml}
@@ -1615,12 +1615,32 @@ window.initTreeApp = function () {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
+  // Marathi has no separate short form in use here, so it serves both lengths.
+  const MONTHS_SHORT_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MONTHS_LONG_EN  = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const MONTHS_MR       = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+
   function formatDateLabel(date) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthsMr = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
-    const m = date.getMonth();
-    const d = date.getDate();
-    return window.CURRENT_LANG === "MR" ? `${d} ${monthsMr[m]}` : `${d} ${months[m]}`;
+    const months = window.CURRENT_LANG === "MR" ? MONTHS_MR : MONTHS_SHORT_EN;
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  }
+
+  // A scrapbook entry is a dated moment, so unlike the calendar's formatDateLabel — which
+  // omits the year because an occasion recurs every one — it spells the year out:
+  // "1985-12-29" reads as "29 December 1985".
+  //
+  // Parsed off the ISO string rather than through `new Date(iso)`, which treats a bare date
+  // as UTC midnight and would render the day before anywhere west of Greenwich. Anything
+  // that is not a plain YYYY-MM-DD (a year alone, a hand-typed sheet value) is shown as it
+  // was written rather than guessed at, and escaped — custom entries come from the Sheet.
+  function formatScrapDate(raw) {
+    const s = String(raw == null ? "" : raw);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return escapeHtml(s);
+    const year = +m[1], monthIndex = +m[2] - 1, day = +m[3];
+    if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return escapeHtml(s);
+    const months = window.CURRENT_LANG === "MR" ? MONTHS_MR : MONTHS_LONG_EN;
+    return `${day} ${months[monthIndex]} ${year}`;
   }
 
   function getWishMessage(occ) {
