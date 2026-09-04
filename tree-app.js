@@ -1521,12 +1521,14 @@ window.initTreeApp = function () {
       const todayIcon = occ.isDeceased ? "🕯" : "🎂";
       let countdownText = "";
       if (window.CURRENT_LANG === "MR") {
-        countdownText = isToday ? `आज! ${todayIcon}` : `${occ.daysLeft} दिवसात`;
+        countdownText = isToday ? `आज! ${todayIcon}` : `${mrDigits(occ.daysLeft)} दिवसात`;
       } else {
         countdownText = isToday ? `Today! ${todayIcon}` : `In ${occ.daysLeft} days`;
       }
 
-      const title = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
+      // mrDigits on the way out only — occ.titleMr itself stays ASCII for the .ics summary
+      // and the search filter above.
+      const title = window.CURRENT_LANG === "MR" ? mrDigits(occ.titleMr) : occ.titleEn;
       
       // Thumbnail representation
       let thumbHtml = "";
@@ -1540,9 +1542,10 @@ window.initTreeApp = function () {
         `;
       }
 
-      const dateText = window.CURRENT_LANG === "MR" 
-        ? `दिनांक: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`
-        : `Date: ${occ.dateLabel} (${occ.dateStr.split("-")[2]}/${occ.dateStr.split("-")[1]}/${occ.dateStr.split("-")[0]})`;
+      const [dsYear, dsMonth, dsDay] = occ.dateStr.split("-");
+      const dateText = window.CURRENT_LANG === "MR"
+        ? mrDigits(`दिनांक: ${occ.dateLabel} (${dsDay}/${dsMonth}/${dsYear})`)
+        : `Date: ${occ.dateLabel} (${dsDay}/${dsMonth}/${dsYear})`;
 
       // No "Send Wish" for anyone who has died — not on a remembrance, and not on a
       // birth anniversary either. A WhatsApp "Happy Birthday" to a deceased relative is
@@ -1635,12 +1638,31 @@ window.initTreeApp = function () {
   // was written rather than guessed at, and escaped — custom entries come from the Sheet.
   function formatScrapDate(raw) {
     const s = String(raw == null ? "" : raw);
+    // A value we cannot parse — a bare year, a hand-typed sheet entry — is shown as written,
+    // but its digits still localize so "1985" alone does not sit in ASCII next to a
+    // "२९ डिसेंबर १९८५" above it. mrDigits runs BEFORE escapeHtml, never after: escapeHtml
+    // emits &#39; for an apostrophe, and converting those digits would produce &#३९; and
+    // break the entity.
+    const asWritten = () => escapeHtml(window.CURRENT_LANG === "MR" ? mrDigits(s) : s);
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return escapeHtml(s);
+    if (!m) return asWritten();
     const year = +m[1], monthIndex = +m[2] - 1, day = +m[3];
-    if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return escapeHtml(s);
-    const months = window.CURRENT_LANG === "MR" ? MONTHS_MR : MONTHS_LONG_EN;
-    return `${day} ${months[monthIndex]} ${year}`;
+    if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return asWritten();
+    if (window.CURRENT_LANG === "MR") {
+      return `${mrDigits(day)} ${MONTHS_MR[monthIndex]} ${mrDigits(year)}`;
+    }
+    return `${day} ${MONTHS_LONG_EN[monthIndex]} ${year}`;
+  }
+
+  // Marathi writes its own numerals, so a date read in Marathi should be "२९ डिसेंबर १९८५",
+  // not "29 डिसेंबर 1985" — half-translated.
+  //
+  // Only ever called on a string about to be displayed. The stored values keep ASCII digits
+  // on purpose: occ.dateStr becomes the DTSTART of an .ics file, occ.titleMr becomes its
+  // SUMMARY, and the occasion search box matches against titleMr — so a family member
+  // typing "12" still finds the 12th anniversary.
+  function mrDigits(value) {
+    return String(value).replace(/[0-9]/g, d => "०१२३४५६७८९"[+d]);
   }
 
   function getWishMessage(occ) {
