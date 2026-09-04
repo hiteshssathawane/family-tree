@@ -1,5 +1,5 @@
 // The Family Tree - Enhanced Service Worker (Phase 8)
-const CACHE_NAME = 'family-tree-v9';
+const CACHE_NAME = 'family-tree-v10';
 const STATIC_CACHE = [
   './',
   'index.html',

@@ -542,9 +542,11 @@
       }
     }
 
-    /* Moon appears only at night */
+    /* Moon appears only at night. 36s, not 32s: it has to share the clock with skyCycle,
+       or the moon drifts a little further out of step with nightfall on every loop until
+       it is rising over a summer afternoon. Same for .stars below. */
     .moon {
-      animation: moonShow 32s ease-in-out infinite;
+      animation: moonShow 36s ease-in-out infinite;
       opacity: 0;
     }
 
@@ -583,7 +585,7 @@
     }
 
     .stars {
-      animation: starsShow 32s ease-in-out infinite;
+      animation: starsShow 36s ease-in-out infinite;
       opacity: 0;
     }
 
