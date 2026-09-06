@@ -114,7 +114,7 @@ window.initTreeApp = function () {
   }
   function thumbHtml(p, cls) {
     const cl = cls || "node-thumb";
-    if (p.photo) return `<div class="${cl}"><img src="${p.photo}" alt="" loading="lazy"></div>`;
+    if (p.photo) return `<div class="${cl}"><img src="${escapeHtml(p.photo)}" alt="" loading="lazy"></div>`;
     // Choose a soft warm tone for the bubble based on a hash of the id
     const palette = ["#7AAD7A","#A5D6A7","#9EBE9C","#C9B98E","#E0AB73","#D9886B","#B79774"];
     const idx = Math.abs(hashCode(p.id)) % palette.length;
@@ -153,6 +153,8 @@ window.initTreeApp = function () {
           escapeHtml(modalDisplayName) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
         renderBioTab(p);
         renderFamilyTab(p);
+        // Keep the relationship picker on the same person, restated in the new language.
+        resetRelCalc(true);
       }
     }
     // Update calendar panel if it is visible
@@ -869,6 +871,8 @@ window.initTreeApp = function () {
       .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v))}</dd>`)
       .join("");
 
+    renderDobEditor(p);
+
     const storyEl = document.getElementById("lb-story");
     if (p.biography) {
       storyEl.innerHTML = `<h4 class="lb-sec-title">${escapeHtml(t("profile.lifeStory"))}</h4>${escapeHtml(p.biography)}`;
@@ -945,17 +949,88 @@ window.initTreeApp = function () {
   /* ============================================================
      RELATIONSHIP CALCULATOR (T-18)
      ============================================================ */
-  const relCalcSelect = document.getElementById("lb-relcalc-select");
+  const relCalcInput  = document.getElementById("lb-relcalc-input");
+  const relCalcList   = document.getElementById("lb-relcalc-list");
+  const relCalcClear  = document.getElementById("lb-relcalc-clear");
   const relCalcResult = document.getElementById("lb-relcalc-result");
-  let relCalcPopulated = false;
+  let relCalcChoice   = "";   // id of the person currently answered about
+  let relCalcMatches  = [];   // people shown in the open list
+  let relCalcActive   = -1;   // keyboard cursor into relCalcMatches
 
-  function populateRelCalc() {
-    if (relCalcPopulated || !relCalcSelect) return;
-    const sorted = F.people.slice().sort((a, b) => a.name.localeCompare(b.name));
-    relCalcSelect.insertAdjacentHTML("beforeend", sorted.map(p =>
-      `<option value="${p.id}">${escapeHtml(p.name)}</option>`
-    ).join(""));
-    relCalcPopulated = true;
+  // The picker is a combobox rather than a <select> because the tree is past 70
+  // members: scrolling a native option list to find one person is the slow way.
+  function relCalcName(p) {
+    return (window.CURRENT_LANG === "MR" && p.nameMr) ? p.nameMr : p.name;
+  }
+
+  // Matching stays deliberately loose — a member searching in English should still
+  // find a person whose card reads in Marathi, and vice versa.
+  function relCalcHaystack(p) {
+    return [p.name, p.nameMr, p.firstName, p.lastName, p.firstNameMr, p.lastNameMr, p.commonName, p.commonNameMr]
+      .filter(Boolean).join(" ").toLowerCase();
+  }
+
+  function relCalcSorted() {
+    return F.people.slice().sort((a, b) => relCalcName(a).localeCompare(relCalcName(b)));
+  }
+
+  function closeRelCalcList() {
+    if (!relCalcList) return;
+    relCalcList.hidden = true;
+    relCalcList.innerHTML = "";
+    relCalcActive = -1;
+    relCalcMatches = [];
+    if (relCalcInput) relCalcInput.setAttribute("aria-expanded", "false");
+  }
+
+  function openRelCalcList(query) {
+    if (!relCalcList || !relCalcInput) return;
+    const q = (query || "").trim().toLowerCase();
+    relCalcMatches = relCalcSorted().filter(p => !q || relCalcHaystack(p).includes(q));
+    relCalcActive = -1;
+
+    if (!relCalcMatches.length) {
+      relCalcList.innerHTML = `<li class="lb-relcalc-empty" role="presentation">${escapeHtml(t("profile.relCalc.noMatch"))}</li>`;
+    } else {
+      relCalcList.innerHTML = relCalcMatches.map((p, i) => `
+        <li class="lb-relcalc-opt" role="option" id="lb-relcalc-opt-${i}"
+            aria-selected="${p.id === relCalcChoice ? "true" : "false"}" data-id="${escapeHtml(p.id)}">
+          ${thumbHtml(p, "sr-thumb")}
+          <span class="lb-relcalc-optname">${escapeHtml(relCalcName(p))}</span>
+        </li>`).join("");
+    }
+    relCalcList.hidden = false;
+    relCalcInput.setAttribute("aria-expanded", "true");
+  }
+
+  function highlightRelCalcOption(idx) {
+    if (!relCalcList || !relCalcMatches.length) return;
+    const opts = relCalcList.querySelectorAll(".lb-relcalc-opt");
+    if (!opts.length) return;
+    relCalcActive = (idx + opts.length) % opts.length;
+    opts.forEach((el, i) => el.classList.toggle("active", i === relCalcActive));
+    opts[relCalcActive].scrollIntoView({ block: "nearest" });
+    if (relCalcInput) relCalcInput.setAttribute("aria-activedescendant", `lb-relcalc-opt-${relCalcActive}`);
+  }
+
+  function chooseRelCalc(id) {
+    const p = F.byId[id];
+    if (!p) return;
+    relCalcChoice = id;
+    if (relCalcInput) relCalcInput.value = relCalcName(p);
+    if (relCalcClear) relCalcClear.hidden = false;
+    closeRelCalcList();
+    renderRelCalc(id);
+  }
+
+  // Called when the profile panel switches person, and when the language flips.
+  function resetRelCalc(keepChoice) {
+    if (!keepChoice) relCalcChoice = "";
+    const p = relCalcChoice && F.byId[relCalcChoice];
+    if (relCalcInput) relCalcInput.value = p ? relCalcName(p) : "";
+    if (relCalcClear) relCalcClear.hidden = !p;
+    closeRelCalcList();
+    renderRelCalc(p ? relCalcChoice : "");
   }
 
   function renderRelCalc(otherId) {
@@ -998,8 +1073,50 @@ window.initTreeApp = function () {
     relCalcResult.innerHTML = `<div class="lb-relcalc-answer">${answer}</div>${chainHtml}`;
   }
 
-  if (relCalcSelect) {
-    relCalcSelect.addEventListener("change", () => renderRelCalc(relCalcSelect.value));
+  if (relCalcInput && relCalcList) {
+    relCalcInput.addEventListener("focus", () => openRelCalcList(""));
+    relCalcInput.addEventListener("click", () => {
+      if (relCalcList.hidden) openRelCalcList(relCalcInput.value === (relCalcChoice && F.byId[relCalcChoice] ? relCalcName(F.byId[relCalcChoice]) : "") ? "" : relCalcInput.value);
+    });
+    relCalcInput.addEventListener("input", () => {
+      // Typing over a chosen name drops the old answer rather than leaving a
+      // result on screen that no longer matches what the box says.
+      relCalcChoice = "";
+      relCalcClear.hidden = !relCalcInput.value;
+      relCalcResult.innerHTML = "";
+      openRelCalcList(relCalcInput.value);
+    });
+    relCalcInput.addEventListener("keydown", ev => {
+      if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        if (relCalcList.hidden) openRelCalcList(relCalcInput.value);
+        highlightRelCalcOption(relCalcActive + 1);
+      } else if (ev.key === "ArrowUp") {
+        ev.preventDefault();
+        if (relCalcList.hidden) openRelCalcList(relCalcInput.value);
+        highlightRelCalcOption(relCalcActive - 1);
+      } else if (ev.key === "Enter") {
+        ev.preventDefault();
+        const pick = relCalcActive >= 0 ? relCalcMatches[relCalcActive] : relCalcMatches[0];
+        if (pick) chooseRelCalc(pick.id);
+      } else if (ev.key === "Escape") {
+        // Swallowed so the profile panel does not close out from under a search.
+        if (!relCalcList.hidden) { ev.stopPropagation(); closeRelCalcList(); }
+      }
+    });
+    relCalcList.addEventListener("mousedown", ev => {
+      const opt = ev.target.closest(".lb-relcalc-opt");
+      if (!opt) return;
+      ev.preventDefault();          // keep focus in the input
+      chooseRelCalc(opt.dataset.id);
+    });
+    relCalcClear.addEventListener("click", () => {
+      resetRelCalc(false);
+      relCalcInput.focus();
+    });
+    document.addEventListener("click", ev => {
+      if (!ev.target.closest("#lb-relcalc-combo")) closeRelCalcList();
+    });
   }
 
   function switchProfileTab(name) {
@@ -1021,6 +1138,26 @@ window.initTreeApp = function () {
   /* ============================================================
      LIGHTBOX
      ============================================================ */
+  // Extracted so a DOB self-edit can refresh just this line without re-running
+  // the rest of openPerson() (which would reset the active tab to Timeline).
+  function renderLifeLine(p) {
+    const life = document.getElementById("lb-life");
+    if (!life) return;
+    const lifeParts = [];
+    // p.birth carries a 1950 placeholder when the record has no DOB, so the
+    // year and the age are only printed when the birth date is real.
+    lifeParts.push(p.hasBirthYear ? `b. ${p.birth}` : "");
+    if (p.deceased && p.death) lifeParts.push(`d. ${p.death}`);
+    else if (!p.deceased && p.hasBirthYear) {
+      const age = 2026 - p.birth;
+      lifeParts.push(`${age} years`);
+    }
+    if (p.altNames && p.altNames.length) lifeParts.push("“" + p.altNames[0] + "”");
+    life.innerHTML = lifeParts.filter(Boolean).map((s, i, arr) =>
+      i < arr.length - 1 ? s + '<span class="sep"></span>' : s
+    ).join("");
+  }
+
   function openPerson(id) {
     const p = F.byId[id];
     if (!p) return;
@@ -1036,20 +1173,7 @@ window.initTreeApp = function () {
     relEl.textContent = id === ME ? "This is you" : rel;
     relEl.classList.toggle("is-me", id === ME);
 
-    const life = document.getElementById("lb-life");
-    const lifeParts = [];
-    // p.birth carries a 1950 placeholder when the record has no DOB, so the
-    // year and the age are only printed when the birth date is real.
-    lifeParts.push(p.hasBirthYear ? `b. ${p.birth}` : "");
-    if (p.deceased && p.death) lifeParts.push(`d. ${p.death}`);
-    else if (!p.deceased && p.hasBirthYear) {
-      const age = 2026 - p.birth;
-      lifeParts.push(`${age} years`);
-    }
-    if (p.altNames && p.altNames.length) lifeParts.push("“" + p.altNames[0] + "”");
-    life.innerHTML = lifeParts.filter(Boolean).map((s, i, arr) =>
-      i < arr.length - 1 ? s + '<span class="sep"></span>' : s
-    ).join("");
+    renderLifeLine(p);
 
     document.getElementById("lb-bio").textContent = p.bio || "";
 
@@ -1093,6 +1217,14 @@ window.initTreeApp = function () {
     const t = tones[Math.abs(hashCode(p.id)) % tones.length];
     cover.style.background = `linear-gradient(135deg, ${t[0]} 0%, ${t[1]} 45%, ${t[2]} 100%)`;
 
+    // Photo edit buttons — own profile only, and only when a Worker is configured.
+    // The Worker re-checks both, so this is presentation, not the security boundary.
+    const canEdit = canEditPhotos(id);
+    const editAvatar = document.getElementById("lb-edit-avatar");
+    const editCover  = document.getElementById("lb-edit-cover");
+    if (editAvatar) editAvatar.hidden = !canEdit;
+    if (editCover)  editCover.hidden  = !canEdit;
+
     // Quick relations row — show spouse, parents, children if any
     const rels = [];
     if (p.spouse)             rels.push({ id: p.spouse, label: p.gender === "m" ? "Wife" : "Husband" });
@@ -1119,9 +1251,7 @@ window.initTreeApp = function () {
     // Bio + Family tabs, and the relationship calculator seeded on this person
     renderBioTab(p);
     renderFamilyTab(p);
-    populateRelCalc();
-    if (relCalcSelect) relCalcSelect.value = "";
-    renderRelCalc("");
+    resetRelCalc(false);
     switchProfileTab("timeline");
 
     // Timeline title
@@ -1373,7 +1503,7 @@ window.initTreeApp = function () {
 
     // 1. Birthdays — deceased members included, flagged so the card can mark them and
     //    never offer a birthday wish. A deceased person's entry reads as a birth
-    //    anniversary rather than a birthday. The 1970-01-01 login placeholder is not a
+    //    anniversary rather than a birthday. The 1674-06-06 login placeholder is not a
     //    birth date and must never surface as one.
     rawData.persons.forEach(p => {
       if (p.birthDate && !isUnknownBirthDate(p.birthDate)) {
@@ -1755,7 +1885,7 @@ window.initTreeApp = function () {
     
     const events = [];
     
-    // 1. Birthdays. Living members only, and never the 1970-01-01 login placeholder.
+    // 1. Birthdays. Living members only, and never the 1674-06-06 login placeholder.
     //    A deceased member's date reaches the feed through section 3 as a remembrance,
     //    so it is never phrased as a birthday here.
     rawData.persons.forEach(p => {
@@ -1899,6 +2029,508 @@ window.initTreeApp = function () {
       layer.appendChild(s);
     }
   }
+  /* ============================================================
+     PHOTO EDITOR — own profile + background
+     ------------------------------------------------------------
+     Crops to a fixed frame, re-encodes to WebP, POSTs to the Cloudflare
+     Worker (worker/photo-upload.js), which writes the object to R2.
+
+     Fixed R2 keys (profile_<id>.webp / background_<id>.webp) mean a re-upload
+     overwrites in place, so storage stays at two objects per person. The Worker
+     sets Cache-Control: max-age=60; we append ?t= locally so the person who just
+     uploaded sees their change immediately rather than waiting out that minute.
+
+     No cropper library: CLAUDE.md rule 1 forbids CDNs and rule 6 forbids a fifth
+     runtime file, so the pan/zoom is hand-rolled on a canvas below.
+     ============================================================ */
+
+  const PHOTO_KINDS = {
+    profile:    { field: "profilePhoto",    title: "Update your profile photo" },
+    background: { field: "backgroundPhoto", title: "Update your cover photo" }
+  };
+
+  // Crop state for the open session. `img` is the decoded source bitmap; offsetX/Y
+  // and zoom describe which part of it the fixed frame is showing.
+  const photoEditor = {
+    kind: null, img: null, zoom: 1, minZoom: 1,
+    offsetX: 0, offsetY: 0, dragging: false, lastX: 0, lastY: 0, busy: false
+  };
+
+  // Self-service DOB edit. Much lighter than photoEditor — one field, no crop
+  // stage — but the save must also update the login hash, since identity is
+  // SHA-256(name + DDMMYYYY). See saveDob().
+  const dobEditor = { busy: false };
+
+  function photoConfig() {
+    return window.PHOTO_CONFIG || {};
+  }
+
+  // Editing is possible only when a Worker is configured AND the open profile is
+  // the logged-in member's own. Both halves matter: without the first the button
+  // would do nothing, without the second it would offer an action the Worker rejects.
+  function canEditPhotos(personId) {
+    const cfg = photoConfig();
+    return Boolean(
+      cfg.workerUrl &&
+      window.CURRENT_IDENTITY &&
+      window.CURRENT_IDENTITY.hash &&
+      personId === ME &&
+      window.CURRENT_IDENTITY.personId === ME
+    );
+  }
+
+  function targetSize(kind) {
+    const cfg = photoConfig();
+    if (kind === "background") {
+      return { w: cfg.backgroundW || 1600, h: cfg.backgroundH || 534 };
+    }
+    return { w: cfg.profilePx || 800, h: cfg.profilePx || 800 };
+  }
+
+  function pmEl(id) { return document.getElementById(id); }
+
+  function showPhotoError(msg) {
+    const el = pmEl("pm-error");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.hidden = !msg;
+  }
+
+  function openPhotoEditor(kind) {
+    if (!PHOTO_KINDS[kind] || !canEditPhotos(ME)) return;
+    photoEditor.kind = kind;
+    photoEditor.img = null;
+    photoEditor.busy = false;
+
+    pmEl("pm-title").textContent = PHOTO_KINDS[kind].title;
+    const size = targetSize(kind);
+    pmEl("pm-hint").textContent =
+      `Drag to reposition · pinch or use the slider to zoom · saved at ${size.w}×${size.h}`;
+    pmEl("pm-drop-sub").textContent =
+      `or drag one here · JPEG, PNG or WebP up to ${photoConfig().maxUploadMB || 5} MB`;
+
+    pmEl("pm-pick").hidden = false;
+    pmEl("pm-crop").hidden = true;
+    pmEl("pm-rechoose").hidden = true;
+    pmEl("pm-save").disabled = true;
+    pmEl("pm-save").textContent = "Save photo";
+    pmEl("pm-file").value = "";
+    showPhotoError("");
+    pmEl("photo-modal").hidden = false;
+    pmEl("pm-drop").focus();
+  }
+
+  function closePhotoEditor() {
+    if (photoEditor.busy) return;   // don't abandon an upload mid-flight
+    const modal = pmEl("photo-modal");
+    if (modal) modal.hidden = true;
+    if (photoEditor.img && photoEditor.img.close) photoEditor.img.close();
+    photoEditor.img = null;
+    photoEditor.kind = null;
+  }
+
+  async function loadPhotoFile(file) {
+    if (!file) return;
+    const cfg = photoConfig();
+    const allowed = cfg.allowedTypes || ["image/jpeg", "image/png", "image/webp"];
+    const maxBytes = (cfg.maxUploadMB || 5) * 1024 * 1024;
+
+    if (!allowed.includes(file.type)) {
+      // HEIC is the common case here — iPhones shoot it by default and no browser
+      // engine but Safari can decode it. Say so specifically instead of "wrong type".
+      const isHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+      showPhotoError(isHeic
+        ? "iPhone HEIC photos can't be read by this browser. On your iPhone open Settings → Camera → Formats and choose “Most Compatible”, then take the photo again — or send the photo to yourself on WhatsApp and pick the copy it saves."
+        : "Please choose a JPEG, PNG or WebP image.");
+      return;
+    }
+    if (file.size > maxBytes) {
+      showPhotoError(`That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${cfg.maxUploadMB || 5} MB.`);
+      return;
+    }
+
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch (err) {
+      showPhotoError("That image could not be opened. Try a different photo.");
+      return;
+    }
+
+    showPhotoError("");
+    photoEditor.img = bitmap;
+    setupCropStage();
+    pmEl("pm-pick").hidden = true;
+    pmEl("pm-crop").hidden = false;
+    pmEl("pm-rechoose").hidden = false;
+    pmEl("pm-save").disabled = false;
+  }
+
+  function setupCropStage() {
+    const canvas = pmEl("pm-canvas");
+    const size = targetSize(photoEditor.kind);
+    // Size the frame to the space actually available rather than a fixed width.
+    // A fixed width lets CSS max-width shrink it on a phone while the inline height
+    // stays put — which squashed the square crop into a tall rectangle (and the
+    // circular mask into an ellipse). The export re-renders at the full target size,
+    // so what you see here is the same framing at a lower resolution.
+    const body = pmEl("pm-crop");
+    const avail = Math.max(200, Math.floor(body.clientWidth - 40));
+    const displayW = Math.min(size.w, 480, avail);
+    const displayH = Math.round(displayW * (size.h / size.w));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(displayW * dpr);
+    canvas.height = Math.round(displayH * dpr);
+    canvas.style.width = displayW + "px";
+    canvas.style.height = displayH + "px";
+
+    // Start at "cover": the smallest zoom that still fills the frame, centred.
+    const img = photoEditor.img;
+    photoEditor.minZoom = Math.max(displayW / img.width, displayH / img.height);
+    photoEditor.zoom = photoEditor.minZoom;
+    photoEditor.offsetX = (displayW - img.width * photoEditor.zoom) / 2;
+    photoEditor.offsetY = (displayH - img.height * photoEditor.zoom) / 2;
+
+    const zoomInput = pmEl("pm-zoom");
+    zoomInput.min = String(photoEditor.minZoom);
+    zoomInput.max = String(photoEditor.minZoom * 4);
+    zoomInput.step = String(photoEditor.minZoom / 100);
+    zoomInput.value = String(photoEditor.zoom);
+
+    drawCropStage();
+  }
+
+  // Keep the image covering the frame at all times, so no crop can include blank space.
+  function clampOffsets(frameW, frameH) {
+    const img = photoEditor.img;
+    const w = img.width * photoEditor.zoom;
+    const h = img.height * photoEditor.zoom;
+    photoEditor.offsetX = Math.min(0, Math.max(frameW - w, photoEditor.offsetX));
+    photoEditor.offsetY = Math.min(0, Math.max(frameH - h, photoEditor.offsetY));
+  }
+
+  function drawCropStage() {
+    const canvas = pmEl("pm-canvas");
+    if (!canvas || !photoEditor.img) return;
+    const dpr = window.devicePixelRatio || 1;
+    const frameW = canvas.width / dpr;
+    const frameH = canvas.height / dpr;
+    clampOffsets(frameW, frameH);
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, frameW, frameH);
+    ctx.drawImage(
+      photoEditor.img,
+      photoEditor.offsetX, photoEditor.offsetY,
+      photoEditor.img.width * photoEditor.zoom,
+      photoEditor.img.height * photoEditor.zoom
+    );
+
+    // A circular mask on the avatar crop, so the framing shown matches the round
+    // avatar the photo will actually appear in.
+    if (photoEditor.kind === "profile") {
+      ctx.save();
+      ctx.fillStyle = "rgba(20,12,5,0.45)";
+      ctx.beginPath();
+      ctx.rect(0, 0, frameW, frameH);
+      ctx.arc(frameW / 2, frameH / 2, Math.min(frameW, frameH) / 2, 0, Math.PI * 2, true);
+      ctx.fill("evenodd");
+      ctx.restore();
+    }
+  }
+
+  // Render the visible region again at full target resolution and encode it.
+  // WebP is ~6x smaller than the PNGs the Form pipeline produced; if the browser
+  // can't encode it (very old Safari) toBlob hands back a PNG, and we retry as JPEG.
+  function exportCrop() {
+    const size = targetSize(photoEditor.kind);
+    const canvas = pmEl("pm-canvas");
+    const dpr = window.devicePixelRatio || 1;
+    const scale = size.w / (canvas.width / dpr);
+
+    const out = document.createElement("canvas");
+    out.width = size.w;
+    out.height = size.h;
+    const ctx = out.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(
+      photoEditor.img,
+      photoEditor.offsetX * scale, photoEditor.offsetY * scale,
+      photoEditor.img.width * photoEditor.zoom * scale,
+      photoEditor.img.height * photoEditor.zoom * scale
+    );
+
+    const quality = photoConfig().webpQuality || 0.82;
+    return new Promise(resolve => {
+      out.toBlob(blob => {
+        if (blob && blob.type === "image/webp") return resolve(blob);
+        out.toBlob(jpeg => resolve(jpeg), "image/jpeg", quality);
+      }, "image/webp", quality);
+    });
+  }
+
+  async function savePhoto() {
+    if (!photoEditor.img || photoEditor.busy) return;
+    const kind = photoEditor.kind;
+    const cfg = photoConfig();
+    const saveBtn = pmEl("pm-save");
+
+    photoEditor.busy = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    showPhotoError("");
+
+    try {
+      const blob = await exportCrop();
+      if (!blob) throw new Error("Could not encode the image");
+
+      const res = await fetch(cfg.workerUrl.replace(/\/+$/, "") + "/photo", {
+        method: "POST",
+        headers: {
+          "Content-Type": blob.type,
+          "X-Person-Id": ME,
+          "X-Photo-Kind": kind,
+          "X-Identity-Hash": window.CURRENT_IDENTITY.hash
+        },
+        body: blob
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || `Upload failed (${res.status})`);
+
+      // Cache-Control is 60s, so bust it locally for the person who just uploaded.
+      const freshUrl = payload.url + "?t=" + Date.now();
+      const person = F.byId[ME];
+      if (person) {
+        if (kind === "profile") person.photo = freshUrl;
+        else person.backgroundPhoto = freshUrl;
+      }
+      applyPhotoToDom(kind, freshUrl);
+
+      photoEditor.busy = false;
+      closePhotoEditor();
+
+      if (payload.warning) {
+        // The object reached R2 but family.json didn't get updated. Say so rather
+        // than reporting a clean success the data doesn't back up.
+        alert(payload.warning);
+      }
+    } catch (err) {
+      photoEditor.busy = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save photo";
+      showPhotoError(err.message || "Upload failed. Please try again.");
+    }
+  }
+
+  // Repaint the open profile panel (and the tree node) without a reload.
+  function applyPhotoToDom(kind, url) {
+    if (kind === "profile") {
+      const holder = document.getElementById("lb-profile-photo");
+      if (holder) {
+        holder.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = url;
+        holder.appendChild(img);
+      }
+      document.querySelectorAll(`.node[data-id="${CSS.escape(ME)}"] .node-thumb`).forEach(el => {
+        el.innerHTML = `<img src="${escapeHtml(url)}" alt="" loading="lazy">`;
+        el.style.background = "";
+      });
+    } else {
+      const cover = document.getElementById("lb-cover");
+      if (cover) {
+        cover.querySelectorAll(".lb-cover-img").forEach(el => el.remove());
+        const img = document.createElement("img");
+        img.className = "lb-cover-img";
+        img.src = url;
+        cover.insertBefore(img, cover.firstChild);
+      }
+    }
+  }
+
+  // Same gate as photos — own profile, Worker configured — because /dob lives on
+  // the same Worker as /photo and shares its identity check.
+  function canEditDob(personId) {
+    return canEditPhotos(personId);
+  }
+
+  function renderDobEditor(p) {
+    const wrap = pmEl("lb-dob-edit");
+    if (!wrap) return;
+    if (!canEditDob(p.id)) {
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    pmEl("lb-dob-form").hidden = true;
+    pmEl("lb-dob-note").hidden = true;
+    showDobError("");
+    pmEl("lb-dob-edit-label").textContent = p.hasBirthYear
+      ? "Edit date of birth" : "Add your date of birth";
+    pmEl("lb-dob-input").value = p.hasBirthYear ? p.birthDate : "";
+  }
+
+  function showDobError(msg) {
+    const el = pmEl("lb-dob-error");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.hidden = !msg;
+  }
+
+  async function saveDob() {
+    if (dobEditor.busy) return;
+    const input = pmEl("lb-dob-input");
+    const saveBtn = pmEl("lb-dob-save");
+    const value = input.value; // "YYYY-MM-DD" from <input type="date">
+    if (!value) { showDobError("Please choose a date."); return; }
+
+    dobEditor.busy = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    showDobError("");
+
+    try {
+      const cfg = photoConfig();
+      const res = await fetch(cfg.workerUrl.replace(/\/+$/, "") + "/dob", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Person-Id": ME,
+          "X-Identity-Hash": window.CURRENT_IDENTITY.hash
+        },
+        body: JSON.stringify({ birthDate: value })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || `Save failed (${res.status})`);
+
+      // The login hash is derived from name+DOB, so it just changed. Keep the
+      // current session working with the new hash; next login needs the new date.
+      window.CURRENT_IDENTITY.hash = payload.hash;
+
+      const person = F.byId[ME];
+      if (person) {
+        person.birthDate = value;
+        person.hasBirthYear = !window.isUnknownBirthDate(value);
+        person.birth = parseInt(value.split("-")[0], 10);
+        renderBioTab(person);   // rebuilds #lb-facts and re-renders this editor
+        renderLifeLine(person); // header "b. <year> · N years" line
+      }
+
+      pmEl("lb-dob-note").hidden = false;
+      if (payload.warning) alert(payload.warning);
+    } catch (err) {
+      showDobError(err.message || "Could not save. Please try again.");
+    } finally {
+      dobEditor.busy = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save";
+    }
+  }
+
+  function bindDobEditor() {
+    const wrap = pmEl("lb-dob-edit");
+    if (!wrap) return;
+    const form = pmEl("lb-dob-form");
+
+    pmEl("lb-dob-edit-btn").addEventListener("click", () => {
+      pmEl("lb-dob-note").hidden = true;
+      form.hidden = false;
+      pmEl("lb-dob-input").focus();
+    });
+    pmEl("lb-dob-cancel").addEventListener("click", () => {
+      form.hidden = true;
+      showDobError("");
+    });
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      saveDob();
+    });
+  }
+
+  function bindPhotoEditor() {
+    const modal = pmEl("photo-modal");
+    if (!modal) return;
+
+    pmEl("lb-edit-avatar").addEventListener("click", () => openPhotoEditor("profile"));
+    pmEl("lb-edit-cover").addEventListener("click", () => openPhotoEditor("background"));
+    pmEl("pm-close").addEventListener("click", closePhotoEditor);
+    pmEl("pm-cancel").addEventListener("click", closePhotoEditor);
+    modal.addEventListener("click", e => { if (e.target === modal) closePhotoEditor(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !modal.hidden) closePhotoEditor();
+    });
+
+    const drop = pmEl("pm-drop");
+    const fileInput = pmEl("pm-file");
+    drop.addEventListener("click", () => fileInput.click());
+    drop.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+    });
+    fileInput.addEventListener("change", e => loadPhotoFile(e.target.files[0]));
+    ["dragenter", "dragover"].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("is-dragover"); }));
+    ["dragleave", "drop"].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("is-dragover"); }));
+    drop.addEventListener("drop", e => loadPhotoFile(e.dataTransfer.files[0]));
+
+    pmEl("pm-rechoose").addEventListener("click", () => {
+      pmEl("pm-pick").hidden = false;
+      pmEl("pm-crop").hidden = true;
+      pmEl("pm-rechoose").hidden = true;
+      pmEl("pm-save").disabled = true;
+      pmEl("pm-file").value = "";
+      showPhotoError("");
+    });
+    pmEl("pm-save").addEventListener("click", savePhoto);
+
+    pmEl("pm-zoom").addEventListener("input", e => {
+      if (!photoEditor.img) return;
+      const canvas = pmEl("pm-canvas");
+      const dpr = window.devicePixelRatio || 1;
+      const frameW = canvas.width / dpr, frameH = canvas.height / dpr;
+      const prev = photoEditor.zoom;
+      photoEditor.zoom = Number(e.target.value);
+      // Zoom about the frame centre so the subject doesn't drift off-frame.
+      const ratio = photoEditor.zoom / prev;
+      photoEditor.offsetX = frameW / 2 - (frameW / 2 - photoEditor.offsetX) * ratio;
+      photoEditor.offsetY = frameH / 2 - (frameH / 2 - photoEditor.offsetY) * ratio;
+      drawCropStage();
+    });
+
+    // Pointer events cover mouse and touch in one path — the app is mostly used
+    // on phones, so the drag must work with a finger.
+    const canvas = pmEl("pm-canvas");
+    canvas.addEventListener("pointerdown", e => {
+      if (!photoEditor.img) return;
+      photoEditor.dragging = true;
+      photoEditor.lastX = e.clientX;
+      photoEditor.lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!photoEditor.dragging) return;
+      // Offsets live in frame units. If CSS ever renders the canvas at a different
+      // size than the frame, a raw client delta would drag at the wrong speed.
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const k = rect.width ? (canvas.width / dpr) / rect.width : 1;
+      photoEditor.offsetX += (e.clientX - photoEditor.lastX) * k;
+      photoEditor.offsetY += (e.clientY - photoEditor.lastY) * k;
+      photoEditor.lastX = e.clientX;
+      photoEditor.lastY = e.clientY;
+      drawCropStage();
+    });
+    ["pointerup", "pointercancel"].forEach(ev =>
+      canvas.addEventListener(ev, e => {
+        photoEditor.dragging = false;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      }));
+  }
+
+  bindPhotoEditor();
+  bindDobEditor();
   init();
   window.addEventListener("resize", () => updateMinimap());
 };

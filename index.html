@@ -2086,7 +2086,10 @@
   .lightbox {
     position: fixed;
     inset: 0;
-    z-index: 60;
+    /* Above .top-tabs (z-index 1000). The sheet starts at y=0 while the nav bar is
+       66px tall with pointer-events:auto, so at 60 the nav swallowed clicks on
+       everything along the top of the panel — the close button included. */
+    z-index: 1100;
     display: none;
     align-items: stretch;
     justify-content: center;
@@ -2167,6 +2170,185 @@
     z-index: 2;
   }
   .lb-profile-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Photo edit affordances — only shown on your own profile, and only when a
+     PHOTO_WORKER_URL is configured. Sit above .lb-cover::after (which is z-index 0
+     but paints after the img) and above the avatar's z-index 2. */
+  .lb-photo-edit {
+    position: absolute;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(253,250,243,0.55);
+    background: rgba(20,12,5,0.55);
+    color: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background .15s ease, transform .15s ease;
+  }
+  /* An author `display` rule beats the UA's [hidden]{display:none}, so the hidden
+     state has to be restated here — without this the buttons stay visible on every
+     profile, including other people's. */
+  .lb-photo-edit[hidden] { display: none; }
+  .lb-photo-edit:hover  { background: rgba(20,12,5,0.75); }
+  .lb-photo-edit:active { transform: scale(0.96); }
+  .lb-photo-edit:focus-visible { outline: 2px solid var(--sunset-glow); outline-offset: 2px; }
+  .lb-edit-cover {
+    top: 14px; left: 14px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .lb-edit-avatar {
+    /* Pinned to the lower-right of the 116px avatar, which is centred and
+       overhangs the cover by 56px. */
+    bottom: -50px;
+    left: 50%;
+    margin-left: 30px;
+    width: 34px; height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    border-width: 2px;
+    font-size: 15px;
+  }
+
+  /* Photo cropper modal */
+  .photo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;   /* above the lightbox (1100), which is above .top-tabs (1000) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20,12,5,0.62);
+    backdrop-filter: blur(3px);
+  }
+  .photo-modal[hidden] { display: none; }
+  .pm-sheet {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 24px 60px -12px rgba(20,12,5,0.5);
+  }
+  .pm-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .pm-title {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 22px; font-weight: 600;
+    color: var(--trunk-dark);
+  }
+  .pm-close {
+    flex: none;
+    width: 30px; height: 30px;
+    border: none; border-radius: 50%;
+    background: var(--line-soft);
+    color: var(--ink-soft);
+    font-size: 14px; cursor: pointer;
+  }
+  .pm-close:hover { background: var(--line); }
+  .pm-body { padding: 20px; }
+
+  /* Step 1 — file picker / drop zone */
+  .pm-drop {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px;
+    min-height: 180px;
+    padding: 24px;
+    border: 2px dashed var(--line);
+    border-radius: 12px;
+    background: var(--cream);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .pm-drop:hover, .pm-drop:focus-visible, .pm-drop.is-dragover {
+    border-color: var(--green-1);
+    background: var(--green-faint);
+    outline: none;
+  }
+  .pm-drop-icon { font-size: 30px; }
+  .pm-drop-main { font-size: 15px; font-weight: 600; color: var(--trunk-dark); }
+  .pm-drop-sub  { font-size: 12.5px; color: var(--ink-faint); }
+
+  /* Step 2 — crop stage. The canvas IS the crop frame: whatever it shows is
+     exactly what gets uploaded, so there is no separate overlay to keep in sync. */
+  .pm-stage {
+    /* Hug the canvas rather than the modal width — a full-width stage leaves dark
+       bars either side of the frame that read as letterboxing, not as a crop. */
+    display: flex; justify-content: center;
+    width: fit-content;
+    margin-inline: auto;
+    background: #221a12;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .pm-canvas {
+    display: block;
+    max-width: 100%;
+    touch-action: none;   /* we handle drag ourselves via pointer events */
+    cursor: grab;
+  }
+  .pm-canvas:active { cursor: grabbing; }
+  .pm-zoom {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px;
+  }
+  .pm-zoom input[type="range"] { flex: 1; accent-color: var(--green-1); }
+  .pm-hint {
+    margin: 10px 0 0;
+    font-size: 12px; color: var(--ink-faint); text-align: center;
+  }
+
+  .pm-error {
+    margin: 0 20px 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fbe6e0;
+    border: 1px solid #e6a48b;
+    color: #8a3a1e;
+    font-size: 13px; line-height: 1.45;
+  }
+  .pm-error[hidden] { display: none; }
+
+  .pm-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .pm-btn {
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, opacity .15s ease;
+  }
+  .pm-btn[hidden] { display: none; }
+  .pm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .pm-btn-ghost {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+  }
+  .pm-btn-ghost:hover:not(:disabled) { background: var(--line-soft); }
+  .pm-btn-primary {
+    border: 1px solid var(--green-1);
+    background: var(--green-1);
+    color: #fff;
+  }
+  .pm-btn-primary:hover:not(:disabled) { background: #256826; }
 
   /* Profile header */
   .lb-header {
@@ -2370,6 +2552,75 @@
     padding: 18px 0;
   }
 
+  /* Self-service DOB edit — a small inline control, not a modal like the photo
+     cropper, because it's one field. Hidden by default; tree-app.js reveals it
+     only on the viewer's own profile. */
+  .lb-dob-edit[hidden] { display: none; }
+  .lb-dob-edit { margin-top: 10px; }
+  .lb-dob-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+    padding: 2px 0;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .lb-dob-edit-btn:hover { color: var(--ink); }
+  .lb-dob-edit-btn:focus-visible { outline: 2px solid var(--sunset-glow); outline-offset: 2px; }
+  .lb-dob-form[hidden] { display: none; }
+  .lb-dob-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .lb-dob-input {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    background: var(--paper, #fff);
+    color: var(--ink);
+  }
+  .lb-dob-btn {
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: 1px solid var(--line-soft);
+  }
+  .lb-dob-btn-primary {
+    background: var(--ink);
+    color: var(--paper, #fff);
+    border-color: var(--ink);
+  }
+  .lb-dob-btn-primary:disabled { opacity: 0.6; cursor: default; }
+  .lb-dob-btn-ghost { background: none; color: var(--ink-soft); }
+  .lb-dob-error {
+    margin: 8px 0 0;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: #b3432f;
+  }
+  .lb-dob-error[hidden] { display: none; }
+  .lb-dob-note {
+    margin: 8px 0 0;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .lb-dob-note[hidden] { display: none; }
+
   /* Family tab */
   .lb-fam-group { margin-bottom: 20px; }
   .lb-fam-chips {
@@ -2382,10 +2633,16 @@
     padding-top: 20px;
     border-top: 1px solid var(--line-soft);
   }
-  .lb-relcalc-select {
+  /* Searchable member picker. A plain <select> made you scroll 70 names, so this
+     is a combobox: type to filter, arrows to move, Enter to pick. */
+  .lb-relcalc-combo {
+    position: relative;
     width: 100%;
     max-width: 340px;
-    padding: 8px 10px;
+  }
+  .lb-relcalc-input {
+    width: 100%;
+    padding: 8px 30px 8px 10px;
     font-family: "Inter", sans-serif;
     font-size: 13px;
     color: var(--ink);
@@ -2394,7 +2651,62 @@
     border-radius: 8px;
     cursor: pointer;
   }
-  .lb-relcalc-select:focus-visible { outline: 2px solid var(--green-2); outline-offset: 1px; }
+  .lb-relcalc-input:focus-visible { outline: 2px solid var(--green-2); outline-offset: 1px; }
+  .lb-relcalc-clear {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 50%;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .lb-relcalc-clear:hover { background: var(--green-faint); color: var(--ink); }
+  .lb-relcalc-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 12px 36px -8px rgba(60,35,15,0.20), 0 4px 12px rgba(60,35,15,0.08);
+    z-index: 40;
+  }
+  .lb-relcalc-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .lb-relcalc-opt:last-child { border-bottom: 0; }
+  .lb-relcalc-opt:hover, .lb-relcalc-opt.active { background: var(--green-faint); }
+  .lb-relcalc-opt .sr-thumb { width: 28px; height: 28px; font-size: 12px; }
+  .lb-relcalc-optname {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .lb-relcalc-empty {
+    padding: 14px 12px;
+    text-align: center;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
   .lb-relcalc-result { margin-top: 14px; }
   .lb-relcalc-answer {
     font-family: "Cormorant Garamond", serif;
@@ -2675,6 +2987,23 @@
     }
     .lb-cover { height: 180px; }
     .lb-profile-photo { width: 92px; height: 92px; font-size: 30px; bottom: -46px; }
+    /* Re-anchor the camera button to the smaller 92px avatar */
+    .lb-edit-avatar { bottom: -42px; margin-left: 20px; width: 30px; height: 30px; font-size: 13px; }
+    .lb-edit-cover  { top: 12px; left: 12px; padding: 6px 10px; font-size: 11.5px; }
+    /* Full-screen cropper on phones — the sheet is the whole viewport */
+    .photo-modal { padding: 0; }
+    .pm-sheet {
+      width: 100%;
+      max-width: none;
+      height: 100%;
+      max-height: none;
+      border: none;
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .pm-body { flex: 1; }
+    .pm-actions { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
     .lb-header { padding: 60px 20px 18px; }
     .lb-name { font-size: 28px; }
     .lb-bio { font-size: 15px; }
@@ -2686,7 +3015,7 @@
     .lb-facts { grid-template-columns: 1fr; gap: 2px 0; }
     .lb-facts dt { padding-top: 12px; }
     .lb-facts dd { padding-bottom: 2px; }
-    .lb-relcalc-select { max-width: none; }
+    .lb-relcalc-combo { max-width: none; }
     .scrap-card { padding: 12px 12px; }
     .status-pill { top: 102px; font-size: 11px; padding: 6px 10px 6px 10px; }
     .status-pill .bc-name { font-size: 13px; }
@@ -3756,7 +4085,16 @@
     <div class="lightbox-sheet" id="lightbox-sheet">
       <button class="lb-close" id="lb-close" aria-label="Close">✕</button>
       <div class="lb-cover" id="lb-cover">
+        <!-- Both buttons are revealed by tree-app.js only when the open profile is
+             the logged-in member's own (id === F.ME) and a worker URL is configured. -->
+        <button class="lb-photo-edit lb-edit-cover" id="lb-edit-cover" type="button" hidden>
+          <span aria-hidden="true">🖼</span><span class="lpe-label">Change cover</span>
+        </button>
         <div class="lb-profile-photo" id="lb-profile-photo"></div>
+        <button class="lb-photo-edit lb-edit-avatar" id="lb-edit-avatar" type="button"
+                aria-label="Change your profile photo" hidden>
+          <span aria-hidden="true">📷</span>
+        </button>
       </div>
       <div class="lb-header">
         <div class="lb-rel" id="lb-rel">Relationship</div>
@@ -3788,6 +4126,21 @@
       <div class="lb-tabpanel" id="lb-tab-bio" role="tabpanel" aria-labelledby="lb-tabbtn-bio" hidden>
         <div class="lb-section">
           <dl class="lb-facts" id="lb-facts"></dl>
+          <!-- Shown only on your own profile, and only when a PHOTO_WORKER_URL is
+               configured — see canEditDob() in tree-app.js. Reuses that same Worker
+               (a /dob route alongside /photo) since DOB is part of the login hash. -->
+          <div class="lb-dob-edit" id="lb-dob-edit" hidden>
+            <button type="button" class="lb-dob-edit-btn" id="lb-dob-edit-btn">
+              <span aria-hidden="true">✎</span> <span id="lb-dob-edit-label">Edit date of birth</span>
+            </button>
+            <form class="lb-dob-form" id="lb-dob-form" hidden>
+              <input type="date" class="lb-dob-input" id="lb-dob-input" required>
+              <button type="submit" class="lb-dob-btn lb-dob-btn-primary" id="lb-dob-save">Save</button>
+              <button type="button" class="lb-dob-btn lb-dob-btn-ghost" id="lb-dob-cancel">Cancel</button>
+            </form>
+            <p class="lb-dob-error" id="lb-dob-error" role="alert" hidden></p>
+            <p class="lb-dob-note" id="lb-dob-note" hidden>Saved — use this date next time you log in.</p>
+          </div>
           <div class="lb-story" id="lb-story"></div>
         </div>
       </div>
@@ -3797,9 +4150,17 @@
           <div class="lb-fam-groups" id="lb-fam-groups"></div>
           <div class="lb-relcalc">
             <h4 class="lb-sec-title" id="lb-relcalc-title" data-i18n="profile.relCalc.title">How are we related?</h4>
-            <select class="lb-relcalc-select" id="lb-relcalc-select" aria-labelledby="lb-relcalc-title">
-              <option value="" data-i18n="profile.relCalc.choose">Choose a family member…</option>
-            </select>
+            <div class="lb-relcalc-combo" id="lb-relcalc-combo">
+              <input class="lb-relcalc-input" id="lb-relcalc-input" type="text"
+                     role="combobox" aria-expanded="false" aria-autocomplete="list"
+                     aria-controls="lb-relcalc-list" aria-labelledby="lb-relcalc-title"
+                     autocomplete="off" placeholder="Choose a family member…"
+                     data-i18n-placeholder="profile.relCalc.choose" />
+              <button class="lb-relcalc-clear" id="lb-relcalc-clear" type="button" hidden
+                      aria-label="Clear" data-i18n-aria="tree.controls.clearSearch">✕</button>
+              <ul class="lb-relcalc-list" id="lb-relcalc-list" role="listbox"
+                  aria-labelledby="lb-relcalc-title" hidden></ul>
+            </div>
             <div class="lb-relcalc-result" id="lb-relcalc-result"></div>
           </div>
         </div>
@@ -3839,10 +4200,57 @@
   </nav>
 
   <!-- ============================================================
+       PHOTO CROPPER
+       Own-profile photo replacement. Crops to a fixed frame (1:1 avatar,
+       3:1 cover), re-encodes to WebP, POSTs to the Cloudflare Worker.
+       Logic lives in tree-app.js — see openPhotoEditor().
+       ============================================================ -->
+  <div class="photo-modal" id="photo-modal" role="dialog" aria-modal="true"
+       aria-labelledby="pm-title" hidden>
+    <div class="pm-sheet">
+      <div class="pm-head">
+        <h3 class="pm-title" id="pm-title">Update your photo</h3>
+        <button class="pm-close" id="pm-close" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Step 1: choose a file -->
+      <div class="pm-body" id="pm-pick">
+        <label class="pm-drop" id="pm-drop" tabindex="0">
+          <span class="pm-drop-icon" aria-hidden="true">📷</span>
+          <span class="pm-drop-main" id="pm-drop-main">Tap to choose a photo</span>
+          <span class="pm-drop-sub" id="pm-drop-sub">or drag one here</span>
+          <input type="file" id="pm-file" accept="image/jpeg,image/png,image/webp" hidden>
+        </label>
+      </div>
+
+      <!-- Step 2: crop -->
+      <div class="pm-body" id="pm-crop" hidden>
+        <div class="pm-stage" id="pm-stage">
+          <canvas class="pm-canvas" id="pm-canvas"></canvas>
+        </div>
+        <label class="pm-zoom">
+          <span aria-hidden="true">🔍</span>
+          <input type="range" id="pm-zoom" min="1" max="4" step="0.01" value="1"
+                 aria-label="Zoom">
+        </label>
+        <p class="pm-hint" id="pm-hint">Drag to reposition · pinch or use the slider to zoom</p>
+      </div>
+
+      <p class="pm-error" id="pm-error" role="alert" hidden></p>
+
+      <div class="pm-actions">
+        <button class="pm-btn pm-btn-ghost" id="pm-cancel" type="button">Cancel</button>
+        <button class="pm-btn pm-btn-ghost" id="pm-rechoose" type="button" hidden>Choose another</button>
+        <button class="pm-btn pm-btn-primary" id="pm-save" type="button" disabled>Save photo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
        DATA + LOGIC
        ============================================================ -->
-  
-  
+
+
 
   </div>
 
@@ -4184,6 +4592,16 @@
           }
         }
 
+        // The photo uploader needs the identity hash to prove to the Worker which
+        // person it is acting for. matchedUserEntry.hash IS the hash the user just
+        // proved they know, so there is nothing extra to compute or store.
+        window.CURRENT_IDENTITY = {
+          hash: matchedUserEntry.hash,
+          personId: initialMe,
+          displayName: matchedUserEntry.displayName || '',
+          role: matchedUserEntry.role || 'viewer'
+        };
+
         if (window.FAMILY_DATA && window.processRawFamilyData) {
           window.FAMILY = window.processRawFamilyData(window.FAMILY_DATA, initialMe);
         } else if (window.FAMILY) {
@@ -4216,7 +4634,19 @@
         // In bundled/production mode, all scripts and data are already inlined
         runApplication();
       } else {
-        // In local/development mode, dynamically load files
+        // In local/development mode, dynamically load files.
+        // scripts/encrypt.js injects window.PHOTO_CONFIG from the PHOTO_* keys in .env;
+        // mirror its defaults here so the cropper works without running a build.
+        // workerUrl stays empty in dev, which leaves the edit buttons hidden.
+        window.PHOTO_CONFIG = window.PHOTO_CONFIG || {
+          workerUrl: '',
+          maxUploadMB: 5,
+          profilePx: 800,
+          backgroundW: 1600,
+          backgroundH: 534,
+          webpQuality: 0.82,
+          allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+        };
         const cacheBust = '?v=' + Date.now();
         const s0 = document.createElement('script');
         s0.src = 'tree-helpers.js' + cacheBust;

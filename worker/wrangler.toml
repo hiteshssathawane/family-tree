@@ -1,0 +1,32 @@
+# Family Tree — photo upload Worker
+#
+# Deploy from the repo root:
+#   wrangler deploy --config worker/wrangler.toml
+#   wrangler secret put GITHUB_TOKEN --config worker/wrangler.toml
+#
+# GITHUB_TOKEN must be a fine-grained PAT scoped to hiteshssathawane/family-tree
+# only, with Contents: read and write. Nothing else.
+#
+# Everything here fits the free tier: Workers 100k requests/day, R2 1M Class A
+# (write) operations/month with free egress. ~70 members changing a photo now and
+# then is nowhere near either ceiling.
+
+name = "family-photos"
+main = "photo-upload.js"
+compatibility_date = "2026-01-01"
+
+# The same bucket scripts/sync-media.js writes to, so the Form pipeline and the
+# in-app uploader agree on keys.
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "family-tree-photos"
+
+# Server-side limits. The browser applies the same numbers from window.PHOTO_CONFIG,
+# but those are advisory — these are the ones that actually hold.
+[vars]
+PHOTO_PUBLIC_URL = "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev"
+PHOTO_MAX_UPLOAD_MB = "5"
+PHOTO_RATE_LIMIT_PER_HOUR = "10"
+# DOB changes also rewrite the person's login hash in auth.json, so this is
+# capped lower than photo uploads.
+DOB_RATE_LIMIT_PER_HOUR = "3"

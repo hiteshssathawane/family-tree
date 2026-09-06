@@ -2,7 +2,7 @@
 // SHA-256(name + DDMMYYYY). csv-import.js writes this placeholder so a hash can exist
 // at all. It is a login token, NOT a fact about the person — nothing may render it as a
 // birth date, raise it as a birthday, or export it to a calendar.
-window.UNKNOWN_BIRTH_DATE = '1970-01-01';
+window.UNKNOWN_BIRTH_DATE = '1674-06-06';
 window.isUnknownBirthDate = function (d) {
   return !!d && String(d).slice(0, 10) === window.UNKNOWN_BIRTH_DATE;
 };

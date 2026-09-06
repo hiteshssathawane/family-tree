@@ -18,7 +18,16 @@
       "image/jpeg",
       "image/png",
       "image/webp"
-    ]
+    ],
+    "_comment": "Deploy metadata only — nothing reads this at runtime. The live values come from the PHOTO_* keys in .env, injected as window.PHOTO_CONFIG by scripts/encrypt.js and mirrored into worker/wrangler.toml [vars].",
+    "upload": {
+      "outputFormat": "image/webp",
+      "webpQuality": 0.82,
+      "profile": { "width": 800, "height": 800, "aspect": "1:1" },
+      "background": { "width": 1600, "height": 534, "aspect": "3:1" },
+      "keyPattern": "<profile|background>_<personId lowercased>.webp",
+      "cacheControl": "public, max-age=60"
+    }
   },
   "github": {
     "owner": "hiteshssathawane",

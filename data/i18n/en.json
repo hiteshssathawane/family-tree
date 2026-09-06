@@ -94,6 +94,7 @@
     "relCalc": {
       "title": "How are we related?",
       "choose": "Choose a family member…",
+      "noMatch": "No member matches that name.",
       "samePerson": "That's {name} — the same person.",
       "noLink": "{other} has no recorded link to {subject} in the tree yet."
     },

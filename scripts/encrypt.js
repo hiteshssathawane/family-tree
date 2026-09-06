@@ -87,6 +87,22 @@ try {
   const helpersJs = readFileSync(resolve('tree-helpers.js'), 'utf8');
   const appJs = readFileSync(resolve('tree-app.js'), 'utf8');
 
+  // Photo-upload limits. These are advisory on the client — the Worker re-checks
+  // byte length and content type, and that check is the authoritative one.
+  const photoConfig = {
+    workerUrl: process.env.PHOTO_WORKER_URL || '',
+    maxUploadMB: Number(process.env.PHOTO_MAX_UPLOAD_MB) || 5,
+    profilePx: Number(process.env.PHOTO_PROFILE_PX) || 800,
+    backgroundW: Number(process.env.PHOTO_BACKGROUND_W) || 1600,
+    backgroundH: Number(process.env.PHOTO_BACKGROUND_H) || 534,
+    webpQuality: Number(process.env.PHOTO_WEBP_QUALITY) || 0.82,
+    allowedTypes: (process.env.PHOTO_ALLOWED_TYPES || 'image/jpeg,image/png,image/webp')
+      .split(',').map(s => s.trim()).filter(Boolean)
+  };
+  if (!photoConfig.workerUrl) {
+    console.warn('⚠️  PHOTO_WORKER_URL not set — photo editing will be disabled in this build.');
+  }
+
   const injection = `
   <!-- PRODUCTION BUNDLED SCRIPTS AND DATABASES -->
   <script>
@@ -94,6 +110,7 @@ try {
     window.AUTH_DATA = ${authJson.trim()};
     window.FAMILY_DATA = ${familyJson.trim()};
     window.I18N_DATA = { en: ${enI18nJson.trim()}, mr: ${mrI18nJson.trim()} };
+    window.PHOTO_CONFIG = ${JSON.stringify(photoConfig)};
   </script>
   <script>
     ${helpersJs}

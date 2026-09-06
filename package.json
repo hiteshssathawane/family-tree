@@ -7,6 +7,7 @@
     "validate": "node scripts/validate.js",
     "verify:pipeline": "node scripts/verify-pipeline.js",
     "setup:auth": "node scripts/setup-auth.js",
+    "auth:backfill": "node scripts/backfill-auth-personid.js",
     "gedcom:in": "node scripts/gedcom-import.js",
     "gedcom:out": "node scripts/gedcom-export.js",
     "csv:import": "node scripts/csv-import.js",

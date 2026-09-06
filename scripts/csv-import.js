@@ -10,7 +10,7 @@ import { resolve } from 'path';
 
 // Keep in step with window.UNKNOWN_BIRTH_DATE in tree-helpers.js — the runtime uses it
 // to keep this placeholder out of the profile panel, the calendar and the .ics feed.
-const UNKNOWN_BIRTH_DATE = '1970-01-01';
+const UNKNOWN_BIRTH_DATE = '1674-06-06';
 
 const csvFile  = process.argv[2];
 const dataPath = resolve('data/family.json');
@@ -39,6 +39,40 @@ const lines = csv.split('\n')
 
 const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
 let added = 0, skipped = 0, errors = 0;
+
+// Snapshot the photos already on record BEFORE persons is wiped below.
+//
+// A member who edits their photo in the app gets an R2 URL written straight into
+// family.json by worker/photo-upload.js — the Sheet knows nothing about it. If that
+// member later re-submits the member Form for any reason, their old Drive URL comes
+// back through the CSV and would overwrite the newer photo. Guard: a Drive URL from
+// the sheet never displaces an R2 URL already on record. See preservePhoto().
+const previousPhotos = new Map();
+(family.persons || []).forEach(p => {
+  if (p.profilePhoto || p.backgroundPhoto) {
+    previousPhotos.set(p.id, {
+      profilePhoto: p.profilePhoto || null,
+      backgroundPhoto: p.backgroundPhoto || null
+    });
+  }
+});
+
+function preservePhoto(personId, field, incoming) {
+  const kept = (previousPhotos.get(personId) || {})[field];
+  if (!kept) return incoming || null;
+  // Only Drive URLs are stale by definition — sync-media.js rewrites them to R2, so
+  // one reappearing means the sheet is behind, not ahead. Anything else (a hand-edited
+  // value, a new R2 URL) is allowed through so the sheet stays authoritative.
+  const incomingIsDrive = typeof incoming === 'string' && incoming.includes('drive.google.com');
+  const keptIsR2 = kept.startsWith('http') && !kept.includes('drive.google.com');
+  if ((!incoming || incomingIsDrive) && keptIsR2) {
+    if (incomingIsDrive) {
+      console.log(`  🛡️  Kept in-app ${field} for ${personId} (sheet still has a Drive URL)`);
+    }
+    return kept;
+  }
+  return incoming || null;
+}
 
 family.persons = [];
 family.relationships = [];
@@ -279,8 +313,8 @@ lines.slice(1).forEach((line, i) => {
     firstNameMr: row.firstNameMr || null,
     lastNameMr: row.lastNameMr || null,
     biography: row.biography || null,
-    profilePhoto: row.profilePhoto || null,
-    backgroundPhoto: row.backgroundPhoto || null,
+    profilePhoto: preservePhoto(row.id, 'profilePhoto', row.profilePhoto),
+    backgroundPhoto: preservePhoto(row.id, 'backgroundPhoto', row.backgroundPhoto),
     tags: row.tags ? row.tags.split(';').map(t => t.trim()) : [],
     private: false
   });
@@ -348,7 +382,7 @@ currentPersons.forEach((p) => {
         gender: 'M',
         status: parentStatus,
         maritalStatus: 'married',
-        birthDate: null,
+        birthDate: UNKNOWN_BIRTH_DATE,
         birthPlace: null,
         deathDate: null,
         deathPlace: null,
@@ -390,7 +424,7 @@ currentPersons.forEach((p) => {
         gender: 'F',
         status: parentStatus,
         maritalStatus: 'married',
-        birthDate: null,
+        birthDate: UNKNOWN_BIRTH_DATE,
         birthPlace: null,
         deathDate: null,
         deathPlace: null,
@@ -496,7 +530,7 @@ parsedRows.forEach((row) => {
         gender: sGender || 'X',
         status: 'living',
         maritalStatus: 'married',
-        birthDate: null,
+        birthDate: UNKNOWN_BIRTH_DATE,
         birthPlace: null,
         deathDate: null,
         deathPlace: null,
@@ -713,8 +747,10 @@ family.persons.forEach(p => {
     const normalised = (fullName.toLowerCase().replace(/\s+/g, '') + dobForHash).replace(/[^a-z0-9]/g, '');
     const hash = createHash('sha256').update(normalised).digest('hex');
     
-    // If it is the admin hash itself, skip (already preserved above)
+    // If it is the admin hash itself, skip (already preserved above) — but still
+    // stamp its personId, since the entry pushed above had no person in scope.
     if (hash === adminHash) {
+      adminEntry.personId = p.id;
       return;
     }
     
@@ -755,6 +791,11 @@ family.persons.forEach(p => {
       }
     }
     
+    // Bind the login to the person it belongs to. worker/photo-upload.js compares
+    // this against the personId the browser claims — it is what enforces
+    // "you can only change your own photo".
+    matchedEntry.personId = p.id;
+
     addAuthEntry(matchedEntry);
   }
 });
