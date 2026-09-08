@@ -107,6 +107,26 @@ window.initTreeApp = function () {
   const lightbox  = document.getElementById("lightbox");
 
   /* ============================================================
+     PHOTO FALLBACKS
+
+     Most members have no photo — only a handful of the tree carries one — so the
+     no-photo state is the common case, not the edge case. Both files ship in assets/
+     and scripts/encrypt.js copies that folder into dist/, so the relative paths resolve
+     identically in dev and in the deployed build.
+     ============================================================ */
+  const DEFAULT_PHOTO = "assets/profile-default.png";
+  const DEFAULT_COVER = "assets/background-default.png";
+
+  // A photo URL that 404s is the same situation as no photo at all — an R2 object that
+  // was deleted, or a Drive link that never got rewritten — and without this the browser
+  // draws its own broken-image glyph. Swapping the src on error lands it back on the
+  // placeholder. The handler clears itself first so a missing placeholder cannot loop.
+  function photoFallbackAttr(fallback) {
+    const src = fallback || DEFAULT_PHOTO;
+    return ` onerror="this.onerror=null;this.src='${src}';this.dataset.usedFallback='1'"`;
+  }
+
+  /* ============================================================
      INITIALS HELPER
      ============================================================ */
   function initials(name) {
@@ -114,11 +134,9 @@ window.initTreeApp = function () {
   }
   function thumbHtml(p, cls) {
     const cl = cls || "node-thumb";
-    if (p.photo) return `<div class="${cl}"><img src="${escapeHtml(p.photo)}" alt="" loading="lazy"></div>`;
-    // Choose a soft warm tone for the bubble based on a hash of the id
-    const palette = ["#7AAD7A","#A5D6A7","#9EBE9C","#C9B98E","#E0AB73","#D9886B","#B79774"];
-    const idx = Math.abs(hashCode(p.id)) % palette.length;
-    return `<div class="${cl}" style="background:${palette[idx]}">${initials(p.name)}</div>`;
+    const src = p.photo || DEFAULT_PHOTO;
+    const isDefault = p.photo ? "" : ' data-default-photo="1"';
+    return `<div class="${cl}"${isDefault}><img src="${escapeHtml(src)}" alt="" loading="lazy"${photoFallbackAttr()}></div>`;
   }
   function hashCode(s) {
     let h = 0;
@@ -143,6 +161,12 @@ window.initTreeApp = function () {
         if (nameDiv) {
           nameDiv.innerHTML = escapeHtml(getNodeDisplayName(p, lang));
         }
+        // The relationship line under the name is resolved through i18n too, so it
+        // has to be recomputed here — applyI18n() only walks data-i18n attributes.
+        const relDiv = el.querySelector(".node-rel");
+        if (relDiv) relDiv.textContent = F.labelFor(ME, p.id);
+        const meTag = el.querySelector(".node-tag-me");
+        if (meTag) meTag.textContent = t("relations.self.you", "You");
       }
     });
     if (lightbox.classList.contains("open") && currentPersonId) {
@@ -162,6 +186,11 @@ window.initTreeApp = function () {
     if (calendarEl && calendarEl.style.display !== "none") {
       renderCalendar();
     }
+    // The filter pills are built in JS, so applyI18n() (which only walks data-i18n
+    // attributes) never reaches them. Rebuild, then restore the active pill.
+    renderTags();
+    syncTagActiveState();
+    if (activeFilter) updateStatusFromFilter();
     applyI18n();
   };
 
@@ -185,7 +214,7 @@ window.initTreeApp = function () {
           <div class="node-name">${escapeHtml(getNodeDisplayName(p, window.CURRENT_LANG || "EN"))}</div>
           <div class="node-rel">${label}</div>
         </div>
-        ${p.me ? `<div class="node-tag-me">You</div>` : ""}
+        ${p.me ? `<div class="node-tag-me">${escapeHtml(t("relations.self.you", "You"))}</div>` : ""}
       `;
       el.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -267,6 +296,12 @@ window.initTreeApp = function () {
   /* ============================================================
      RENDER TAGS
      ============================================================ */
+  // The English tag string stays the identity — it keys data-tag, activeFilter and
+  // F.tagMatches — so only the label is translated, never the value.
+  function tagLabel(tag) {
+    return t("tree.tags." + tag, tag);
+  }
+
   function renderTags() {
     tagsRow.innerHTML = "";
     F.TAGS.forEach(tag => {
@@ -274,7 +309,7 @@ window.initTreeApp = function () {
       const el = document.createElement("button");
       el.className = "tag" + (matches.length === 0 ? " disabled" : "");
       el.dataset.tag = tag;
-      el.innerHTML = `${tag} <span class="tag-count">${matches.length}</span>`;
+      el.innerHTML = `${escapeHtml(tagLabel(tag))} <span class="tag-count">${matches.length}</span>`;
       if (matches.length > 0) {
         el.addEventListener("click", () => toggleTag(tag));
       }
@@ -394,7 +429,7 @@ window.initTreeApp = function () {
     if (!activeFilter) return updateStatusFromPath();
     const n = F.tagMatches(ME, activeFilter).length;
     statusPill.classList.remove("is-path");
-    statusBC.innerHTML = `<span>Filtering:</span> <span class="bc-name">${activeFilter}</span> <span style="opacity:.7">· ${n} ${n === 1 ? "match" : "matches"}</span>`;
+    statusBC.innerHTML = `<span>Filtering:</span> <span class="bc-name">${escapeHtml(tagLabel(activeFilter))}</span> <span style="opacity:.7">· ${n} ${n === 1 ? "match" : "matches"}</span>`;
     statusPill.classList.add("visible");
   }
   function updateStatusFromPath() {
@@ -1001,7 +1036,36 @@ window.initTreeApp = function () {
     }
     relCalcList.hidden = false;
     relCalcInput.setAttribute("aria-expanded", "true");
+    fitRelCalcList();
   }
+
+  // The picker sits near the bottom of the Family tab, and .lightbox-sheet is
+  // overflow:hidden — so a list long enough to reach past the sheet was simply cut off,
+  // taking its own scrollbar with it. Nothing was scrollable and the last names in the
+  // tree were unreachable.
+  //
+  // Rather than let it escape the sheet (which would need the list re-parented to the
+  // body and kept in sync with two scrolling ancestors), give it only the room that
+  // actually exists: measure the gap to the viewport edge, open upwards when there is
+  // more room above, and cap max-height to whichever side won.
+  function fitRelCalcList() {
+    if (!relCalcList || relCalcList.hidden || !relCalcInput) return;
+    const GAP = 6;         // matches the CSS offset from the input
+    const MARGIN = 12;     // breathing room against the viewport edge
+    const MAX = 260;       // the design cap; never grow past it
+
+    const rect = relCalcInput.getBoundingClientRect();
+    const below = window.innerHeight - rect.bottom - GAP - MARGIN;
+    const above = rect.top - GAP - MARGIN;
+    const openUp = below < 160 && above > below;
+
+    relCalcList.classList.toggle("up", openUp);
+    relCalcList.style.maxHeight = Math.max(120, Math.min(MAX, openUp ? above : below)) + "px";
+  }
+
+  // Both the panel scrolling under the open list and a resize invalidate the measurement.
+  lightbox.addEventListener("scroll", fitRelCalcList, { passive: true });
+  window.addEventListener("resize", fitRelCalcList);
 
   function highlightRelCalcOption(idx) {
     if (!relCalcList || !relCalcMatches.length) return;
@@ -1055,9 +1119,17 @@ window.initTreeApp = function () {
     } else if (!result.isNounPhrase) {
       // "Related by marriage" is a statement about the pair, not a name for the person,
       // so it gets its own sentence instead of being slotted in after the possessive.
-      answer = `<strong>${otherFirst}</strong> and <strong>${subjectFirst}</strong> are <strong>${escapeHtml(result.label.toLowerCase())}</strong>.`;
+      // Lower-casing only applies to English; Devanagari has no case to fold.
+      const phrase = window.CURRENT_LANG === "MR" ? result.label : result.label.toLowerCase();
+      answer = t("profile.relCalc.answerPair", "{other} and {subject} are {label}.")
+        .replace("{other}",   `<strong>${otherFirst}</strong>`)
+        .replace("{subject}", `<strong>${subjectFirst}</strong>`)
+        .replace("{label}",   `<strong>${escapeHtml(phrase)}</strong>`);
     } else {
-      answer = `<strong>${otherFirst}</strong> is <strong>${subjectFirst}</strong>'s <strong>${escapeHtml(result.label)}</strong>.`;
+      answer = t("profile.relCalc.answer", "{other} is {subject}'s {label}.")
+        .replace("{other}",   `<strong>${otherFirst}</strong>`)
+        .replace("{subject}", `<strong>${subjectFirst}</strong>`)
+        .replace("{label}",   `<strong>${escapeHtml(result.label)}</strong>`);
     }
 
     // Show the working: the hop chain the answer was derived from.
@@ -1170,7 +1242,7 @@ window.initTreeApp = function () {
       escapeHtml(modalDisplayName) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
     const relEl = document.getElementById("lb-rel");
     const rel = F.labelFor(ME, id);
-    relEl.textContent = id === ME ? "This is you" : rel;
+    relEl.textContent = id === ME ? t("relations.self.thisIsYou", "This is you") : rel;
     relEl.classList.toggle("is-me", id === ME);
 
     renderLifeLine(p);
@@ -1180,23 +1252,28 @@ window.initTreeApp = function () {
     // Profile + cover photo
     const photoEl = document.getElementById("lb-profile-photo");
     photoEl.innerHTML = "";
-    if (p.photo) {
-      const img = document.createElement("img"); 
-      img.src = p.photo;
-      img.loading = "lazy";
-      photoEl.appendChild(img);
-    } else {
-      photoEl.textContent = initials(p.name);
-    }
+    const avatarImg = document.createElement("img");
+    avatarImg.src = p.photo || DEFAULT_PHOTO;
+    avatarImg.loading = "lazy";
+    avatarImg.alt = "";
+    avatarImg.onerror = () => { avatarImg.onerror = null; avatarImg.src = DEFAULT_PHOTO; };
+    // Marks the placeholder so it is not offered to the photo viewer and does not
+    // advertise itself as clickable — there is nothing to enlarge.
+    photoEl.toggleAttribute("data-default-photo", !p.photo);
+    photoEl.appendChild(avatarImg);
     const cover = document.getElementById("lb-cover");
-    cover.querySelectorAll(".lb-cover-img").forEach(el => el.remove());
+    const coverMedia = document.getElementById("lb-cover-media");
+    coverMedia.innerHTML = "";
     // If person has a background cover photo, render it in full resolution. Otherwise, blur profile photo.
+    // Only a real cover opens in the viewer — the blurred fallback is the avatar again,
+    // and the avatar is already clickable in its own right.
     if (p.backgroundPhoto) {
       const img = document.createElement("img");
       img.className = "lb-cover-img";
       img.src = p.backgroundPhoto;
       img.loading = "lazy";
-      cover.insertBefore(img, photoEl);
+      img.dataset.viewerSrc = p.backgroundPhoto;
+      coverMedia.appendChild(img);
     } else if (p.photo) {
       const img = document.createElement("img");
       img.className = "lb-cover-img";
@@ -1204,7 +1281,22 @@ window.initTreeApp = function () {
       img.loading = "lazy";
       img.style.filter = "blur(8px) saturate(1.05)";
       img.style.transform = "scale(1.1)";
-      cover.insertBefore(img, photoEl);
+      img.style.cursor = "default";
+      coverMedia.appendChild(img);
+    } else {
+      // Neither photo. The default cover is the same silhouette as the avatar, so it is
+      // blurred hard and dropped to a whisper — otherwise the panel shows one grey face
+      // behind another. What survives is a soft wash that reads as "no photo yet" while
+      // the per-person tonal gradient underneath still carries the colour.
+      const img = document.createElement("img");
+      img.className = "lb-cover-img";
+      img.src = DEFAULT_COVER;
+      img.loading = "lazy";
+      img.style.filter = "blur(18px) saturate(0.6)";
+      img.style.transform = "scale(1.2)";
+      img.style.opacity = "0.35";
+      img.style.cursor = "default";
+      coverMedia.appendChild(img);
     }
     // Tonal palette varies by person to give each profile a slight identity
     const tones = [
@@ -1326,9 +1418,60 @@ window.initTreeApp = function () {
   lightbox.addEventListener("click", (ev) => {
     if (ev.target === lightbox) closeLightbox();
   });
+
+  /* ============================================================
+     PHOTO VIEWER — the profile panel shows both photos cropped (the avatar to a
+     116px circle, the cover to a 220px band). Clicking either opens the source
+     image whole, which is the only way to actually see a photo someone uploaded.
+     ============================================================ */
+  const photoViewer = document.getElementById("photo-viewer");
+  const pvImg       = document.getElementById("pv-img");
+  const pvCaption   = document.getElementById("pv-caption");
+
+  function openPhotoViewer(src, caption) {
+    if (!src) return;
+    pvImg.src = src;
+    pvImg.alt = caption || "";
+    pvCaption.textContent = caption || "";
+    photoViewer.classList.add("open");
+    document.getElementById("pv-close").focus();
+  }
+  function closePhotoViewer() {
+    photoViewer.classList.remove("open");
+    // Drop the source so a large image is not held decoded behind the profile panel,
+    // and so the next open never flashes the previous person's face.
+    pvImg.removeAttribute("src");
+    pvCaption.textContent = "";
+  }
+  document.getElementById("pv-close").addEventListener("click", closePhotoViewer);
+  photoViewer.addEventListener("click", (ev) => {
+    // The figure is the photo itself; only the surrounding backdrop dismisses.
+    if (!ev.target.closest(".pv-figure")) closePhotoViewer();
+  });
+
+  document.getElementById("lb-cover").addEventListener("click", (ev) => {
+    // The edit buttons sit on top of the cover; they own their own clicks.
+    if (ev.target.closest(".lb-photo-edit")) return;
+
+    if (ev.target.closest("#lb-profile-photo")) {
+      // No photo means the avatar is the grey placeholder, and there is nothing to enlarge.
+      if (lbPersonPhoto()) openPhotoViewer(lbPersonPhoto(), lbPersonName());
+      return;
+    }
+    // Anywhere else on the cover. The click cannot be read off ev.target: .lb-cover::after
+    // is a full-bleed gradient painted over the image, so the image is never the target.
+    const coverImg = document.querySelector("#lb-cover-media .lb-cover-img[data-viewer-src]");
+    if (coverImg) openPhotoViewer(coverImg.dataset.viewerSrc, lbPersonName());
+  });
+  function lbPerson() { return currentPersonId ? F.byId[currentPersonId] : null; }
+  function lbPersonPhoto() { const p = lbPerson(); return p && p.photo; }
+  function lbPersonName()  { const p = lbPerson(); return p ? p.name : ""; }
+
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") {
-      if (lightbox.classList.contains("open")) closeLightbox();
+      // Innermost layer first, or Escape would close the panel out from under the photo.
+      if (photoViewer.classList.contains("open")) closePhotoViewer();
+      else if (lightbox.classList.contains("open")) closeLightbox();
       else if (pathTargetId) clearPath();
       else if (activeFilter) clearFilter();
     }
@@ -1535,7 +1678,10 @@ window.initTreeApp = function () {
     // 1b. Death anniversaries (punyatithi). Owner's call: shown as an alert in red,
     //     never exported to .ics and never given a "send wish" action.
     rawData.persons.forEach(p => {
-      if (p.status === "deceased" && p.deathDate) {
+      // The login placeholder reached the Sheet as a typed Death Date on a few records,
+      // so it has to be screened here exactly as it is for birthdays — otherwise those
+      // members get a 6 June remembrance for a day nobody died on.
+      if (p.status === "deceased" && p.deathDate && !isUnknownBirthDate(p.deathDate)) {
         const startYear = parseInt(p.deathDate.split("-")[0]);
         const calc = calculateNextOccur(p.deathDate, startYear);
         if (calc) {
@@ -1740,7 +1886,9 @@ window.initTreeApp = function () {
   // second for any hand-authored or GEDCOM-imported record that carries it.
   function marriageDateOf(r) {
     if (!r) return null;
-    return r.startDate || r.marriageDate || null;
+    const d = r.startDate || r.marriageDate || null;
+    // One screening point for every anniversary the app raises — card and .ics alike.
+    return d && !isUnknownBirthDate(d) ? d : null;
   }
 
   function getOrdinal(n) {
@@ -1822,12 +1970,9 @@ window.initTreeApp = function () {
       // "Family/Cropped/https://…" and broke every calendar photo. PHOTO_BASE_URL was never
       // defined anywhere either, so the fallback always won — and Family/ is gitignored and
       // never deployed, so there was nothing behind it to find.
-      return `<img src="${escapeHtml(p.profilePhoto)}" class="${cl}" alt="" loading="lazy">`;
+      return `<img src="${escapeHtml(p.profilePhoto)}" class="${cl}" alt="" loading="lazy"${photoFallbackAttr()}>`;
     }
-    const initials = (p.firstName[0] || "") + (p.lastName[0] || "");
-    const palette = ["#7AAD7A", "#A5D6A7", "#9EBE9C", "#C9B98E", "#E0AB73", "#D9886B", "#B79774"];
-    const idx = Math.abs(hashCode(p.id)) % palette.length;
-    return `<div class="${cl}" style="background:${palette[idx]}">${initials}</div>`;
+    return `<img src="${DEFAULT_PHOTO}" class="${cl}" alt="" loading="lazy" data-default-photo="1">`;
   }
 
   function downloadSingleICS(occ) {
@@ -1936,7 +2081,9 @@ window.initTreeApp = function () {
     //    date, so it belongs in the feed — what a deceased member must never get is a
     //    "Send Wish" button, and that stays suppressed on the card.
     rawData.persons.forEach(p => {
-      if (p.status === "deceased" && p.deathDate) {
+      // Same screen as the on-screen remembrance card: a placeholder death date writes
+      // no .ics event.
+      if (p.status === "deceased" && p.deathDate && !isUnknownBirthDate(p.deathDate)) {
         const dateStr = p.deathDate.replace(/-/g, "");
         const name = p.name || `${p.firstName} ${p.lastName}`;
         const nameMr = (p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;
@@ -2339,13 +2486,14 @@ window.initTreeApp = function () {
         el.style.background = "";
       });
     } else {
-      const cover = document.getElementById("lb-cover");
-      if (cover) {
-        cover.querySelectorAll(".lb-cover-img").forEach(el => el.remove());
+      const coverMedia = document.getElementById("lb-cover-media");
+      if (coverMedia) {
+        coverMedia.innerHTML = "";
         const img = document.createElement("img");
         img.className = "lb-cover-img";
         img.src = url;
-        cover.insertBefore(img, cover.firstChild);
+        img.dataset.viewerSrc = url;
+        coverMedia.appendChild(img);
       }
     }
   }

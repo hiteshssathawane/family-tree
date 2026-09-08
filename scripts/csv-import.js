@@ -12,6 +12,16 @@ import { resolve } from 'path';
 // to keep this placeholder out of the profile panel, the calendar and the .ics feed.
 const UNKNOWN_BIRTH_DATE = '1674-06-06';
 
+// The placeholder is only ever legitimate in birthDate, where it exists so a member with
+// no DOB still gets a login hash. It has no meaning in any other date column — but it
+// reached the Sheet as a literal typed answer in Death Date and Marriage Date on a few
+// rows, and came straight back through the importer as fact ("d. 1674" under a name).
+// Every date except the birth token is filtered through here.
+const realDate = (raw) => {
+  const d = formatDate(raw);
+  return d && d !== UNKNOWN_BIRTH_DATE ? d : null;
+};
+
 const csvFile  = process.argv[2];
 const dataPath = resolve('data/family.json');
 const authPath = resolve('data/auth.json');
@@ -185,6 +195,63 @@ function findPersonByParents(firstName, fatherName, motherName, preferredGender)
   return candidates[0] || null;
 }
 
+// A first name is not an identity. The tree holds three Kalpanas, two Harshals and two
+// Bijabais, so resolving a child's `fatherName` / `motherName` one name at a time picks
+// whichever same-named person happens to sit first in the array — which is how Takshita's
+// mother became Ratnakar's wife, how Babanrao got married to her too, and how Rahul ended
+// up with a second spouse and a connector line running clear across the canvas.
+//
+// The pair is the key: the mother we want is the one already married to the father named
+// on the same line, and the father is the one married to that mother. That is also what
+// rescues a parent recorded under the wrong surname — Erika's row names her parents
+// "Harshal" and "Onil Sathawane", while the tree holds Harshal and Onil *Lanjewar*, so a
+// surname-keyed lookup minted a second, childless couple instead of linking the real one.
+//
+// Two couples sharing both first names is not something first names can settle, so this
+// declines rather than guesses, and the caller falls back to minting a fresh stub.
+function findCouple(fatherFirst, motherFirst, exclude) {
+  const fa = (fatherFirst || '').trim().toLowerCase();
+  const mo = (motherFirst || '').trim().toLowerCase();
+  if (!fa || !mo) return null;
+
+  const byId = new Map(family.persons.map(p => [p.id, p]));
+  const matches = [];
+  for (const r of family.relationships) {
+    if (r.type !== 'marriage') continue;
+    const a = byId.get(r.person1Id);
+    const b = byId.get(r.person2Id);
+    if (!a || !b) continue;
+    // The data really does contain "Sampathrao, father Sampathrao", so a person may
+    // never be resolved as their own parent.
+    if (exclude && (a.id === exclude.id || b.id === exclude.id)) continue;
+    const an = a.firstName.trim().toLowerCase();
+    const bn = b.firstName.trim().toLowerCase();
+    if (an === fa && bn === mo) matches.push({ father: a, mother: b });
+    else if (bn === fa && an === mo) matches.push({ father: b, mother: a });
+  }
+  return matches.length === 1 ? matches[0] : null;
+}
+
+// Name lookup for the parent passes that refuses to guess. findExistingPerson picks the
+// first of several same-named candidates and logs a warning; for a parent that warning
+// was the tree quietly acquiring a wrong edge, so here an ambiguous name resolves to
+// nothing and a distinct stub gets created instead. A wrong link is far more expensive
+// than a duplicate node: the duplicate is visible and mergeable, the wrong link is not.
+function findUniquePerson(firstName, lastName, preferredGender, exclude) {
+  const fn = (firstName || '').trim().toLowerCase();
+  if (!fn) return null;
+  const ln = lastName ? lastName.trim().toLowerCase() : null;
+  const candidates = family.persons.filter(x =>
+    (!exclude || x.id !== exclude.id) &&
+    x.firstName.trim().toLowerCase() === fn &&
+    (ln === null || x.lastName.trim().toLowerCase() === ln)
+  );
+  if (candidates.length === 1) return candidates[0];
+  if (!candidates.length) return null;
+  const gendered = preferredGender ? candidates.filter(x => x.gender === preferredGender) : [];
+  return gendered.length === 1 ? gendered[0] : null;
+}
+
 // Identity is the maiden surname; the husband's surname is a display name derived
 // downstream (tree-helpers.js renders "Swati Sathawane (Biradar)", and csv-import's own
 // login pass hashes the married name). So when the two rows disagree about a wife's
@@ -291,7 +358,7 @@ lines.slice(1).forEach((line, i) => {
     // Defaults match pull-sheet.js: Male / Active / Single. A death date still overrides
     // the status default, so an import can never mark a person with a death date alive.
     gender: row.gender || 'M',
-    status: row.status || (formatDate(row.deathDate) ? 'deceased' : 'living'),
+    status: row.status || (realDate(row.deathDate) ? 'deceased' : 'living'),
     maritalStatus: row.maritalStatus || 'single',
     // Identity is SHA-256(name + DDMMYYYY), so a member with no DOB gets no hash and
     // cannot log in at all. The placeholder gives them one. It is a login token, not a
@@ -303,7 +370,7 @@ lines.slice(1).forEach((line, i) => {
     // `row.status === 'living' ? null : …`, so one blank Status radio erased the date —
     // and erased the very contradiction validate.js exists to catch. Keep both and let
     // validation report the conflict instead of silently resolving it.
-    deathDate: formatDate(row.deathDate),
+    deathDate: realDate(row.deathDate),
     deathPlace: row.deathPlace || null,
     occupation: row.occupation || null,
     education: row.education || null,
@@ -325,152 +392,6 @@ lines.slice(1).forEach((line, i) => {
   parsedRows.push(row);
   added++;
   console.log(`  ✅ Added: ${row.firstName} ${row.lastName} (${row.id})`);
-});
-
-// Auto-create parents for any person who lists fatherName/motherName but lacks those nodes in the database
-// Settle every wife's surname BEFORE parents are auto-created. The parent pass names a
-// father from the child's own surname, so running it while a woman is still stored under
-// her married name gives her parents the husband's surname — Swati's father came out as
-// "Bhimrao Sathawane" instead of "Bhimrao Biradar". Only a husband's row carries the
-// maiden name (his Spouse Last Name), which is why this cannot be done from her row alone.
-console.log('\n👰 Reconciling maiden surnames...');
-parsedRows.forEach((row) => {
-  if (!row.spouseFirstName) return;
-  const sGender = row.gender === 'M' ? 'F' : row.gender === 'F' ? 'M' : null;
-  if (sGender !== 'F') return;
-
-  const sFirst = row.spouseFirstName.trim();
-  const sLast = (row.spouseLastName || '').trim() || row.lastName.trim();
-  const sFather = (row.spouseFatherName || '').trim();
-  const sMother = (row.spouseMotherName || '').trim();
-  const exactId = `${sFirst}_${sMother}_${sFather}_${sLast}`.toUpperCase().replace(/\s+/g, '');
-
-  const wife = family.persons.find(p => p.id === exactId)
-    || findExistingPerson(sFirst, sLast, 'F')
-    || findPersonByParents(sFirst, sFather, sMother, 'F');
-  if (wife) reconcileMaidenName(wife, row.lastName, sLast);
-});
-
-console.log('\n🚸 Auto-detecting and creating missing parents...');
-const currentPersons = [...family.persons];
-currentPersons.forEach((p) => {
-  let childBirthYear = null;
-  if (p.birthDate) {
-    const match = p.birthDate.match(/^(\d{4})/);
-    if (match) childBirthYear = parseInt(match[1]);
-  } else if (p.birth) {
-    childBirthYear = p.birth;
-  }
-  const parentStatus = (childBirthYear && childBirthYear < 1975) || p.status === 'deceased' ? 'deceased' : 'living';
-
-  let father = null;
-  if (p.fatherName) {
-    const fFirst = p.fatherName.trim();
-    const fLast = p.lastName.trim();
-    const fatherId = `${fFirst}___${fLast}`.toUpperCase().replace(/\s+/g, '');
-    
-    father = family.persons.find(x => x.id === fatherId) || findExistingPerson(fFirst, fLast, 'M');
-
-    if (!father) {
-      father = {
-        id: fatherId,
-        firstName: fFirst,
-        fatherName: '',
-        motherName: '',
-        lastName: fLast,
-        maidenName: null,
-        gender: 'M',
-        status: parentStatus,
-        maritalStatus: 'married',
-        birthDate: UNKNOWN_BIRTH_DATE,
-        birthPlace: null,
-        deathDate: null,
-        deathPlace: null,
-        occupation: null,
-        education: null,
-        location: null,
-        commonName: null,
-        commonNameMr: null,
-        firstNameMr: null,
-        lastNameMr: null,
-        biography: `Father of ${p.firstName} ${p.lastName}.`,
-        profilePhoto: null,
-        tags: [],
-        private: false
-      };
-      family.persons.push(father);
-      addedIds.add(fatherId);
-      added++;
-      console.log(`  ➕ Auto-created father node: ${fFirst} ${fLast} (${fatherId})`);
-    }
-  }
-
-  let mother = null;
-  if (p.motherName) {
-    const mFirst = p.motherName.trim();
-    const mLast = p.lastName.trim();
-    const motherId = `${mFirst}___${mLast}`.toUpperCase().replace(/\s+/g, '');
-    
-    mother = family.persons.find(x => x.id === motherId) || findExistingPerson(mFirst, null, 'F');
-
-    if (!mother) {
-      mother = {
-        id: motherId,
-        firstName: mFirst,
-        fatherName: '',
-        motherName: '',
-        lastName: mLast,
-        maidenName: null,
-        gender: 'F',
-        status: parentStatus,
-        maritalStatus: 'married',
-        birthDate: UNKNOWN_BIRTH_DATE,
-        birthPlace: null,
-        deathDate: null,
-        deathPlace: null,
-        occupation: null,
-        education: null,
-        location: null,
-        commonName: null,
-        commonNameMr: null,
-        firstNameMr: null,
-        lastNameMr: null,
-        biography: `Mother of ${p.firstName} ${p.lastName}.`,
-        profilePhoto: null,
-        tags: [],
-        private: false
-      };
-      family.persons.push(mother);
-      addedIds.add(motherId);
-      added++;
-      console.log(`  ➕ Auto-created mother node: ${mFirst} ${mLast} (${motherId})`);
-    }
-  }
-
-  if (father && mother) {
-    const exists = family.relationships.find(r => 
-      r.type === 'marriage' && 
-      ((r.person1Id === father.id && r.person2Id === mother.id) || 
-       (r.person1Id === mother.id && r.person2Id === father.id))
-    );
-    if (!exists) {
-      const p1 = father.id < mother.id ? father.id : mother.id;
-      const p2 = father.id < mother.id ? mother.id : father.id;
-      const relId = `R_M_${p1}_${p2}`;
-      family.relationships.push({
-        id: relId,
-        type: 'marriage',
-        person1Id: p1,
-        person2Id: p2,
-        startDate: null,
-        endDate: null,
-        endReason: null,
-        place: null,
-        notes: `Auto-created parental marriage link.`
-      });
-      console.log(`  💍 Auto-created marriage: ${father.firstName} & ${mother.firstName}`);
-    }
-  }
 });
 
 console.log('\n🔗 Processing marriages...');
@@ -567,7 +488,7 @@ parsedRows.forEach((row) => {
         type: 'marriage',
         person1Id: p1,
         person2Id: p2,
-        startDate: formatDate(row.marriageDate) || null,
+        startDate: realDate(row.marriageDate),
         endDate: null,
         endReason: null,
         place: null,
@@ -580,7 +501,7 @@ parsedRows.forEach((row) => {
       // date, so that link is minted with startDate: null. When the couple's own row
       // arrives here it found `exists` and returned, dropping the date on the floor:
       // every anniversary in the tree was lost this way. Backfill instead of skipping.
-      const startDate = formatDate(row.marriageDate) || null;
+      const startDate = realDate(row.marriageDate);
       if (startDate && !exists.startDate) {
         exists.startDate = startDate;
         if (exists.notes === 'Auto-created parental marriage link.') exists.notes = null;
@@ -590,9 +511,174 @@ parsedRows.forEach((row) => {
   }
 });
 
+// Auto-create parents for any person who lists fatherName/motherName but lacks those nodes in the database
+// Settle every wife's surname BEFORE parents are auto-created. The parent pass names a
+// father from the child's own surname, so running it while a woman is still stored under
+// her married name gives her parents the husband's surname — Swati's father came out as
+// "Bhimrao Sathawane" instead of "Bhimrao Biradar". Only a husband's row carries the
+// maiden name (his Spouse Last Name), which is why this cannot be done from her row alone.
+console.log('\n👰 Reconciling maiden surnames...');
+parsedRows.forEach((row) => {
+  if (!row.spouseFirstName) return;
+  const sGender = row.gender === 'M' ? 'F' : row.gender === 'F' ? 'M' : null;
+  if (sGender !== 'F') return;
+
+  const sFirst = row.spouseFirstName.trim();
+  const sLast = (row.spouseLastName || '').trim() || row.lastName.trim();
+  const sFather = (row.spouseFatherName || '').trim();
+  const sMother = (row.spouseMotherName || '').trim();
+  const exactId = `${sFirst}_${sMother}_${sFather}_${sLast}`.toUpperCase().replace(/\s+/g, '');
+
+  const wife = family.persons.find(p => p.id === exactId)
+    || findExistingPerson(sFirst, sLast, 'F')
+    || findPersonByParents(sFirst, sFather, sMother, 'F');
+  if (wife) reconcileMaidenName(wife, row.lastName, sLast);
+});
+
+console.log('\n🚸 Auto-detecting and creating missing parents...');
+const currentPersons = [...family.persons];
+currentPersons.forEach((p) => {
+  let childBirthYear = null;
+  if (p.birthDate) {
+    const match = p.birthDate.match(/^(\d{4})/);
+    if (match) childBirthYear = parseInt(match[1]);
+  } else if (p.birth) {
+    childBirthYear = p.birth;
+  }
+  const parentStatus = (childBirthYear && childBirthYear < 1975) || p.status === 'deceased' ? 'deceased' : 'living';
+
+  // Marriages are materialised before this pass runs, so the couple named on this row can
+  // be resolved as a unit. Take that answer ahead of any single-name lookup: it is the only
+  // evidence in the row that separates one Kalpana from another, and the only thing that
+  // links a parent whose surname here is the married one rather than the maiden one.
+  const namedCouple = findCouple(p.fatherName, p.motherName, p);
+
+  let father = null;
+  if (p.fatherName) {
+    const fFirst = p.fatherName.trim();
+    const fLast = p.lastName.trim();
+    const fatherId = `${fFirst}___${fLast}`.toUpperCase().replace(/\s+/g, '');
+
+    father = (namedCouple && namedCouple.father)
+      || family.persons.find(x => x.id === fatherId)
+      || findUniquePerson(fFirst, fLast, 'M', p);
+
+    if (!father) {
+      father = {
+        id: fatherId,
+        firstName: fFirst,
+        fatherName: '',
+        motherName: '',
+        lastName: fLast,
+        maidenName: null,
+        gender: 'M',
+        status: parentStatus,
+        maritalStatus: 'married',
+        birthDate: UNKNOWN_BIRTH_DATE,
+        birthPlace: null,
+        deathDate: null,
+        deathPlace: null,
+        occupation: null,
+        education: null,
+        location: null,
+        commonName: null,
+        commonNameMr: null,
+        firstNameMr: null,
+        lastNameMr: null,
+        biography: `Father of ${p.firstName} ${p.lastName}.`,
+        profilePhoto: null,
+        tags: [],
+        private: false
+      };
+      family.persons.push(father);
+      addedIds.add(fatherId);
+      added++;
+      console.log(`  ➕ Auto-created father node: ${fFirst} ${fLast} (${fatherId})`);
+    }
+  }
+
+  let mother = null;
+  if (p.motherName) {
+    const mFirst = p.motherName.trim();
+    const mLast = p.lastName.trim();
+    const motherId = `${mFirst}___${mLast}`.toUpperCase().replace(/\s+/g, '');
+
+    // A mother is looked up without a surname (her own row keeps her maiden name), which
+    // makes her first name the whole key — and the loosest lookup in the importer. The
+    // couple answer comes first for exactly that reason; failing that, an ambiguous first
+    // name mints a distinct stub rather than attaching this child to a stranger.
+    mother = (namedCouple && namedCouple.mother)
+      || family.persons.find(x => x.id === motherId)
+      || findUniquePerson(mFirst, null, 'F', p);
+
+    if (!mother) {
+      mother = {
+        id: motherId,
+        firstName: mFirst,
+        fatherName: '',
+        motherName: '',
+        lastName: mLast,
+        maidenName: null,
+        gender: 'F',
+        status: parentStatus,
+        maritalStatus: 'married',
+        birthDate: UNKNOWN_BIRTH_DATE,
+        birthPlace: null,
+        deathDate: null,
+        deathPlace: null,
+        occupation: null,
+        education: null,
+        location: null,
+        commonName: null,
+        commonNameMr: null,
+        firstNameMr: null,
+        lastNameMr: null,
+        biography: `Mother of ${p.firstName} ${p.lastName}.`,
+        profilePhoto: null,
+        tags: [],
+        private: false
+      };
+      family.persons.push(mother);
+      addedIds.add(motherId);
+      added++;
+      console.log(`  ➕ Auto-created mother node: ${mFirst} ${mLast} (${motherId})`);
+    }
+  }
+
+  if (father && mother) {
+    const exists = family.relationships.find(r => 
+      r.type === 'marriage' && 
+      ((r.person1Id === father.id && r.person2Id === mother.id) || 
+       (r.person1Id === mother.id && r.person2Id === father.id))
+    );
+    if (!exists) {
+      const p1 = father.id < mother.id ? father.id : mother.id;
+      const p2 = father.id < mother.id ? mother.id : father.id;
+      const relId = `R_M_${p1}_${p2}`;
+      family.relationships.push({
+        id: relId,
+        type: 'marriage',
+        person1Id: p1,
+        person2Id: p2,
+        startDate: null,
+        endDate: null,
+        endReason: null,
+        place: null,
+        notes: `Auto-created parental marriage link.`
+      });
+      console.log(`  💍 Auto-created marriage: ${father.firstName} & ${mother.firstName}`);
+    }
+  }
+});
+
 // Auto-link parent-child relationships for all persons
 console.log('\n🚸 Processing parent-child relationships...');
 family.persons.forEach((p) => {
+  // Same rule as the creation pass: the couple named on the row identifies both parents
+  // when neither first name is unique on its own, and it is the only lookup that survives
+  // a parent being named here under a surname the tree does not store them under.
+  const namedCouple = findCouple(p.fatherName, p.motherName, p);
+
   let father = null;
   if (p.fatherName) {
     // Gender disambiguates here, it must never block. T-34 removed exactly this condition
@@ -608,7 +694,9 @@ family.persons.forEach((p) => {
       f.lastName.toLowerCase() === p.lastName.toLowerCase()
     );
     const males = fCandidates.filter(f => f.gender === 'M');
-    father = (males.length ? males : fCandidates)[0] || null;
+    father = (namedCouple && namedCouple.father)
+      || (males.length ? males : fCandidates)[0]
+      || null;
     if (father) {
       const exists = family.relationships.some(r => 
         r.type === 'parent-child' && 
@@ -639,14 +727,16 @@ family.persons.forEach((p) => {
     );
     const females = allCandidates.filter(m => m.gender === 'F');
     const candidates = females.length ? females : allCandidates;
-    if (candidates.length === 1) {
+    if (namedCouple && namedCouple.mother) {
+      mother = namedCouple.mother;
+    } else if (candidates.length === 1) {
       mother = candidates[0];
     } else if (candidates.length > 1) {
       if (father) {
-        mother = candidates.find(m => 
-          family.relationships.some(r => 
-            r.type === 'marriage' && 
-            ((r.person1Id === father.id && r.person2Id === m.id) || 
+        mother = candidates.find(m =>
+          family.relationships.some(r =>
+            r.type === 'marriage' &&
+            ((r.person1Id === father.id && r.person2Id === m.id) ||
              (r.person2Id === father.id && r.person1Id === m.id))
           )
         );
@@ -723,8 +813,17 @@ function addAuthEntry(entry) {
   newAuthEntries.push(entry);
 }
 
+// A death date is as final as the status field, and the two can disagree: csv-import
+// deliberately keeps a death date even when Status came back blank, so that the
+// contradiction is visible to validate.js rather than silently resolved. Reading only
+// `status` here would hand a login to anyone whose Status radio went unanswered but whose
+// Death Date did not. Both are checked, and either one is disqualifying.
+function isDeceased(p) {
+  return p.status === 'deceased' || !!p.deathDate;
+}
+
 family.persons.forEach(p => {
-  if (p.status !== 'deceased' && p.birthDate) {
+  if (!isDeceased(p) && p.birthDate) {
     let loginLastName = p.lastName;
     
     // If female and married, look up the husband's last name

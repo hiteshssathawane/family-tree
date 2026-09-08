@@ -1128,20 +1128,17 @@
     }
 
     /* ---------- Top Tabs ---------- */
+    /* Lives inside .top-chrome, on its own line above the wordmark row.
+       It used to be a second position:fixed bar at top:0 — the same coordinates as
+       .top-chrome — with z-index 1000 against the chrome's 30. Visually the two rows
+       printed over each other, and every pointer event aimed at the header row landed on
+       this bar instead: the language toggle, the member chip and Logout could be seen but
+       never clicked. One bar, one row each, and the problem cannot recur. */
     .top-tabs {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
       display: flex;
       justify-content: center;
       gap: 20px;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--line);
-      z-index: 1000;
+      padding: 2px 0 12px;
       opacity: 0;
       pointer-events: none;
       transform: translateY(-20px);
@@ -1281,6 +1278,16 @@
     overscroll-behavior: none;
   }
 
+  /* The sky gradient is declared on `html, body` and animated by skyCycle, but once the
+     app is up every child of body is position:fixed, so both boxes collapse to 0px high.
+     A gradient with a zero-height box paints nothing — which is why the logged-in page sat
+     white while the sun kept arcing across it. Giving the root a real height gives the
+     gradient a box to fill. Scoped to the logged-in state so the login screen, whose
+     #login-container already gives body its height, is left exactly as it was. */
+  html:has(body.logged-in) {
+    height: 100%;
+  }
+
 
   @keyframes skyCycle {
     0%   { background: linear-gradient(to bottom, #ffcfa8 0%, #ffe8d0 40%, #fffaf0 100%); }   /* sunrise */
@@ -1371,6 +1378,34 @@
     100% { opacity: 0.85; filter: saturate(1.3); }
   }
 
+  /* Clouds — the login canvas's drift, retimed for a viewport-width crossing. They dim
+     rather than vanish after dusk, so the night sky is not simply empty. */
+  .app-cloud {
+    position: absolute;
+    left: 0;
+    width: 210px;
+    height: auto;
+    opacity: 0.8;
+    will-change: transform;
+    animation: appCloudFade 36s linear infinite;
+  }
+  .app-cloud-1 { top: 13vh; animation: appDrift1 96s linear infinite, appCloudFade 36s linear infinite; }
+  .app-cloud-2 { top: 27vh; width: 155px; animation: appDrift2 128s linear infinite, appCloudFade 36s linear infinite; }
+  .app-cloud-3 { top: 7vh;  width: 130px; animation: appDrift1 152s linear infinite, appCloudFade 36s linear infinite; animation-delay: -54s, 0s; }
+  @keyframes appDrift1 {
+    0%   { transform: translateX(-26vw); }
+    100% { transform: translateX(114vw); }
+  }
+  @keyframes appDrift2 {
+    0%   { transform: translateX(112vw); }
+    100% { transform: translateX(-28vw); }
+  }
+  @keyframes appCloudFade {
+    0%, 56%   { opacity: 0.8; }
+    70%, 92%  { opacity: 0.28; }
+    100%      { opacity: 0.8; }
+  }
+
   /* Moon appears only at night */
   .moon {
     position: absolute;
@@ -1443,16 +1478,17 @@
     position: absolute;
     left: 50%;
     /* Origin shifted down so content sits well BELOW the top chrome.
-       Top chrome is ~150px tall on desktop, ~130px on mobile; we add a
-       generous buffer so panning up from "Me" doesn't bury ancestors. */
-    top: calc(50% + 130px);
+       Top chrome is ~220px tall on desktop and ~315px on mobile — it grew when the
+       Tree/Calendar switch moved inside it from its own overlapping fixed bar — and we
+       add a buffer on top of that so panning up from "Me" doesn't bury ancestors. */
+    top: calc(50% + 175px);
     width: 0;
     height: 0;
     transform-origin: 0 0;
     will-change: transform;
   }
   @media (max-width: 768px) {
-    .world { top: calc(50% + 90px); }
+    .world { top: calc(50% + 135px); }
   }
   .world.animating { transition: transform 600ms cubic-bezier(.65,.05,.36,1); }
 
@@ -1702,7 +1738,11 @@
     top: 0; left: 0; right: 0;
     z-index: 30;
     padding: 14px 24px 12px;
-    background: #ffffff;
+    /* Frosted rather than solid, so the sky behind it keeps cycling through the header
+       instead of being cut off by a white band across the top of the canvas. */
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(14px) saturate(1.25);
+    backdrop-filter: blur(14px) saturate(1.25);
     border-bottom: 1px solid rgba(92,51,23,0.10);
     box-shadow: 0 2px 14px -4px rgba(60, 35, 15, 0.10);
   }
@@ -1913,7 +1953,9 @@
     font-weight: 600; font-size: 14px;
     border: 1.5px solid #fff;
     box-shadow: 0 0 0 1px rgba(184,90,42,0.4);
+    overflow: hidden;
   }
+  .me-chip .mc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .me-chip .mc-name {
     font-family: "Inter", sans-serif;
     font-size: 12px;
@@ -2083,6 +2125,75 @@
   /* ============================================================
      LIGHTBOX OVERLAY
      ============================================================ */
+  /* ============================================================
+     PHOTO VIEWER — full-size profile / cover photo over the profile panel
+     ============================================================ */
+  .photo-viewer {
+    position: fixed;
+    inset: 0;
+    /* Above .lightbox (1100), which is what it opens on top of. */
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgba(14, 9, 4, 0.86);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: zoom-out;
+  }
+  .photo-viewer.open { display: flex; }
+  .pv-figure {
+    margin: 0;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    cursor: default;
+    animation: pvIn .28s cubic-bezier(.5,.1,.3,1.15);
+  }
+  @keyframes pvIn {
+    from { opacity: 0; transform: scale(.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .pv-img {
+    max-width: 100%;
+    /* Leaves room for the caption under it without the image ever forcing a scroll. */
+    max-height: calc(100vh - 128px);
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 30px 90px -20px rgba(0,0,0,0.8);
+    background: rgba(255,255,255,0.04);
+  }
+  .pv-caption {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    color: #f4ece0;
+    text-align: center;
+    opacity: 0.9;
+  }
+  .pv-close {
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(253,250,243,0.35);
+    background: rgba(20,12,5,0.6);
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-close:hover { background: rgba(20,12,5,0.85); }
+  .pv-close:focus-visible { outline: 2px solid var(--sunset-glow); outline-offset: 2px; }
+  @media (max-width: 768px) {
+    .photo-viewer { padding: 16px; }
+    .pv-img { max-height: calc(100vh - 104px); }
+  }
+
   .lightbox {
     position: fixed;
     inset: 0;
@@ -2137,7 +2248,19 @@
     position: relative;
     height: 220px;
     background: linear-gradient(135deg, #ffd9a8 0%, #f6a96b 40%, #b85a2a 100%);
+    /* Deliberately NOT overflow:hidden. The avatar is a child of this box and overhangs
+       it by 56px, so clipping here sliced the bottom off the circle. Nothing in here
+       needs the clip: .lb-cover-img is inset:0 with object-fit:cover, which crops inside
+       its own box, and ::after is inset:0 too. */
+    overflow: visible;
+  }
+  /* Holds the clip the cover itself gave up, so the blurred fallback (which is scaled
+     up by 1.1 to hide its soft edges) still stops at the bottom of the cover. */
+  .lb-cover-media {
+    position: absolute;
+    inset: 0;
     overflow: hidden;
+    z-index: 0;
   }
   .lb-cover-img {
     position: absolute;
@@ -2146,6 +2269,11 @@
     object-fit: cover;
     opacity: 0.85;
   }
+  /* Both photos open full-size on click. The cursor goes on .lb-cover, not the image:
+     ::after paints a gradient over the whole cover, so the image never gets the pointer.
+     The grey placeholder is excluded — there is nothing behind it to enlarge. */
+  .lb-cover:has(.lb-cover-img[data-viewer-src]),
+  .lb-profile-photo:has(img):not([data-default-photo]) { cursor: zoom-in; }
   .lb-cover::after {
     content: "";
     position: absolute;
@@ -2674,13 +2802,27 @@
     margin: 0;
     padding: 0;
     list-style: none;
+    /* A starting cap only — tree-app.js's fitRelCalcList() overwrites this with the room
+       that actually exists between the input and the edge of the viewport, because
+       .lightbox-sheet is overflow:hidden and would otherwise crop the list, scrollbar
+       and all. */
     max-height: 260px;
     overflow-y: auto;
+    /* Keeps a wheel gesture that reaches the end of the list from scrolling the profile
+       panel out from under it. */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     background: #ffffff;
     border: 1px solid var(--line);
     border-radius: 12px;
     box-shadow: 0 12px 36px -8px rgba(60,35,15,0.20), 0 4px 12px rgba(60,35,15,0.08);
     z-index: 40;
+  }
+  /* Flipped above the input when the room below has run out. */
+  .lb-relcalc-list.up {
+    top: auto;
+    bottom: calc(100% + 6px);
+    box-shadow: 0 -12px 36px -8px rgba(60,35,15,0.20), 0 -4px 12px rgba(60,35,15,0.08);
   }
   .lb-relcalc-opt {
     display: flex;
@@ -3948,12 +4090,6 @@
   </div>
 
   <div id="app-container" style="display: none;">
-    <!-- Top Tabs (Desktop tab navigation) -->
-    <nav class="top-tabs" id="topTabs">
-      <button class="active" id="tab-tree" data-tab="tree" data-i18n="nav.tree">Family Tree</button>
-      <button id="tab-calendar" data-tab="calendar" data-i18n="nav.calendar">Calendar</button>
-    </nav>
-
 
   <!-- ============================================================
        SKY LAYER — sun, moon, stars (day/night cycle, matches v5)
@@ -3962,12 +4098,33 @@
     <div class="stars" id="stars"></div>
     <div class="moon"></div>
     <div class="sun"></div>
+    <!-- Clouds lifted from the login canvas: the same overlapping soft ellipses in the
+         same #f3f7f1, on a slower drift because they cross a whole viewport here rather
+         than an 800-unit SVG. -->
+    <svg class="app-cloud app-cloud-1" viewBox="0 0 86 32" fill="#f3f7f1">
+      <ellipse cx="40" cy="14" rx="26" ry="11" /><ellipse cx="62" cy="10" rx="22" ry="10" />
+      <ellipse cx="22" cy="16" rx="18" ry="9" /><ellipse cx="50" cy="22" rx="30" ry="8" />
+    </svg>
+    <svg class="app-cloud app-cloud-2" viewBox="0 0 80 26" fill="#f3f7f1">
+      <ellipse cx="40" cy="14" rx="22" ry="9" /><ellipse cx="58" cy="10" rx="18" ry="8" />
+      <ellipse cx="24" cy="16" rx="14" ry="7" />
+    </svg>
+    <svg class="app-cloud app-cloud-3" viewBox="0 0 76 24" fill="#f3f7f1">
+      <ellipse cx="40" cy="14" rx="20" ry="8" /><ellipse cx="58" cy="11" rx="14" ry="7" />
+      <ellipse cx="24" cy="15" rx="12" ry="6" />
+    </svg>
   </div>
 
   <!-- ============================================================
        TOP CHROME: wordmark + search + filter tags
        ============================================================ -->
   <div class="top-chrome">
+    <!-- Tree / Calendar switch. Inside the chrome, on its own line — see .top-tabs. -->
+    <nav class="top-tabs" id="topTabs">
+      <button class="active" id="tab-tree" data-tab="tree" data-i18n="nav.tree">Family Tree</button>
+      <button id="tab-calendar" data-tab="calendar" data-i18n="nav.calendar">Calendar</button>
+    </nav>
+
     <div class="chrome-row">
       <a class="wordmark" href="#" onclick="location.reload(); return false;" title="Sign-in screen" data-i18n-title="nav.signInScreen">
         <span class="eyebrow" data-i18n="app.wordmark">The Family Tree</span>
@@ -4085,6 +4242,9 @@
     <div class="lightbox-sheet" id="lightbox-sheet">
       <button class="lb-close" id="lb-close" aria-label="Close">✕</button>
       <div class="lb-cover" id="lb-cover">
+        <!-- The cover art lives in its own clipping box; the avatar below deliberately
+             does not, so its circle is not sliced where it overhangs the cover. -->
+        <div class="lb-cover-media" id="lb-cover-media"></div>
         <!-- Both buttons are revealed by tree-app.js only when the open profile is
              the logged-in member's own (id === F.ME) and a worker URL is configured. -->
         <button class="lb-photo-edit lb-edit-cover" id="lb-edit-cover" type="button" hidden>
@@ -4244,6 +4404,19 @@
         <button class="pm-btn pm-btn-primary" id="pm-save" type="button" disabled>Save photo</button>
       </div>
     </div>
+  </div>
+
+  <!-- ============================================================
+       PHOTO VIEWER — opened by clicking a profile or cover photo
+       ============================================================ -->
+  <div class="photo-viewer" id="photo-viewer" role="dialog" aria-modal="true"
+       aria-label="Photo" data-i18n-aria="profile.photoViewer">
+    <button class="pv-close" id="pv-close" type="button" aria-label="Close photo"
+            data-i18n-aria="profile.closePhoto">✕</button>
+    <figure class="pv-figure" id="pv-figure">
+      <img class="pv-img" id="pv-img" alt="">
+      <figcaption class="pv-caption" id="pv-caption"></figcaption>
+    </figure>
   </div>
 
   <!-- ============================================================
@@ -4530,6 +4703,22 @@
       completeLogin();
     }
 
+    // Unwinds completeLogin()'s DOM changes. The identity check that calls this can only
+    // run once the family data has loaded, which is after the app container is already on
+    // screen — so refusing has to put the login screen back rather than simply not proceed.
+    function abortLogin(message) {
+      matchedUserEntry = null;
+      window.CURRENT_IDENTITY = null;
+      document.body.classList.remove('logged-in');
+      const topTabs = document.getElementById('topTabs');
+      if (topTabs) topTabs.classList.remove('visible');
+      document.getElementById('app-container').style.display = 'none';
+      document.getElementById('login-container').style.display = '';
+      const dobField = document.getElementById('dob');
+      if (dobField) dobField.value = '';
+      alert(message);
+    }
+
     function completeLogin() {
       if (!matchedUserEntry) {
         alert('Session error. Please restart login.');
@@ -4592,6 +4781,21 @@
           }
         }
 
+        // A death closes the login. scripts/csv-import.js already declines to mint an auth
+        // entry for a deceased member, but that is a build-time guarantee: it holds only
+        // for as long as auth.json is regenerated after the Sheet records the death, and a
+        // hand-added or stale entry walks straight past it. This is the runtime half. It
+        // reads the same person record the tree renders from, so the answer here can never
+        // disagree with what the tree shows.
+        const meRecord =
+          (rawData && rawData.persons && rawData.persons.find(p => p.id === initialMe)) ||
+          (window.FAMILY && window.FAMILY.people || []).find(p => p.id === initialMe);
+        if (meRecord && (meRecord.status === 'deceased' || meRecord.deathDate)) {
+          abortLogin(t('login.deceasedRefused',
+            'This member is recorded as no longer with us, so this login is closed.'));
+          return;
+        }
+
         // The photo uploader needs the identity hash to prove to the Worker which
         // person it is acting for. matchedUserEntry.hash IS the hash the user just
         // proved they know, so there is nothing extra to compute or store.
@@ -4615,8 +4819,14 @@
         const mePerson = window.FAMILY.people.find(p => p.id === window.FAMILY.ME);
         if (mePerson) {
           meChipName.textContent = mePerson.firstName;
-          meChipThumb.textContent = mePerson.firstName[0];
           meChip.title = `${mePerson.name} (you)`;
+          // Your own face when there is one, the shared placeholder when there is not —
+          // the same rule the tree nodes and the profile panel follow.
+          const meSrc = mePerson.photo || 'assets/profile-default.png';
+          meChipThumb.textContent = '';
+          meChipThumb.innerHTML =
+            '<img src="' + meSrc + '" alt="" ' +
+            'onerror="this.onerror=null;this.src=\'assets/profile-default.png\'">';
         }
 
         // Call the tree visual app initializer

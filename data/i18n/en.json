@@ -28,7 +28,8 @@
       "hint": "Code changes every 30 seconds · No internet needed",
       "adminOnly": "Only required for Admin and Contributors",
       "button": "Verify and enter"
-    }
+    },
+    "deceasedRefused": "This member is recorded as no longer with us, so this login is closed."
   },
   "nav": {
     "tree": "Tree",
@@ -58,6 +59,18 @@
       "print": "Print tree",
       "centerMe": "Center on me",
       "clearSearch": "Clear search"
+    },
+    "tags": {
+      "Parents": "Parents",
+      "Siblings": "Siblings",
+      "Spouse": "Spouse",
+      "Children": "Children",
+      "Grandparents": "Grandparents",
+      "Uncles & Aunts": "Uncles & Aunts",
+      "Cousins": "Cousins",
+      "Nephews & Nieces": "Nephews & Nieces",
+      "In-Laws": "In-Laws",
+      "Grandchildren": "Grandchildren"
     }
   },
   "profile": {
@@ -96,7 +109,9 @@
       "choose": "Choose a family member…",
       "noMatch": "No member matches that name.",
       "samePerson": "That's {name} — the same person.",
-      "noLink": "{other} has no recorded link to {subject} in the tree yet."
+      "noLink": "{other} has no recorded link to {subject} in the tree yet.",
+      "answer": "{other} is {subject}'s {label}.",
+      "answerPair": "{other} and {subject} are {label}."
     },
     "terms": {
       "husband": "Husband",
@@ -112,7 +127,9 @@
       "child": "Child",
       "children": "Children",
       "parents": "Parents"
-    }
+    },
+    "photoViewer": "Photo",
+    "closePhoto": "Close photo"
   },
   "calendar": {
     "title": "Family calendar",
@@ -216,5 +233,124 @@
     "dedicationLine1": "Dedicated to my beloved mother,",
     "dedicationName": "Baby",
     "dedicationLine2": "Forever in our hearts"
+  },
+  "relations": {
+    "self": {
+      "you": "You",
+      "thisIsYou": "This is you",
+      "samePerson": "The same person"
+    },
+    "spouse": {
+      "husband": "Husband",
+      "wife": "Wife"
+    },
+    "ancestors": {
+      "father": "Father",
+      "mother": "Mother",
+      "grandfatherPaternal": "Grandfather (Ajoba)",
+      "grandfatherMaternal": "Grandfather (Ajoba)",
+      "grandmotherPaternal": "Grandmother (Aaji)",
+      "grandmotherMaternal": "Grandmother (Aaji)",
+      "greatGrandfather": "Great-Grandfather",
+      "greatGrandmother": "Great-Grandmother",
+      "ancestor": "Ancestor"
+    },
+    "descendants": {
+      "son": "Son",
+      "daughter": "Daughter",
+      "grandson": "Grandson",
+      "granddaughter": "Granddaughter",
+      "greatGrandson": "Great-Grandson",
+      "greatGranddaughter": "Great-Granddaughter"
+    },
+    "siblings": {
+      "brother": "Brother",
+      "sister": "Sister",
+      "nephewFromBrother": "Nephew",
+      "nephewFromSister": "Nephew",
+      "nieceFromBrother": "Niece",
+      "nieceFromSister": "Niece"
+    },
+    "cousins": {
+      "fathersBrotherM": "Paternal Cousin",
+      "fathersBrotherF": "Paternal Cousin",
+      "fathersSisterM": "Paternal Cousin",
+      "fathersSisterF": "Paternal Cousin",
+      "mothersBrotherM": "Maternal Cousin",
+      "mothersBrotherF": "Maternal Cousin",
+      "mothersSisterM": "Maternal Cousin",
+      "mothersSisterF": "Maternal Cousin"
+    },
+    "unclesAunts": {
+      "fathersBrother": "Paternal Uncle (Kaka)",
+      "mothersBrother": "Maternal Uncle (Mama)",
+      "fathersSister": "Paternal Aunt (Aatya)",
+      "mothersSister": "Maternal Aunt (Maushi)",
+      "fathersSisterHusband": "Uncle (Kaka)",
+      "fathersBrotherWife": "Aunt (Kaki)",
+      "mothersSisterHusband": "Uncle (Mama)",
+      "mothersBrotherWife": "Aunt (Mami)"
+    },
+    "inLaws": {
+      "fatherInLaw": "Father-in-Law",
+      "motherInLaw": "Mother-in-Law",
+      "husbandsBrother": "Brother-in-Law",
+      "wifesBrother": "Brother-in-Law",
+      "sistersHusband": "Brother-in-Law",
+      "husbandsSister": "Sister-in-Law",
+      "wifesSister": "Sister-in-Law",
+      "brothersWife": "Sister-in-Law",
+      "sonInLaw": "Son-in-Law",
+      "daughterInLaw": "Daughter-in-Law"
+    },
+    "distant": {
+      "grandUncle": "Grand-uncle",
+      "grandAunt": "Grand-aunt",
+      "grandNephew": "Grand-nephew",
+      "grandNiece": "Grand-niece"
+    },
+    "fallbacks": {
+      "family": "Family",
+      "relative": "Relative",
+      "relatedByMarriage": "Related by marriage",
+      "noKnownConnection": "No known connection"
+    },
+    "steps": {
+      "husband": "husband",
+      "wife": "wife",
+      "father": "father",
+      "mother": "mother",
+      "son": "son",
+      "daughter": "daughter",
+      "brother": "brother",
+      "sister": "sister",
+      "relative": "relative"
+    },
+    "patterns": {
+      "cousinM": "{n} cousin",
+      "cousinF": "{n} cousin",
+      "ordinalM": {
+        "1": "1st", "2": "2nd", "3": "3rd",
+        "4": "4th", "5": "5th", "6": "6th"
+      },
+      "ordinalF": {
+        "1": "1st", "2": "2nd", "3": "3rd",
+        "4": "4th", "5": "5th", "6": "6th"
+      },
+      "onceRemoved": "once removed",
+      "twiceRemoved": "twice removed",
+      "timesRemoved": "{n} times removed",
+      "greatPrefix": "Great-"
+    },
+    "possessive": {
+      "viaSpouse": "{spouse}'s {relation}",
+      "spouseOf": "{relation}'s {spouse}",
+      "husbandPossessorM": "Husband",
+      "husbandPossessorF": "Husband",
+      "wifePossessorM": "Wife",
+      "wifePossessorF": "Wife",
+      "spouseTermM": "Husband",
+      "spouseTermF": "Wife"
+    }
   }
 }

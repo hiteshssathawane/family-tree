@@ -28,7 +28,8 @@
       "hint": "दर ३० सेकंदात बदलतो · इंटरनेट लागत नाही",
       "adminOnly": "केवळ Admin आणि Contributor साठी आवश्यक",
       "button": "प्रवेश करा"
-    }
+    },
+    "deceasedRefused": "या सदस्याची नोंद दिवंगत म्हणून आहे, त्यामुळे हे लॉगिन बंद आहे."
   },
   "nav": {
     "tree": "वंशवृक्ष",
@@ -58,6 +59,18 @@
       "print": "छापा",
       "centerMe": "माझ्यावर केंद्रित करा",
       "clearSearch": "शोध पुसा"
+    },
+    "tags": {
+      "Parents": "आई-वडील",
+      "Siblings": "भावंडे",
+      "Spouse": "जोडीदार",
+      "Children": "मुले",
+      "Grandparents": "आजी-आजोबा",
+      "Uncles & Aunts": "काका-मामा व आत्या-मावशी",
+      "Cousins": "चुलत-मामे भावंडे",
+      "Nephews & Nieces": "पुतणे-भाचे",
+      "In-Laws": "सासरचे नातेवाईक",
+      "Grandchildren": "नातवंडे"
     }
   },
   "profile": {
@@ -94,8 +107,11 @@
     "relCalc": {
       "title": "आपले नाते काय आहे?",
       "choose": "कुटुंबातील सदस्य निवडा…",
+      "noMatch": "त्या नावाचा कोणताही सदस्य आढळला नाही.",
       "samePerson": "हे {name} च आहेत — तीच व्यक्ती.",
-      "noLink": "{other} यांचा {subject} यांच्याशी वंशवृक्षात अद्याप कोणताही संबंध नोंदवलेला नाही."
+      "noLink": "{other} यांचा {subject} यांच्याशी वंशवृक्षात अद्याप कोणताही संबंध नोंदवलेला नाही.",
+      "answer": "{other} हे {subject} यांचे {label} आहेत.",
+      "answerPair": "{other} आणि {subject} यांचे {label} आहे."
     },
     "terms": {
       "husband": "पती",
@@ -111,7 +127,9 @@
       "child": "अपत्य",
       "children": "मुले",
       "parents": "आई-वडील"
-    }
+    },
+    "photoViewer": "छायाचित्र",
+    "closePhoto": "छायाचित्र बंद करा"
   },
   "calendar": {
     "title": "कुटुंब दिनदर्शिका",
@@ -215,5 +233,124 @@
     "dedicationLine1": "माझ्या प्रिय आईला समर्पित,",
     "dedicationName": "बेबी",
     "dedicationLine2": "आमच्या हृदयात कायम"
+  },
+  "relations": {
+    "self": {
+      "you": "स्वतः",
+      "thisIsYou": "हे तुम्ही आहात",
+      "samePerson": "तीच व्यक्ती"
+    },
+    "spouse": {
+      "husband": "नवरा",
+      "wife": "बायको"
+    },
+    "ancestors": {
+      "father": "वडील",
+      "mother": "आई",
+      "grandfatherPaternal": "आजोबा",
+      "grandfatherMaternal": "आजोबा",
+      "grandmotherPaternal": "आजी",
+      "grandmotherMaternal": "आजी",
+      "greatGrandfather": "पणजोबा",
+      "greatGrandmother": "पणजी",
+      "ancestor": "पूर्वज"
+    },
+    "descendants": {
+      "son": "मुलगा",
+      "daughter": "मुलगी",
+      "grandson": "नातू",
+      "granddaughter": "नात",
+      "greatGrandson": "पणतू",
+      "greatGranddaughter": "पणती"
+    },
+    "siblings": {
+      "brother": "भाऊ",
+      "sister": "बहीण",
+      "nephewFromBrother": "पुतण्या",
+      "nephewFromSister": "भाचा",
+      "nieceFromBrother": "पुतणी",
+      "nieceFromSister": "भाची"
+    },
+    "cousins": {
+      "fathersBrotherM": "चुलत भाऊ",
+      "fathersBrotherF": "चुलत बहीण",
+      "fathersSisterM": "आत्ये भाऊ",
+      "fathersSisterF": "आत्ये बहीण",
+      "mothersBrotherM": "मामे भाऊ",
+      "mothersBrotherF": "मामे बहीण",
+      "mothersSisterM": "मावस भाऊ",
+      "mothersSisterF": "मावस बहीण"
+    },
+    "unclesAunts": {
+      "fathersBrother": "काका",
+      "mothersBrother": "मामा",
+      "fathersSister": "आत्या",
+      "mothersSister": "मावशी",
+      "fathersSisterHusband": "काका",
+      "fathersBrotherWife": "काकू",
+      "mothersSisterHusband": "काका",
+      "mothersBrotherWife": "मामी"
+    },
+    "inLaws": {
+      "fatherInLaw": "सासरे",
+      "motherInLaw": "सासू",
+      "husbandsBrother": "दीर",
+      "wifesBrother": "मेहुणा",
+      "sistersHusband": "भावोजी",
+      "husbandsSister": "नणंद",
+      "wifesSister": "मेहुणी",
+      "brothersWife": "वहिनी",
+      "sonInLaw": "जावई",
+      "daughterInLaw": "सून"
+    },
+    "distant": {
+      "grandUncle": "चुलत आजोबा",
+      "grandAunt": "चुलत आजी",
+      "grandNephew": "भावंडाचा नातू",
+      "grandNiece": "भावंडाची नात"
+    },
+    "fallbacks": {
+      "family": "कुटुंब",
+      "relative": "नातेवाईक",
+      "relatedByMarriage": "लग्नाने जुळलेले नाते",
+      "noKnownConnection": "कोणतेही ज्ञात नाते नाही"
+    },
+    "steps": {
+      "husband": "नवरा",
+      "wife": "बायको",
+      "father": "वडील",
+      "mother": "आई",
+      "son": "मुलगा",
+      "daughter": "मुलगी",
+      "brother": "भाऊ",
+      "sister": "बहीण",
+      "relative": "नातेवाईक"
+    },
+    "patterns": {
+      "cousinM": "{n} चुलत भाऊ",
+      "cousinF": "{n} चुलत बहीण",
+      "ordinalM": {
+        "1": "पहिला", "2": "दुसरा", "3": "तिसरा",
+        "4": "चौथा", "5": "पाचवा", "6": "सहावा"
+      },
+      "ordinalF": {
+        "1": "पहिली", "2": "दुसरी", "3": "तिसरी",
+        "4": "चौथी", "5": "पाचवी", "6": "सहावी"
+      },
+      "onceRemoved": "एक पिढी अंतराने",
+      "twiceRemoved": "दोन पिढ्या अंतराने",
+      "timesRemoved": "{n} पिढ्या अंतराने",
+      "greatPrefix": "खापर "
+    },
+    "possessive": {
+      "viaSpouse": "{spouse} {relation}",
+      "spouseOf": "{relation} {spouse}",
+      "husbandPossessorM": "नवऱ्याचा",
+      "husbandPossessorF": "नवऱ्याची",
+      "wifePossessorM": "बायकोचा",
+      "wifePossessorF": "बायकोची",
+      "spouseTermM": "यांचा नवरा",
+      "spouseTermF": "यांची बायको"
+    }
   }
 }

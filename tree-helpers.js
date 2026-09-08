@@ -1,12 +1,23 @@
 // A member with no known date of birth still needs a login, because identity is
 // SHA-256(name + DDMMYYYY). csv-import.js writes this placeholder so a hash can exist
 // at all. It is a login token, NOT a fact about the person — nothing may render it as a
-// birth date, raise it as a birthday, or export it to a calendar.
+// birth date, raise it as a birthday or a remembrance, or export it to a calendar.
+//
+// It is not confined to birthDate either: the value reached the Sheet as a typed answer
+// and came back in Death Date too, which is how "d. 1674" appeared under a name. So the
+// test is on the value, wherever it turns up — hence isPlaceholderDate, with the old
+// birth-specific name kept as an alias for callers that already use it.
 window.UNKNOWN_BIRTH_DATE = '1674-06-06';
-window.isUnknownBirthDate = function (d) {
+window.isPlaceholderDate = function (d) {
   return !!d && String(d).slice(0, 10) === window.UNKNOWN_BIRTH_DATE;
 };
-const isUnknownBirthDate = window.isUnknownBirthDate;
+window.isUnknownBirthDate = window.isPlaceholderDate;
+const isUnknownBirthDate = window.isPlaceholderDate;
+const isPlaceholderDate = window.isPlaceholderDate;
+
+// Strips the placeholder to null so no consumer has to remember to check. Every date
+// entering the view model goes through this.
+const realDate = (d) => (d && !isPlaceholderDate(d) ? d : null);
 
 window.buildFamilyTree = function (people, scrapbook, initialMe) {
   // Build lookup
@@ -109,115 +120,205 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     return Infinity;
   }
 
-  function labelFor(viewerId, otherId) {
-    if (viewerId === otherId) return "You";
+  // Translation shim. index.html's i18n core defines window.t before this file's
+  // functions are ever called, but the raw-data path can be exercised without it
+  // (scripts, tests), so fall back to the English literal when it is absent.
+  function tr(key, fallback) {
+    return (typeof window !== "undefined" && typeof window.t === "function")
+      ? window.t(key, fallback)
+      : fallback;
+  }
+
+  // Names `other` as seen from `viewer`, as { key, en } so the caller translates at
+  // the point of display. The two non-answers ("Family", "Relative") come back
+  // marked `weak`: relationshipBetween treats those as a miss and hands the pair on
+  // to the collateral resolver rather than showing them.
+  //
+  // Several branches split finer than the English they produce, because Marathi
+  // keeps distinctions English collapses — a brother's son is पुतण्या where a
+  // sister's son is भाचा, and each of the four parent-sibling lines has its own
+  // cousin term. The English string stays one word; only the key forks.
+  function labelPair(viewerId, otherId) {
+    if (viewerId === otherId) return { key: "relations.self.you", en: "You" };
     const viewer = byId[viewerId];
     const other  = byId[otherId];
-    if (!viewer || !other) return "Family";
+    if (!viewer || !other) return { key: "relations.fallbacks.family", en: "Family", weak: true };
 
     if (viewer.spouse === otherId) {
-      return other.gender === "m" ? "Husband" : "Wife";
+      return other.gender === "m"
+        ? { key: "relations.spouse.husband", en: "Husband" }
+        : { key: "relations.spouse.wife",    en: "Wife" };
     }
 
     if (viewer.spouse) {
       const sp = byId[viewer.spouse];
       if (sp && sp.parents.includes(otherId)) {
-        return other.gender === "m" ? "Father-in-Law" : "Mother-in-Law";
+        return other.gender === "m"
+          ? { key: "relations.inLaws.fatherInLaw", en: "Father-in-Law" }
+          : { key: "relations.inLaws.motherInLaw", en: "Mother-in-Law" };
       }
+      // दीर / नणंद through a husband, मेहुणा / मेहुणी through a wife.
       if (sp && sp.siblings.includes(otherId)) {
-        return other.gender === "m" ? "Brother-in-Law" : "Sister-in-Law";
+        const viaHusband = sp.gender === "m";
+        if (other.gender === "m") {
+          return viaHusband
+            ? { key: "relations.inLaws.husbandsBrother", en: "Brother-in-Law" }
+            : { key: "relations.inLaws.wifesBrother",    en: "Brother-in-Law" };
+        }
+        return viaHusband
+          ? { key: "relations.inLaws.husbandsSister", en: "Sister-in-Law" }
+          : { key: "relations.inLaws.wifesSister",    en: "Sister-in-Law" };
       }
     }
+    // A sibling's spouse: भावोजी for a sister's husband, वहिनी for a brother's wife,
+    // so the discriminator is the blood sibling's gender. Where the data does not
+    // carry it, the spouse's own gender implies it.
     for (const sibId of viewer.siblings) {
       const sib = byId[sibId];
-      if (sib && sib.spouse === otherId) {
-        return other.gender === "m" ? "Brother-in-Law" : "Sister-in-Law";
-      }
+      if (!sib || sib.spouse !== otherId) continue;
+      const sibIsBrother = sib.gender ? sib.gender === "m" : other.gender !== "m";
+      return sibIsBrother
+        ? { key: "relations.inLaws.brothersWife",   en: "Sister-in-Law" }
+        : { key: "relations.inLaws.sistersHusband", en: "Brother-in-Law" };
     }
     for (const cid of viewer.children) {
       const c = byId[cid];
-      if (c && c.spouse === otherId) return other.gender === "m" ? "Son-in-Law" : "Daughter-in-Law";
+      if (c && c.spouse === otherId) {
+        return other.gender === "m"
+          ? { key: "relations.inLaws.sonInLaw",      en: "Son-in-Law" }
+          : { key: "relations.inLaws.daughterInLaw", en: "Daughter-in-Law" };
+      }
     }
 
     const upPath = ancestorPath(viewerId, otherId);
     if (upPath && upPath.length > 1) {
       const dist = upPath.length - 1;
       if (dist === 1) {
-        return other.gender === "m" ? "Father" : "Mother";
+        return other.gender === "m"
+          ? { key: "relations.ancestors.father", en: "Father" }
+          : { key: "relations.ancestors.mother", en: "Mother" };
       }
       if (dist === 2) {
-        const sidePar = upPath[1];
-        const sideParent = byId[sidePar];
-        const isPaternal = sideParent && sideParent.gender === "m";
-        if (other.gender === "m") return isPaternal ? "Grandfather (Ajoba)" : "Grandfather (Aajoba)";
-        return isPaternal ? "Grandmother (Aaji)" : "Grandmother (Aaji)";
+        const sideParent = byId[upPath[1]];
+        const paternal = !!(sideParent && sideParent.gender === "m");
+        if (other.gender === "m") {
+          return paternal
+            ? { key: "relations.ancestors.grandfatherPaternal", en: "Grandfather (Ajoba)" }
+            : { key: "relations.ancestors.grandfatherMaternal", en: "Grandfather (Ajoba)" };
+        }
+        return paternal
+          ? { key: "relations.ancestors.grandmotherPaternal", en: "Grandmother (Aaji)" }
+          : { key: "relations.ancestors.grandmotherMaternal", en: "Grandmother (Aaji)" };
       }
       if (dist === 3) {
-        return other.gender === "m" ? "Great-Grandfather" : "Great-Grandmother";
+        return other.gender === "m"
+          ? { key: "relations.ancestors.greatGrandfather", en: "Great-Grandfather" }
+          : { key: "relations.ancestors.greatGrandmother", en: "Great-Grandmother" };
       }
-      return "Ancestor";
+      return { key: "relations.ancestors.ancestor", en: "Ancestor" };
     }
 
     const downPath = ancestorPath(otherId, viewerId);
     if (downPath && downPath.length > 1) {
       const dist = downPath.length - 1;
-      if (dist === 1) return other.gender === "m" ? "Son" : "Daughter";
-      if (dist === 2) return other.gender === "m" ? "Grandson" : "Granddaughter";
-      return other.gender === "m" ? "Great-Grandson" : "Great-Granddaughter";
+      if (dist === 1) {
+        return other.gender === "m"
+          ? { key: "relations.descendants.son",      en: "Son" }
+          : { key: "relations.descendants.daughter", en: "Daughter" };
+      }
+      if (dist === 2) {
+        return other.gender === "m"
+          ? { key: "relations.descendants.grandson",      en: "Grandson" }
+          : { key: "relations.descendants.granddaughter", en: "Granddaughter" };
+      }
+      return other.gender === "m"
+        ? { key: "relations.descendants.greatGrandson",      en: "Great-Grandson" }
+        : { key: "relations.descendants.greatGranddaughter", en: "Great-Granddaughter" };
     }
 
     if (viewer.siblings.includes(otherId)) {
-      return other.gender === "m" ? "Brother" : "Sister";
+      return other.gender === "m"
+        ? { key: "relations.siblings.brother", en: "Brother" }
+        : { key: "relations.siblings.sister",  en: "Sister" };
     }
 
     for (const parId of viewer.parents) {
       const par = byId[parId];
       if (!par) continue;
+      const paternal = par.gender === "m";
       if (par.siblings.includes(otherId)) {
-        const paternal = par.gender === "m";
-        if (other.gender === "m") return paternal ? "Paternal Uncle (Kaka)" : "Maternal Uncle (Mama)";
-        return paternal ? "Paternal Aunt (Aatya)" : "Maternal Aunt (Maushi)";
+        if (other.gender === "m") {
+          return paternal
+            ? { key: "relations.unclesAunts.fathersBrother", en: "Paternal Uncle (Kaka)" }
+            : { key: "relations.unclesAunts.mothersBrother", en: "Maternal Uncle (Mama)" };
+        }
+        return paternal
+          ? { key: "relations.unclesAunts.fathersSister", en: "Paternal Aunt (Aatya)" }
+          : { key: "relations.unclesAunts.mothersSister", en: "Maternal Aunt (Maushi)" };
       }
+      // Married into that generation. The term turns on the *blood* sibling's
+      // gender, not the in-law's: father's brother's wife is काकू, father's
+      // sister's husband is a different word again.
       for (const sibId of par.siblings) {
         const sib = byId[sibId];
-        if (sib && sib.spouse === otherId) {
-          const paternal = par.gender === "m";
-          if (other.gender === "m") return paternal ? "Uncle (Kaka)" : "Uncle (Mama)";
-          return paternal ? "Aunt (Kaki)" : "Aunt (Mami)";
+        if (!sib || sib.spouse !== otherId) continue;
+        const sibIsBrother = sib.gender ? sib.gender === "m" : other.gender !== "m";
+        if (paternal) {
+          return sibIsBrother
+            ? { key: "relations.unclesAunts.fathersBrotherWife",   en: "Aunt (Kaki)" }
+            : { key: "relations.unclesAunts.fathersSisterHusband", en: "Uncle (Kaka)" };
         }
+        return sibIsBrother
+          ? { key: "relations.unclesAunts.mothersBrotherWife",   en: "Aunt (Mami)" }
+          : { key: "relations.unclesAunts.mothersSisterHusband", en: "Uncle (Mama)" };
       }
     }
 
+    // A sibling's child: पुतण्या / पुतणी from a brother, भाचा / भाची from a sister.
     for (const sibId of viewer.siblings) {
       const sib = byId[sibId];
-      if (!sib) continue;
-      if (sib.children.includes(otherId)) {
-        return other.gender === "m" ? "Nephew" : "Niece";
+      if (!sib || !sib.children.includes(otherId)) continue;
+      const fromBrother = sib.gender === "m";
+      if (other.gender === "m") {
+        return fromBrother
+          ? { key: "relations.siblings.nephewFromBrother", en: "Nephew" }
+          : { key: "relations.siblings.nephewFromSister",  en: "Nephew" };
       }
+      return fromBrother
+        ? { key: "relations.siblings.nieceFromBrother", en: "Niece" }
+        : { key: "relations.siblings.nieceFromSister",  en: "Niece" };
     }
 
+    // A parent's sibling's child. All four lines are one word in English but four
+    // in Marathi (चुलत / आत्ये / मामे / मावस), so both the parent's gender and the
+    // linking sibling's gender select the key.
     for (const parId of viewer.parents) {
       const par = byId[parId];
       if (!par) continue;
+      const paternal = par.gender === "m";
       for (const sibId of par.siblings) {
         const sib = byId[sibId];
-        if (sib && sib.children.includes(otherId)) {
-          const paternal = par.gender === "m";
-          return paternal ? "Paternal Cousin" : "Maternal Cousin";
-        }
+        if (!sib || !sib.children.includes(otherId)) continue;
+        const line = paternal
+          ? (sib.gender === "m" ? "fathersBrother" : "fathersSister")
+          : (sib.gender === "m" ? "mothersBrother" : "mothersSister");
+        return {
+          key: "relations.cousins." + line + (other.gender === "m" ? "M" : "F"),
+          en: paternal ? "Paternal Cousin" : "Maternal Cousin"
+        };
       }
     }
 
     const myAnc = new Set(ancestorsOf(viewerId));
-    let common = null, bestDepth = Infinity;
     for (const a of ancestorsOf(otherId)) {
-      if (myAnc.has(a)) {
-        const d = distToAncestor(viewerId, a) + distToAncestor(otherId, a);
-        if (d < bestDepth) { bestDepth = d; common = a; }
-      }
+      if (myAnc.has(a)) return { key: "relations.fallbacks.relative", en: "Relative", weak: true };
     }
-    if (common) return "Relative";
-    return "Family";
+    return { key: "relations.fallbacks.family", en: "Family", weak: true };
+  }
+
+  function labelFor(viewerId, otherId) {
+    const pair = labelPair(viewerId, otherId);
+    return tr(pair.key, pair.en);
   }
 
   function pathBetween(aId, bId) {
@@ -270,19 +371,50 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
   }
 
   // Names a single hop, e.g. "mother" for the step from a child to its mother.
-  function stepName(fromId, toId) {
+  // `spouse` flags the marriage hop, which relationshipBetween still has to spot
+  // once the visible label has been translated out of English.
+  function stepPair(fromId, toId) {
     const from = byId[fromId], to = byId[toId];
-    if (!from || !to) return "relative";
-    if (from.spouse === toId)                   return to.gender === "m" ? "husband" : "wife";
-    if ((from.parents  || []).includes(toId))   return to.gender === "m" ? "father"  : "mother";
-    if ((from.children || []).includes(toId))   return to.gender === "m" ? "son"     : "daughter";
-    if ((from.siblings || []).includes(toId))   return to.gender === "m" ? "brother" : "sister";
-    return "relative";
+    const miss = { key: "relations.steps.relative", en: "relative" };
+    if (!from || !to) return miss;
+    if (from.spouse === toId) {
+      return to.gender === "m"
+        ? { key: "relations.steps.husband", en: "husband", spouse: true }
+        : { key: "relations.steps.wife",    en: "wife",    spouse: true };
+    }
+    if ((from.parents || []).includes(toId)) {
+      return to.gender === "m"
+        ? { key: "relations.steps.father", en: "father" }
+        : { key: "relations.steps.mother", en: "mother" };
+    }
+    if ((from.children || []).includes(toId)) {
+      return to.gender === "m"
+        ? { key: "relations.steps.son",      en: "son" }
+        : { key: "relations.steps.daughter", en: "daughter" };
+    }
+    if ((from.siblings || []).includes(toId)) {
+      return to.gender === "m"
+        ? { key: "relations.steps.brother", en: "brother" }
+        : { key: "relations.steps.sister",  en: "sister" };
+    }
+    return miss;
   }
 
   function ordinal(n) {
     return ["1st", "2nd", "3rd"][n - 1] || (n + "th");
   }
+
+  // Numbers inside a built label. English carries the ordinal in the token itself
+  // ("2nd cousin"); Marathi carries it in the pattern ("{n}वा चुलत भाऊ"), so there
+  // the token is just the digit, in Devanagari numerals.
+  function mrNum(n) {
+    return String(n).replace(/[0-9]/g, d => "०१२३४५६७८९"[+d]);
+  }
+  function isMR() {
+    return typeof window !== "undefined" && window.CURRENT_LANG === "MR";
+  }
+  function degreeToken(n) { return isMR() ? mrNum(n) : ordinal(n); }
+  function countToken(n)  { return isMR() ? mrNum(n) : String(n); }
 
   // Names a blood relationship off the nearest shared ancestor: cousins when
   // both sides descend at least two generations, grand-uncles and grand-nephews
@@ -309,10 +441,18 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     if (du >= 2 && dd >= 2) {
       const degree  = Math.min(du, dd) - 1;
       const removed = Math.abs(du - dd);
-      let label = ordinal(degree) + " cousin";
-      if (removed === 1) label += " once removed";
-      else if (removed === 2) label += " twice removed";
-      else if (removed > 2) label += ` ${removed} times removed`;
+      const pattern = other.gender === "m"
+        ? tr("relations.patterns.cousinM", "{n} cousin")
+        : tr("relations.patterns.cousinF", "{n} cousin");
+      let label = pattern.replace("{n}", degreeToken(degree));
+      if (removed === 1) {
+        label += " " + tr("relations.patterns.onceRemoved", "once removed");
+      } else if (removed === 2) {
+        label += " " + tr("relations.patterns.twiceRemoved", "twice removed");
+      } else if (removed > 2) {
+        label += " " + tr("relations.patterns.timesRemoved", "{n} times removed")
+                         .replace("{n}", countToken(removed));
+      }
       return label;
     }
 
@@ -321,18 +461,25 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     // nephew that labelFor handles.
     const gap = Math.max(du, dd) - 2;
     if (gap <= 0) return null;
-    const greats = gap > 1 ? "Great-".repeat(gap - 1) : "";
-    const stem = greats ? "grand-" : "Grand-";
-    if (dd === 1) return greats + stem + (other.gender === "m" ? "uncle" : "aunt");
-    return greats + stem + (other.gender === "m" ? "nephew" : "niece");
+    const greats = gap > 1
+      ? tr("relations.patterns.greatPrefix", "Great-").repeat(gap - 1)
+      : "";
+    if (dd === 1) {
+      return greats + (other.gender === "m"
+        ? tr("relations.distant.grandUncle", "Grand-uncle")
+        : tr("relations.distant.grandAunt",  "Grand-aunt"));
+    }
+    return greats + (other.gender === "m"
+      ? tr("relations.distant.grandNephew", "Grand-nephew")
+      : tr("relations.distant.grandNiece",  "Grand-niece"));
   }
 
   // The best *blood* term for b as seen from a, or null when the two share no
   // ancestor. labelFor's own fallbacks ("Family", "Relative") are not answers, so
   // they are treated as a miss and handed to collateralLabel.
   function bloodLabel(aId, bId) {
-    const direct = labelFor(aId, bId);
-    if (direct && direct !== "Family" && direct !== "Relative") return direct;
+    const pair = labelPair(aId, bId);
+    if (pair && !pair.weak) return tr(pair.key, pair.en);
     return collateralLabel(aId, bId);
   }
 
@@ -356,59 +503,94 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
 
     const a = byId[aId], b = byId[bId];
 
+    // Marathi has no bare possessive 's: the possessor takes an oblique form and a
+    // postposition (चा / ची / चे) that agrees with the *possessed* — i.e. with b.
+    // The spouse side is a closed set of two words, so its oblique forms are held
+    // literally in the strings (नवऱ्याचा / नवऱ्याची). The other direction would have
+    // to inflect an arbitrary kinship term, which is not something we can compute,
+    // so it uses the honorific particle instead — "मामे भाऊ यांची बायको" — which is
+    // grammatical without touching the noun.
     if (a && a.spouse && a.spouse !== bId && byId[a.spouse]) {
       const inner = composedLabel(a.spouse, bId, depth - 1);
       if (inner) {
-        const term = byId[a.spouse].gender === "m" ? "Husband" : "Wife";
-        return `${term}'s ${inner}`;
+        const g = (b && b.gender === "m") ? "M" : "F";
+        const term = byId[a.spouse].gender === "m"
+          ? tr("relations.possessive.husbandPossessor" + g, "Husband")
+          : tr("relations.possessive.wifePossessor" + g, "Wife");
+        return tr("relations.possessive.viaSpouse", "{spouse}'s {relation}")
+          .replace("{spouse}", term)
+          .replace("{relation}", inner);
       }
     }
 
     if (b && b.spouse && b.spouse !== aId && byId[b.spouse]) {
       const inner = composedLabel(aId, b.spouse, depth - 1);
       if (inner) {
-        const term = b.gender === "m" ? "Husband" : "Wife";
-        return `${inner}'s ${term}`;
+        const term = b.gender === "m"
+          ? tr("relations.possessive.spouseTermM", "Husband")
+          : tr("relations.possessive.spouseTermF", "Wife");
+        return tr("relations.possessive.spouseOf", "{relation}'s {spouse}")
+          .replace("{relation}", inner)
+          .replace("{spouse}", term);
       }
     }
 
     return null;
   }
 
-  // Labels that are a statement about the pair rather than a noun phrase naming b.
-  // "Aarti is Swati's Related by marriage." is what slotting one of these into the
-  // sentence template produces, so the UI needs to know to phrase them separately.
-  const NON_NOUN_LABELS = new Set(["Related by marriage", "No known connection", "Family", "Relative"]);
-
   // How is `bId` related to `aId`? Returns the term, plus the hop chain so the
   // UI can show the working rather than just asserting an answer.
+  //
+  // `isNounPhrase` is false when the answer is a statement about the pair rather
+  // than a name for b — "Related by marriage" and friends. Slotting one of those
+  // into the sentence template gives "Aarti is Swati's Related by marriage.", so
+  // the UI phrases them separately. It is tracked as a flag rather than derived by
+  // comparing the label against a list of English strings, because by this point
+  // the label may well be in Marathi.
   function relationshipBetween(aId, bId) {
     const a = byId[aId], b = byId[bId];
     if (!a || !b) return null;
     if (aId === bId) {
-      return { label: "The same person", chain: [], viaMarriage: false, degrees: 0, connected: true };
+      return {
+        label: tr("relations.self.samePerson", "The same person"),
+        chain: [], viaMarriage: false, isNounPhrase: false, degrees: 0, connected: true
+      };
     }
 
     const path = relationPath(aId, bId);
     const chain = [];
     if (path) {
       for (let i = 1; i < path.length; i++) {
-        chain.push({ id: path[i], name: byId[path[i]].name, rel: stepName(path[i - 1], path[i]) });
+        const step = stepPair(path[i - 1], path[i]);
+        chain.push({
+          id: path[i],
+          name: byId[path[i]].name,
+          rel: tr(step.key, step.en),
+          spouseHop: !!step.spouse
+        });
       }
     }
-    const viaMarriage = chain.some(s => s.rel === "husband" || s.rel === "wife");
+    const viaMarriage = chain.some(s => s.spouseHop);
 
-    let label = labelFor(aId, bId);
-    if (label === "Family" || label === "Relative") {
+    const pair = labelPair(aId, bId);
+    let label, isNounPhrase = true;
+    if (pair && !pair.weak) {
+      label = tr(pair.key, pair.en);
+    } else {
       const composed = composedLabel(aId, bId, 2);
-      if (composed) label = composed;
-      else if (!path) label = "No known connection";
-      else if (viaMarriage) label = "Related by marriage";
+      if (composed) {
+        label = composed;
+      } else if (!path) {
+        label = tr("relations.fallbacks.noKnownConnection", "No known connection");
+        isNounPhrase = false;
+      } else if (viaMarriage) {
+        label = tr("relations.fallbacks.relatedByMarriage", "Related by marriage");
+        isNounPhrase = false;
+      } else {
+        label = tr(pair.key, pair.en);   // Family / Relative
+        isNounPhrase = false;
+      }
     }
-
-    // True only when the label still is not a noun phrase naming b, so the sentence
-    // template can fall back rather than producing "X is Y's Related by marriage."
-    const isNounPhrase = !NON_NOUN_LABELS.has(label);
 
     return { label, chain, viaMarriage, isNounPhrase, degrees: chain.length, connected: !!path };
   }
@@ -854,6 +1036,76 @@ window.processRawFamilyData = function (rawData, initialMe) {
     return m ? m.id : null;
   }
 
+  // Generation levelling.
+  //
+  // The recursion below descends one row per parent-child hop *within a branch*, and every
+  // root marriage starts at row 0 — so two branches of unequal depth put their youngest
+  // members on different rows, and an in-law family grafted in at `lvl - 1` inherits the
+  // depth of whatever it married into rather than its own. That is why Riyan sat a row
+  // above Takshita, Yashmit, Virika and Daksh even though all five are the same generation.
+  //
+  // Generation is a property of the whole graph, not of one branch, so solve it as one.
+  // Every parent-child edge fixes a difference of exactly 1 and every marriage a difference
+  // of 0; walking the graph from the root person and honouring those differences gives one
+  // consistent row index for everybody. Where two routes to the same person disagree — data
+  // saying someone is both an uncle and a brother-in-law, say — the first level assigned
+  // wins and the clash is reported, because averaging would move BOTH of them wrongly.
+  const generation = (function solveGenerations() {
+    const adj = {};
+    persons.forEach(p => { adj[p.id] = []; });
+    const link = (a, b, delta) => {
+      if (!adj[a] || !adj[b]) return;
+      adj[a].push([b, delta]);
+      adj[b].push([a, -delta]);
+    };
+    relationships.forEach(r => {
+      if (r.type === 'parent-child') link(r.parentId, r.childId, 1);
+      else if (r.type === 'marriage') link(r.person1Id, r.person2Id, 0);
+    });
+
+    const lvl = {};
+    const clashes = new Set();
+    // Anchor on the root person so the main line keeps its rows as data around it changes.
+    // Anything the root cannot reach forms its own component and anchors on itself.
+    const starts = [rawData.meta && rawData.meta.rootPersonId].concat(persons.map(p => p.id));
+    starts.forEach(start => {
+      if (!start || !adj[start] || lvl[start] !== undefined) return;
+      lvl[start] = 0;
+      const queue = [start];
+      while (queue.length) {
+        const u = queue.shift();
+        adj[u].forEach(([v, delta]) => {
+          const want = lvl[u] + delta;
+          if (lvl[v] === undefined) { lvl[v] = want; queue.push(v); }
+          else if (lvl[v] !== want) clashes.add(v);
+        });
+      }
+    });
+
+    if (clashes.size) {
+      console.warn(
+        `[tree-helpers] ${clashes.size} person(s) are reachable at two different generations; ` +
+        `kept the first row for each:`, Array.from(clashes).slice(0, 10)
+      );
+    }
+
+    // Rows are used as indices (y = row * verticalLevelHeight), so slide the oldest
+    // generation to 0 rather than leaving the root person's ancestors on negative rows.
+    const values = Object.values(lvl);
+    const min = values.length ? Math.min.apply(null, values) : 0;
+    Object.keys(lvl).forEach(id => { lvl[id] -= min; });
+    return lvl;
+  })();
+
+  // The row a node belongs on. `fallback` is the recursion's own depth, used only for a
+  // node the solver never saw (a person absent from every relationship).
+  function nodeLevel(node, fallback) {
+    if (!node) return fallback;
+    const id = node.type === 'single' ? node.personId : node.husbandId;
+    const lvl = generation[id];
+    return lvl === undefined ? fallback : lvl;
+  }
+
   // Horizontal space already claimed on each level. In-law branches are parked
   // beside the family they marry into, so without this they get dropped on top
   // of whatever is already there — which is what crossed the maternal lines.
@@ -895,8 +1147,12 @@ window.processRawFamilyData = function (rawData, initialMe) {
     return center;
   }
 
-  function assignAbsoluteCoords(node, absX, lvl) {
+  function assignAbsoluteCoords(node, absX, depth) {
     if (!node) return;
+
+    // The recursion's depth only decides where to look next; the row itself comes from
+    // the global generation solve, so every branch lands its generations on the same rows.
+    const lvl = nodeLevel(node, depth);
 
     if (node.type === 'single') {
       computedCoords[node.personId] = { x: absX, y: lvl * verticalLevelHeight };
@@ -968,14 +1224,19 @@ window.processRawFamilyData = function (rawData, initialMe) {
         node.inLaws.forEach(il => {
           const spouseCoord = computedCoords[il.spouseId];
           let spouseX = absX;
+          // An in-law's parents are one generation up from the couple only when the
+          // in-law is themselves this couple's generation — which the solver already
+          // knows, and which lvl - 1 merely assumed. Reserve on the row they will
+          // actually occupy, or the collision check clears the wrong row.
+          const ilLvl = nodeLevel(il.node, lvl - 1);
           if (spouseCoord) {
             const dir = (il.spouseId === leftId) ? -1 : 1;
             const halfWidth = il.node.width / 2;
             const desired = spouseCoord.x + dir * (halfWidth + inLawGap);
-            spouseX = Math.round(findFreeCenter(desired, halfWidth, dir, lvl - 1));
-            reserveSpan(lvl - 1, spouseX - halfWidth, spouseX + halfWidth);
+            spouseX = Math.round(findFreeCenter(desired, halfWidth, dir, ilLvl));
+            reserveSpan(ilLvl, spouseX - halfWidth, spouseX + halfWidth);
           }
-          assignAbsoluteCoords(il.node, spouseX, lvl - 1);
+          assignAbsoluteCoords(il.node, spouseX, ilLvl);
         });
       }
     }
@@ -1018,17 +1279,27 @@ window.processRawFamilyData = function (rawData, initialMe) {
     const spouseId = spouseRel ? (spouseRel.person1Id === p.id ? spouseRel.person2Id : spouseRel.person1Id) : null;
     const spouse = spouseId ? persons.find(x => x.id === spouseId) : null;
 
-    let displayName = `${p.firstName} ${p.lastName}`;
+    // Joins only the parts that exist. A blank surname used to leave a trailing space on
+    // the name — invisible in the card but real in the search index, the picker list and
+    // the .ics summaries — and the Marathi side dropped the name entirely rather than
+    // falling back to the first name alone.
+    const joinName = (...parts) => parts.map(s => (s || '').trim()).filter(Boolean).join(' ');
+
+    let displayName = joinName(p.firstName, p.lastName);
     let fNameMr = p.firstNameMr || getMarathiTranslation(p.firstName);
     let lNameMr = p.lastNameMr || getMarathiTranslation(p.lastName);
-    let displayNameMr = (fNameMr && lNameMr) ? `${fNameMr} ${lNameMr}` : null;
+    let displayNameMr = fNameMr ? joinName(fNameMr, lNameMr) : null;
 
     if ((p.gender === 'F' || p.gender === 'f') && spouse) {
       const hLastName = spouse.lastName ? spouse.lastName.trim() : '';
       const wLastName = p.lastName ? p.lastName.trim() : '';
 
       if (hLastName && wLastName && hLastName.toLowerCase() !== wLastName.toLowerCase()) {
-        displayName = `${p.firstName} ${hLastName} (${wLastName})`;
+        displayName = `${joinName(p.firstName, hLastName)} (${wLastName})`;
+      } else if (hLastName && !wLastName) {
+        // Her maiden name is unknown — show the married name plainly rather than
+        // "Name ()", which is what an empty maiden surname would otherwise print.
+        displayName = joinName(p.firstName, hLastName);
       }
 
       const hLastNameMr = spouse.lastNameMr || getMarathiTranslation(spouse.lastName);
@@ -1055,17 +1326,21 @@ window.processRawFamilyData = function (rawData, initialMe) {
       // needs to know which years are real before it prints one.
       // UNKNOWN_BIRTH_DATE is a login placeholder, not a fact about the person, so it
       // must read as "no birth year" everywhere the UI states one.
-      hasBirthYear: !!p.birthDate && !isUnknownBirthDate(p.birthDate),
-      death: p.status === 'deceased' && p.deathDate ? parseInt(p.deathDate.split('-')[0]) : null,
+      hasBirthYear: !!realDate(p.birthDate),
+      death: p.status === 'deceased' && realDate(p.deathDate)
+        ? parseInt(p.deathDate.split('-')[0])
+        : null,
       deceased: p.status === 'deceased',
       bio: p.biography || `A valued member of our family.`,
       photo: p.profilePhoto || null,
       backgroundPhoto: p.backgroundPhoto || null,
       // Raw record fields the Bio tab renders. Kept null when absent so the
       // panel can skip the row rather than print an empty label.
-      birthDate: p.birthDate || null,
+      // Nulled rather than passed through when they hold the placeholder, so the Bio tab,
+      // the calendar and the .ics feed cannot print it however they read the record.
+      birthDate: realDate(p.birthDate),
       birthPlace: p.birthPlace || null,
-      deathDate: p.deathDate || null,
+      deathDate: realDate(p.deathDate),
       deathPlace: p.deathPlace || null,
       occupation: p.occupation || null,
       education: p.education || null,
@@ -1126,7 +1401,9 @@ window.processRawFamilyData = function (rawData, initialMe) {
       });
     });
 
-    if (p.status === 'deceased' && p.deathDate) {
+    // Same rule as the birth entry above: the placeholder is a login token, not a date
+    // anyone died on, so it must not become a timeline entry either.
+    if (p.status === 'deceased' && realDate(p.deathDate)) {
       timeline.push({
         date: p.deathDate,
         caption: `${p.firstName} ${p.lastName} passed away${p.deathPlace ? ' in ' + p.deathPlace : ''}.`,
