@@ -270,7 +270,7 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
         }
         return sibIsBrother
           ? { key: "relations.unclesAunts.mothersBrotherWife",   en: "Aunt (Mami)" }
-          : { key: "relations.unclesAunts.mothersSisterHusband", en: "Uncle (Mama)" };
+          : { key: "relations.unclesAunts.mothersSisterHusband", en: "Uncle (Kakaji)" };
       }
     }
 
@@ -404,17 +404,22 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     return ["1st", "2nd", "3rd"][n - 1] || (n + "th");
   }
 
-  // Numbers inside a built label. English carries the ordinal in the token itself
-  // ("2nd cousin"); Marathi carries it in the pattern ("{n}वा चुलत भाऊ"), so there
-  // the token is just the digit, in Devanagari numerals.
-  function mrNum(n) {
-    return String(n).replace(/[0-9]/g, d => "०१२३४५६७८९"[+d]);
-  }
   function isMR() {
     return typeof window !== "undefined" && window.CURRENT_LANG === "MR";
   }
-  function degreeToken(n) { return isMR() ? mrNum(n) : ordinal(n); }
-  function countToken(n)  { return isMR() ? mrNum(n) : String(n); }
+
+  // The ordinal in "2nd cousin". Marathi ordinals are words, not digit+suffix, and
+  // they agree in gender with the noun — दुसरा भाऊ but दुसरी बहीण — so they are held
+  // as a table rather than built. Past the table, English's own form is the only
+  // sensible fallback; cousins that distant are not something the tree ever shows.
+  function degreeToken(n, male) {
+    return tr("relations.patterns." + (male ? "ordinalM" : "ordinalF") + "." + n, ordinal(n));
+  }
+
+  // A plain count, as in "3 times removed". Devanagari numerals in Marathi.
+  function countToken(n) {
+    return isMR() ? String(n).replace(/[0-9]/g, d => "०१२३४५६७८९"[+d]) : String(n);
+  }
 
   // Names a blood relationship off the nearest shared ancestor: cousins when
   // both sides descend at least two generations, grand-uncles and grand-nephews
@@ -441,10 +446,11 @@ window.buildFamilyTree = function (people, scrapbook, initialMe) {
     if (du >= 2 && dd >= 2) {
       const degree  = Math.min(du, dd) - 1;
       const removed = Math.abs(du - dd);
-      const pattern = other.gender === "m"
+      const male = other.gender === "m";
+      const pattern = male
         ? tr("relations.patterns.cousinM", "{n} cousin")
         : tr("relations.patterns.cousinF", "{n} cousin");
-      let label = pattern.replace("{n}", degreeToken(degree));
+      let label = pattern.replace("{n}", degreeToken(degree, male));
       if (removed === 1) {
         label += " " + tr("relations.patterns.onceRemoved", "once removed");
       } else if (removed === 2) {

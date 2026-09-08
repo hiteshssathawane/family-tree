@@ -5509,7 +5509,7 @@ window.I18N_DATA = { en: {
       "mothersSister": "Maternal Aunt (Maushi)",
       "fathersSisterHusband": "Uncle (Kaka)",
       "fathersBrotherWife": "Aunt (Kaki)",
-      "mothersSisterHusband": "Uncle (Mama)",
+      "mothersSisterHusband": "Uncle (Kakaji)",
       "mothersBrotherWife": "Aunt (Mami)"
     },
     "inLaws": {
@@ -5550,6 +5550,22 @@ window.I18N_DATA = { en: {
     "patterns": {
       "cousinM": "{n} cousin",
       "cousinF": "{n} cousin",
+      "ordinalM": {
+        "1": "1st",
+        "2": "2nd",
+        "3": "3rd",
+        "4": "4th",
+        "5": "5th",
+        "6": "6th"
+      },
+      "ordinalF": {
+        "1": "1st",
+        "2": "2nd",
+        "3": "3rd",
+        "4": "4th",
+        "5": "5th",
+        "6": "6th"
+      },
       "onceRemoved": "once removed",
       "twiceRemoved": "twice removed",
       "timesRemoved": "{n} times removed",
@@ -5675,6 +5691,7 @@ window.I18N_DATA = { en: {
     "relCalc": {
       "title": "आपले नाते काय आहे?",
       "choose": "कुटुंबातील सदस्य निवडा…",
+      "noMatch": "त्या नावाचा कोणताही सदस्य आढळला नाही.",
       "samePerson": "हे {name} च आहेत — तीच व्यक्ती.",
       "noLink": "{other} यांचा {subject} यांच्याशी वंशवृक्षात अद्याप कोणताही संबंध नोंदवलेला नाही.",
       "answer": "{other} हे {subject} यांचे {label} आहेत.",
@@ -5855,7 +5872,7 @@ window.I18N_DATA = { en: {
       "mothersSister": "मावशी",
       "fathersSisterHusband": "काका",
       "fathersBrotherWife": "काकू",
-      "mothersSisterHusband": "काका",
+      "mothersSisterHusband": "काकाजी",
       "mothersBrotherWife": "मामी"
     },
     "inLaws": {
@@ -5894,8 +5911,24 @@ window.I18N_DATA = { en: {
       "relative": "नातेवाईक"
     },
     "patterns": {
-      "cousinM": "{n}वा चुलत भाऊ",
-      "cousinF": "{n}वी चुलत बहीण",
+      "cousinM": "{n} चुलत भाऊ",
+      "cousinF": "{n} चुलत बहीण",
+      "ordinalM": {
+        "1": "पहिला",
+        "2": "दुसरा",
+        "3": "तिसरा",
+        "4": "चौथा",
+        "5": "पाचवा",
+        "6": "सहावा"
+      },
+      "ordinalF": {
+        "1": "पहिली",
+        "2": "दुसरी",
+        "3": "तिसरी",
+        "4": "चौथी",
+        "5": "पाचवी",
+        "6": "सहावी"
+      },
       "onceRemoved": "एक पिढी अंतराने",
       "twiceRemoved": "दोन पिढ्या अंतराने",
       "timesRemoved": "{n} पिढ्या अंतराने",
