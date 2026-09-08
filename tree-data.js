@@ -5292,6 +5292,11 @@ window.I18N_DATA = { en: {
       "Nephews & Nieces": "Nephews & Nieces",
       "In-Laws": "In-Laws",
       "Grandchildren": "Grandchildren"
+    },
+    "status": {
+      "filtering": "Filtering:",
+      "match": "match",
+      "matches": "matches"
     }
   },
   "profile": {
@@ -5350,7 +5355,11 @@ window.I18N_DATA = { en: {
       "parents": "Parents"
     },
     "photoViewer": "Photo",
-    "closePhoto": "Close photo"
+    "closePhoto": "Close photo",
+    "scrapbookOwn": "Your Scrapbook",
+    "scrapbookOf": "{name}'s Scrapbook",
+    "emptyScrapbook": "The scrapbook is still waiting for stories.",
+    "emptyScrapbookHint": "Tap + on the canvas to add a memory."
   },
   "calendar": {
     "title": "Family calendar",
@@ -5655,6 +5664,11 @@ window.I18N_DATA = { en: {
       "Nephews & Nieces": "पुतणे-भाचे",
       "In-Laws": "सासरचे नातेवाईक",
       "Grandchildren": "नातवंडे"
+    },
+    "status": {
+      "filtering": "गाळणी:",
+      "match": "सदस्य",
+      "matches": "सदस्य"
     }
   },
   "profile": {
@@ -5713,7 +5727,11 @@ window.I18N_DATA = { en: {
       "parents": "आई-वडील"
     },
     "photoViewer": "छायाचित्र",
-    "closePhoto": "छायाचित्र बंद करा"
+    "closePhoto": "छायाचित्र बंद करा",
+    "scrapbookOwn": "तुमचे स्मृतिपुस्तक",
+    "scrapbookOf": "{name} यांचे स्मृतिपुस्तक",
+    "emptyScrapbook": "स्मृतिपुस्तक अजून कथांची वाट पाहत आहे.",
+    "emptyScrapbookHint": "आठवण जोडण्यासाठी कॅनव्हासवर + दाबा."
   },
   "calendar": {
     "title": "कुटुंब दिनदर्शिका",

@@ -152,6 +152,32 @@ window.initTreeApp = function () {
     }
   }
 
+  /* ============================================================
+     NAMES IN TRANSLATED TEXT
+
+     The strings around a person's name are translated, but the name itself was
+     spliced in from the English record every time — so Marathi read as English
+     names wrapped in Marathi grammar ("Hitesh हे Vatsal यांचे चुलत भाऊ आहेत"),
+     and the relationship chain strung Marathi hop labels between Latin names.
+
+     Both helpers fall back per person rather than per language, so a member with
+     no Marathi name still reads correctly instead of dropping out of the sentence.
+     The English branch is deliberately unchanged — shortName returns the same
+     first token it always did, so nothing moves in EN.
+     ============================================================ */
+  function isMarathi() {
+    return window.CURRENT_LANG === "MR";
+  }
+  function shortName(p) {
+    if (!p) return "";
+    if (isMarathi()) return p.commonNameMr || p.firstNameMr || p.firstName || p.name.split(" ")[0];
+    return p.name.split(" ")[0];
+  }
+  function fullName(p) {
+    if (!p) return "";
+    return (isMarathi() && p.nameMr) ? p.nameMr : p.name;
+  }
+
   window.updateLanguage = function (lang) {
     window.CURRENT_LANG = lang;
     F.people.forEach(p => {
@@ -172,15 +198,25 @@ window.initTreeApp = function () {
     if (lightbox.classList.contains("open") && currentPersonId) {
       const p = F.byId[currentPersonId];
       if (p) {
-        const modalDisplayName = (lang === "MR" && p.nameMr) ? p.nameMr : p.name;
         document.getElementById("lb-name").innerHTML =
-          escapeHtml(modalDisplayName) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
+          escapeHtml(fullName(p)) + (p.deceased ? '<span class="leaf" title="In memory"></span>' : "");
+        renderRelationsRow(p);
         renderBioTab(p);
         renderFamilyTab(p);
+        renderTimelineTitle(p, currentPersonId);
+        // The scrapbook list holds user-written captions, which do not translate — but
+        // its empty state is our own sentence and has to follow the language.
+        const emptyEl = document.querySelector("#lb-timeline-list .scrap-empty");
+        if (emptyEl) {
+          emptyEl.innerHTML = `${escapeHtml(t("profile.emptyScrapbook", "The scrapbook is still waiting for stories."))}<br>${escapeHtml(t("profile.emptyScrapbookHint", "Tap + on the canvas to add a memory."))}`;
+        }
         // Keep the relationship picker on the same person, restated in the new language.
         resetRelCalc(true);
       }
     }
+
+    // The breadcrumb names a person and the hops to them, both of which just changed.
+    updateStatusFromPath();
     // Update calendar panel if it is visible
     const calendarEl = document.getElementById("calendar-panel");
     if (calendarEl && calendarEl.style.display !== "none") {
@@ -429,7 +465,10 @@ window.initTreeApp = function () {
     if (!activeFilter) return updateStatusFromPath();
     const n = F.tagMatches(ME, activeFilter).length;
     statusPill.classList.remove("is-path");
-    statusBC.innerHTML = `<span>Filtering:</span> <span class="bc-name">${escapeHtml(tagLabel(activeFilter))}</span> <span style="opacity:.7">· ${n} ${n === 1 ? "match" : "matches"}</span>`;
+    const unit = t(n === 1 ? "tree.status.match" : "tree.status.matches", n === 1 ? "match" : "matches");
+    statusBC.innerHTML = `<span>${escapeHtml(t("tree.status.filtering", "Filtering:"))}</span> ` +
+      `<span class="bc-name">${escapeHtml(tagLabel(activeFilter))}</span> ` +
+      `<span style="opacity:.7">· ${n} ${escapeHtml(unit)}</span>`;
     statusPill.classList.add("visible");
   }
   function updateStatusFromPath() {
@@ -443,7 +482,9 @@ window.initTreeApp = function () {
       statusPill.classList.add("is-path");
       const segs = path.map((id, i) => {
         const p = F.byId[id];
-        const label = id === ME ? "Me" : (i === path.length - 1 ? p.name.split(" ")[0] : shortRelative(id, path[Math.max(0, i - 1)]));
+        const label = id === ME
+          ? t("relations.self.you", "Me")
+          : (i === path.length - 1 ? shortName(p) : shortRelative(id, path[Math.max(0, i - 1)]));
         return `<span class="bc-name">${label}</span>`;
       });
       statusBC.innerHTML = segs.join(' <span class="bc-arrow">→</span> ');
@@ -455,12 +496,17 @@ window.initTreeApp = function () {
   function shortRelative(id, prevId) {
     // simple short label between two adjacent path nodes
     const p = F.byId[id], prev = F.byId[prevId];
-    if (!p || !prev) return p.name.split(" ")[0];
-    if (prev.spouse === id) return p.gender === "m" ? "Husband" : "Wife";
-    if (prev.parents.includes(id)) return p.gender === "m" ? "Father" : "Mother";
-    if (prev.children.includes(id)) return p.gender === "m" ? "Son" : "Daughter";
-    if (prev.siblings && prev.siblings.includes(id)) return p.gender === "m" ? "Brother" : "Sister";
-    return p.name.split(" ")[0];
+    if (!p || !prev) return shortName(p);
+    // profile.terms.* already carries these eight in both languages; they were hardcoded
+    // here, so the breadcrumb stayed English while every other relation label switched.
+    const male = p.gender === "m";
+    const term = (m, f) => male ? t("profile.terms." + m, m[0].toUpperCase() + m.slice(1))
+                                : t("profile.terms." + f, f[0].toUpperCase() + f.slice(1));
+    if (prev.spouse === id) return term("husband", "wife");
+    if (prev.parents.includes(id)) return term("father", "mother");
+    if (prev.children.includes(id)) return term("son", "daughter");
+    if (prev.siblings && prev.siblings.includes(id)) return term("brother", "sister");
+    return shortName(p);
   }
   statusX.addEventListener("click", () => {
     clearPath();
@@ -859,6 +905,48 @@ window.initTreeApp = function () {
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   }
 
+  // Quick relations row under the name — spouse, parents, children, a few siblings.
+  // Extracted so a language switch can redraw it without reopening the panel, which
+  // would re-pan the canvas and throw the reader back to the Timeline tab. Its labels
+  // used to be hardcoded English while the Family tab right below used profile.terms.*,
+  // so the same relation appeared twice on one screen in two languages.
+  function renderRelationsRow(p) {
+    const rels = [];
+    const term = (male, m, f) => t("profile.terms." + (male ? m : f), male ? m : f);
+    if (p.spouse) rels.push({ id: p.spouse, label: term(p.gender !== "m", "husband", "wife") });
+    (p.parents || []).forEach(pid => {
+      const par = F.byId[pid];
+      if (par) rels.push({ id: pid, label: term(par.gender === "m", "father", "mother") });
+    });
+    (p.children || []).forEach(cid => {
+      const c = F.byId[cid];
+      if (c) rels.push({ id: cid, label: term(c.gender === "m", "son", "daughter") });
+    });
+    (p.siblings || []).slice(0, 3).forEach(sid => {
+      const s = F.byId[sid];
+      if (s) rels.push({ id: sid, label: term(s.gender === "m", "brother", "sister") });
+    });
+
+    const relsEl = document.getElementById("lb-relations");
+    relsEl.innerHTML = rels.slice(0, 6).map(r => {
+      const rp = F.byId[r.id];
+      return `<button class="lb-rel-chip" data-id="${r.id}">
+        ${thumbHtml(rp, "lrc-thumb")}
+        <span class="lrc-rel">${escapeHtml(r.label)}</span>
+        <span>${escapeHtml(shortName(rp))}</span>
+      </button>`;
+    }).join("");
+    bindPersonChips(relsEl);
+  }
+
+  // Overwrites the data-i18n heading in the markup, so it carries its own translation —
+  // otherwise the panel reverted to English the moment it opened.
+  function renderTimelineTitle(p, id) {
+    document.getElementById("lb-timeline-title").textContent = id === ME
+      ? t("profile.scrapbookOwn", "Your Scrapbook")
+      : t("profile.scrapbookOf", "{name}'s Scrapbook").replace("{name}", shortName(p));
+  }
+
   function personChipHtml(id, label) {
     const p = F.byId[id];
     if (!p) return "";
@@ -867,7 +955,7 @@ window.initTreeApp = function () {
     return `<button class="lb-rel-chip" data-id="${id}">
       ${thumbHtml(p, "lrc-thumb")}
       ${relHtml}
-      <span>${escapeHtml(p.name.split(" ")[0])}</span>
+      <span>${escapeHtml(shortName(p))}</span>
     </button>`;
   }
 
@@ -917,7 +1005,7 @@ window.initTreeApp = function () {
 
     if (!facts.length && !p.biography) {
       factsEl.innerHTML = "";
-      const emptyMsg = t("profile.emptyState").replace("{name}", p.name.split(" ")[0]);
+      const emptyMsg = t("profile.emptyState").replace("{name}", shortName(p));
       storyEl.innerHTML = `<div class="lb-empty">${escapeHtml(emptyMsg)}</div>`;
       storyEl.style.borderTop = "none";
       storyEl.style.paddingTop = "0";
@@ -967,7 +1055,7 @@ window.initTreeApp = function () {
 
     const groupsEl = document.getElementById("lb-fam-groups");
     if (!groups.length) {
-      const noLinks = t("profile.noFamilyLinks").replace("{name}", p.name.split(" ")[0]);
+      const noLinks = t("profile.noFamilyLinks").replace("{name}", shortName(p));
       groupsEl.innerHTML = `<div class="lb-empty">${escapeHtml(noLinks)}</div>`;
     } else {
       groupsEl.innerHTML = groups.map(g => `
@@ -995,7 +1083,7 @@ window.initTreeApp = function () {
   // The picker is a combobox rather than a <select> because the tree is past 70
   // members: scrolling a native option list to find one person is the slow way.
   function relCalcName(p) {
-    return (window.CURRENT_LANG === "MR" && p.nameMr) ? p.nameMr : p.name;
+    return fullName(p);
   }
 
   // Matching stays deliberately loose — a member searching in English should still
@@ -1106,12 +1194,12 @@ window.initTreeApp = function () {
     const result  = F.relationshipBetween(currentPersonId, otherId);
     if (!subject || !other || !result) { relCalcResult.innerHTML = ""; return; }
 
-    const subjectFirst = escapeHtml(subject.name.split(" ")[0]);
-    const otherFirst   = escapeHtml(other.name.split(" ")[0]);
+    const subjectFirst = escapeHtml(shortName(subject));
+    const otherFirst   = escapeHtml(shortName(other));
 
     let answer;
     if (currentPersonId === otherId) {
-      answer = escapeHtml(t("profile.relCalc.samePerson").replace("{name}", subject.name.split(" ")[0]));
+      answer = escapeHtml(t("profile.relCalc.samePerson").replace("{name}", shortName(subject)));
     } else if (!result.connected) {
       answer = escapeHtml(t("profile.relCalc.noLink"))
         .replace("{other}", `<strong>${otherFirst}</strong>`)
@@ -1132,12 +1220,16 @@ window.initTreeApp = function () {
         .replace("{label}",   `<strong>${escapeHtml(result.label)}</strong>`);
     }
 
-    // Show the working: the hop chain the answer was derived from.
+    // Show the working: the hop chain the answer was derived from. Each hop carries the
+    // person's id, so the names are resolved here rather than taken from the chain's
+    // pre-baked English `h.name` — the hop relations were already translated, which left
+    // Marathi labels strung between Latin names.
     let chainHtml = "";
     const hops = result.chain.slice(0, 8);
     if (hops.length > 1) {
-      chainHtml = `<div class="lb-relcalc-chain">${escapeHtml(subject.name)}` +
-        hops.map(h => `<span class="arrow">→</span><span class="hop-rel">${escapeHtml(h.rel)}</span>${escapeHtml(h.name)}`).join("") +
+      const hopName = h => relCalcName(F.byId[h.id] || { name: h.name, nameMr: null });
+      chainHtml = `<div class="lb-relcalc-chain">${escapeHtml(relCalcName(subject))}` +
+        hops.map(h => `<span class="arrow">→</span><span class="hop-rel">${escapeHtml(h.rel)}</span>${escapeHtml(hopName(h))}`).join("") +
         (result.chain.length > hops.length ? `<span class="arrow">→</span>…` : "") +
         `</div>`;
     }
@@ -1306,8 +1398,12 @@ window.initTreeApp = function () {
       ["#fbe1d2","#e6a48b","#a05a3c"],
       ["#e6dfca","#c9b98e","#7a6a4a"]
     ];
-    const t = tones[Math.abs(hashCode(p.id)) % tones.length];
-    cover.style.background = `linear-gradient(135deg, ${t[0]} 0%, ${t[1]} 45%, ${t[2]} 100%)`;
+    // Named `tone`, not `t`: `t` is the module-wide translate function, and a local of
+    // that name shadowed it for the whole of openPerson — every t("…") call further down
+    // this function threw "t is not a function", which is what blanked the scrapbook's
+    // empty state.
+    const tone = tones[Math.abs(hashCode(p.id)) % tones.length];
+    cover.style.background = `linear-gradient(135deg, ${tone[0]} 0%, ${tone[1]} 45%, ${tone[2]} 100%)`;
 
     // Photo edit buttons — own profile only, and only when a Worker is configured.
     // The Worker re-checks both, so this is presentation, not the security boundary.
@@ -1317,28 +1413,7 @@ window.initTreeApp = function () {
     if (editAvatar) editAvatar.hidden = !canEdit;
     if (editCover)  editCover.hidden  = !canEdit;
 
-    // Quick relations row — show spouse, parents, children if any
-    const rels = [];
-    if (p.spouse)             rels.push({ id: p.spouse, label: p.gender === "m" ? "Wife" : "Husband" });
-    (p.parents || []).forEach(pid => {
-      const par = F.byId[pid]; if (par) rels.push({ id: pid, label: par.gender === "m" ? "Father" : "Mother" });
-    });
-    (p.children || []).forEach(cid => {
-      const c = F.byId[cid]; if (c) rels.push({ id: cid, label: c.gender === "m" ? "Son" : "Daughter" });
-    });
-    (p.siblings || []).slice(0, 3).forEach(sid => {
-      const s = F.byId[sid]; if (s) rels.push({ id: sid, label: s.gender === "m" ? "Brother" : "Sister" });
-    });
-    const relsEl = document.getElementById("lb-relations");
-    relsEl.innerHTML = rels.slice(0, 6).map(r => {
-      const rp = F.byId[r.id];
-      return `<button class="lb-rel-chip" data-id="${r.id}">
-        ${thumbHtml(rp, "lrc-thumb")}
-        <span class="lrc-rel">${r.label}</span>
-        <span>${escapeHtml(rp.name.split(" ")[0])}</span>
-      </button>`;
-    }).join("");
-    bindPersonChips(relsEl);
+    renderRelationsRow(p);
 
     // Bio + Family tabs, and the relationship calculator seeded on this person
     renderBioTab(p);
@@ -1346,16 +1421,14 @@ window.initTreeApp = function () {
     resetRelCalc(false);
     switchProfileTab("timeline");
 
-    // Timeline title
-    document.getElementById("lb-timeline-title").textContent = id === ME
-      ? "Your Scrapbook" : `${p.name.split(" ")[0]}'s Scrapbook`;
+    renderTimelineTitle(p, id);
 
     // Scrapbook
     const list = document.getElementById("lb-timeline-list");
     list.innerHTML = "";
     const entries = F.scrapbook[id] || [];
     if (!entries.length) {
-      list.innerHTML = `<div class="scrap-empty">The scrapbook is still waiting for stories.<br>Tap + on the canvas to add a memory.</div>`;
+      list.innerHTML = `<div class="scrap-empty">${escapeHtml(t("profile.emptyScrapbook", "The scrapbook is still waiting for stories."))}<br>${escapeHtml(t("profile.emptyScrapbookHint", "Tap + on the canvas to add a memory."))}</div>`;
     } else {
       entries.forEach(e => {
         const card = document.createElement("div");
@@ -1385,7 +1458,7 @@ window.initTreeApp = function () {
               const tp = F.byId[tid]; if (!tp) return "";
               return `<button class="scrap-tag" data-id="${tid}">
                 ${thumbHtml(tp, "st-thumb")}
-                <span>${escapeHtml(tp.name.split(" ")[0])}</span>
+                <span>${escapeHtml(shortName(tp))}</span>
               </button>`;
             }).join("")}
           </div>` : "";
@@ -1465,7 +1538,7 @@ window.initTreeApp = function () {
   });
   function lbPerson() { return currentPersonId ? F.byId[currentPersonId] : null; }
   function lbPersonPhoto() { const p = lbPerson(); return p && p.photo; }
-  function lbPersonName()  { const p = lbPerson(); return p ? p.name : ""; }
+  function lbPersonName()  { const p = lbPerson(); return p ? fullName(p) : ""; }
 
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape") {

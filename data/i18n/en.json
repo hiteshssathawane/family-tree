@@ -71,6 +71,11 @@
       "Nephews & Nieces": "Nephews & Nieces",
       "In-Laws": "In-Laws",
       "Grandchildren": "Grandchildren"
+    },
+    "status": {
+      "filtering": "Filtering:",
+      "match": "match",
+      "matches": "matches"
     }
   },
   "profile": {
@@ -129,7 +134,11 @@
       "parents": "Parents"
     },
     "photoViewer": "Photo",
-    "closePhoto": "Close photo"
+    "closePhoto": "Close photo",
+    "scrapbookOwn": "Your Scrapbook",
+    "scrapbookOf": "{name}'s Scrapbook",
+    "emptyScrapbook": "The scrapbook is still waiting for stories.",
+    "emptyScrapbookHint": "Tap + on the canvas to add a memory."
   },
   "calendar": {
     "title": "Family calendar",
@@ -330,12 +339,20 @@
       "cousinM": "{n} cousin",
       "cousinF": "{n} cousin",
       "ordinalM": {
-        "1": "1st", "2": "2nd", "3": "3rd",
-        "4": "4th", "5": "5th", "6": "6th"
+        "1": "1st",
+        "2": "2nd",
+        "3": "3rd",
+        "4": "4th",
+        "5": "5th",
+        "6": "6th"
       },
       "ordinalF": {
-        "1": "1st", "2": "2nd", "3": "3rd",
-        "4": "4th", "5": "5th", "6": "6th"
+        "1": "1st",
+        "2": "2nd",
+        "3": "3rd",
+        "4": "4th",
+        "5": "5th",
+        "6": "6th"
       },
       "onceRemoved": "once removed",
       "twiceRemoved": "twice removed",

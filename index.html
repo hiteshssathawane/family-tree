@@ -4275,7 +4275,11 @@
 
       <div class="lb-tabpanel active" id="lb-tab-timeline" role="tabpanel" aria-labelledby="lb-tabbtn-timeline">
         <div class="lb-timeline">
-          <h3 class="lb-timeline-title" id="lb-timeline-title" data-i18n="profile.timelineTitle">A Life in Pictures</h3>
+          <!-- No data-i18n here on purpose: renderTimelineTitle() owns this text, because
+               it names the person ("Vatsal's Scrapbook"). While the attribute was present,
+               applyI18n() ran last on a language switch and overwrote that with the
+               generic heading. -->
+          <h3 class="lb-timeline-title" id="lb-timeline-title">A Life in Pictures</h3>
           <div class="lb-timeline-sub">
             <span class="sep"></span><span data-i18n="profile.scrapbook">Scrapbook</span><span class="sep"></span>
           </div>
