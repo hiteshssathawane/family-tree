@@ -19,6 +19,18 @@ const isPlaceholderDate = window.isPlaceholderDate;
 // entering the view model goes through this.
 const realDate = (d) => (d && !isPlaceholderDate(d) ? d : null);
 
+// A date whose day and month are real but whose year is not — the Form field said
+// "19-Jan" or "2-july-", and csv-import stamped this year on it. Unlike
+// UNKNOWN_BIRTH_DATE, such a date is worth keeping and worth showing: the occasion
+// still falls on a known day, so the calendar raises it and counts down to it. What it
+// must never do is state an age or an Nth anniversary, because that needs the year.
+window.UNKNOWN_YEAR = 1900;
+window.hasKnownYear = function (d) {
+  if (!d) return false;
+  const year = parseInt(String(d).slice(0, 4), 10);
+  return Number.isFinite(year) && year !== window.UNKNOWN_YEAR;
+};
+
 window.buildFamilyTree = function (people, scrapbook, initialMe) {
   // Build lookup
   const byId = {};

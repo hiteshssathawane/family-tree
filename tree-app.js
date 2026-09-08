@@ -178,6 +178,26 @@ window.initTreeApp = function () {
     return (isMarathi() && p.nameMr) ? p.nameMr : p.name;
   }
 
+  // Surname shown on the calendar's branch pills. Only the label translates — the English
+  // surname stays the key, because it is what data-branch carries and what occ.branch is
+  // compared against when filtering.
+  //
+  // Read off F.people rather than the raw records: processRawFamilyData already fills
+  // lastNameMr from the transliteration dictionary where the sheet left the column blank,
+  // so this covers more surnames than the sheet does on its own.
+  const branchLabelCache = {};
+  function branchLabel(surname) {
+    if (!isMarathi() || !surname) return surname;
+    if (!(surname in branchLabelCache)) {
+      const key = String(surname).trim().toLowerCase();
+      const hit = F.people.find(p =>
+        String(p.lastName || "").trim().toLowerCase() === key && p.lastNameMr
+      );
+      branchLabelCache[surname] = hit ? hit.lastNameMr : surname;
+    }
+    return branchLabelCache[surname] || surname;
+  }
+
   window.updateLanguage = function (lang) {
     window.CURRENT_LANG = lang;
     F.people.forEach(p => {
@@ -1625,9 +1645,14 @@ window.initTreeApp = function () {
   // Calendar render functions
   function calculateNextOccur(dateStr, startYear) {
     if (!dateStr) return null;
-    const parts = dateStr.split("-").map(Number);
+    const parts = String(dateStr).split("-").map(Number);
     if (parts.length < 3) return null;
     const [year, month, day] = parts;
+    // A hand-typed sheet value can survive the importer as something like "2-july-",
+    // which splits into three parts but yields NaN for the month. Without this the card
+    // rendered "In NaN days" on a date of "NaN undefined".
+    if (!Number.isFinite(month) || !Number.isFinite(day) ||
+        month < 1 || month > 12 || day < 1 || day > 31) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -1641,8 +1666,11 @@ window.initTreeApp = function () {
     const diffMs = nextOcc.getTime() - today.getTime();
     const daysLeft = Math.round(diffMs / (1000 * 60 * 60 * 24));
     
-    const milestone = startYear ? (nextOcc.getFullYear() - startYear) : null;
-    
+    // No milestone when the year is a placeholder: the day and month are real, so the
+    // countdown stands, but "how many years" is not something the data knows.
+    const knownStart = Number.isFinite(startYear) && startYear !== window.UNKNOWN_YEAR;
+    const milestone = knownStart ? (nextOcc.getFullYear() - startYear) : null;
+
     return { nextOcc, daysLeft, milestone };
   }
 
@@ -1700,7 +1728,7 @@ window.initTreeApp = function () {
     if (branchFiltersEl) {
       let pillsHtml = `<button class="cal-pill ${activeCalBranch === 'all' ? 'active' : ''}" data-branch="all">${window.CURRENT_LANG === "MR" ? "सर्व शाखा" : "All Branches"}</button>`;
       majorBranches.forEach(b => {
-        pillsHtml += `<button class="cal-pill ${activeCalBranch === b ? 'active' : ''}" data-branch="${b}">${b} (${counts[b]})</button>`;
+        pillsHtml += `<button class="cal-pill ${activeCalBranch === b ? 'active' : ''}" data-branch="${escapeHtml(b)}">${escapeHtml(branchLabel(b))} (${counts[b]})</button>`;
       });
       branchFiltersEl.innerHTML = pillsHtml;
       
@@ -1737,11 +1765,11 @@ window.initTreeApp = function () {
             milestone: calc.milestone,
             branch: p.lastName,
             titleEn: gone
-              ? `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birth Anniversary`
-              : `${p.firstName} ${p.lastName}'s ${getOrdinal(calc.milestone)} Birthday`,
+              ? `${p.firstName} ${p.lastName}'s ${ordEn(calc.milestone)}Birth Anniversary`
+              : `${p.firstName} ${p.lastName}'s ${ordEn(calc.milestone)}Birthday`,
             titleMr: gone
-              ? `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${calc.milestone}वी जयंती`
-              : `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांचा ${calc.milestone}वा वाढदिवस`,
+              ? `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${ordMr(calc.milestone,'वी')}जयंती`
+              : `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांचा ${ordMr(calc.milestone,'वा')}वाढदिवस`,
             dateLabel: formatDateLabel(calc.nextOcc)
           });
         }
@@ -1767,8 +1795,8 @@ window.initTreeApp = function () {
             daysLeft: calc.daysLeft,
             milestone: calc.milestone,
             branch: p.lastName,
-            titleEn: `${p.firstName} ${p.lastName} — ${getOrdinal(calc.milestone)} Remembrance`,
-            titleMr: `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${calc.milestone}वी पुण्यतिथी`,
+            titleEn: `${p.firstName} ${p.lastName} — ${ordEn(calc.milestone)}Remembrance`,
+            titleMr: `${p.firstNameMr || p.firstName} ${p.lastNameMr || p.lastName} यांची ${ordMr(calc.milestone,'वी')}पुण्यतिथी`,
             dateLabel: formatDateLabel(calc.nextOcc)
           });
         }
@@ -1804,8 +1832,8 @@ window.initTreeApp = function () {
               daysLeft: calc.daysLeft,
               milestone: calc.milestone,
               branch: branch,
-              titleEn: `${p1.firstName} & ${p2.firstName}'s ${getOrdinal(calc.milestone)} Anniversary`,
-              titleMr: `${p1NameMr} आणि ${p2NameMr} यांचा ${calc.milestone}वा लग्नाचा वाढदिवस`,
+              titleEn: `${p1.firstName} & ${p2.firstName}'s ${ordEn(calc.milestone)}Anniversary`,
+              titleMr: `${p1NameMr} आणि ${p2NameMr} यांचा ${ordMr(calc.milestone,'वा')}लग्नाचा वाढदिवस`,
               dateLabel: formatDateLabel(calc.nextOcc)
             });
           }
@@ -1892,9 +1920,13 @@ window.initTreeApp = function () {
       }
 
       const [dsYear, dsMonth, dsDay] = occ.dateStr.split("-");
+      // The parenthetical spells out the original date, so it is only printed when that
+      // date has a year. Otherwise it would read "(02/07/1900)" for a "2 July" the sheet
+      // gave no year for.
+      const fullDate = window.hasKnownYear(occ.dateStr) ? ` (${dsDay}/${dsMonth}/${dsYear})` : "";
       const dateText = window.CURRENT_LANG === "MR"
-        ? mrDigits(`दिनांक: ${occ.dateLabel} (${dsDay}/${dsMonth}/${dsYear})`)
-        : `Date: ${occ.dateLabel} (${dsDay}/${dsMonth}/${dsYear})`;
+        ? mrDigits(`दिनांक: ${occ.dateLabel}${fullDate}`)
+        : `Date: ${occ.dateLabel}${fullDate}`;
 
       // No "Send Wish" for anyone who has died — not on a remembrance, and not on a
       // birth anniversary either. A WhatsApp "Happy Birthday" to a deceased relative is
@@ -1962,6 +1994,18 @@ window.initTreeApp = function () {
     const d = r.startDate || r.marriageDate || null;
     // One screening point for every anniversary the app raises — card and .ics alike.
     return d && !isUnknownBirthDate(d) ? d : null;
+  }
+
+  // "40th " when the year behind the date is known, "" when it is not — so a card reads
+  // "Aarti & Vishal's Anniversary" instead of inventing a number the data does not have.
+  // The trailing space is part of the prefix so the noun still reads right without it.
+  function ordEn(milestone) {
+    return milestone == null ? "" : getOrdinal(milestone) + " ";
+  }
+  // Marathi puts the ordinal suffix on the digits (४०वा), and the suffix differs by the
+  // gender of the noun that follows, so the caller passes it.
+  function ordMr(milestone, suffix) {
+    return milestone == null ? "" : `${milestone}${suffix} `;
   }
 
   function getOrdinal(n) {
@@ -2048,8 +2092,20 @@ window.initTreeApp = function () {
     return `<img src="${DEFAULT_PHOTO}" class="${cl}" alt="" loading="lazy" data-default-photo="1">`;
   }
 
+  // DTSTART for a yearly event. A date the sheet gave no year for is stamped
+  // UNKNOWN_YEAR, and starting the series there makes a calendar client materialise a
+  // century of past occurrences before it reaches today. The recurrence is what matters,
+  // not the origin, so an undated series starts at its next real occurrence.
+  function icsDateFor(dateStr) {
+    if (window.hasKnownYear(dateStr)) return String(dateStr).replace(/-/g, "");
+    const calc = calculateNextOccur(dateStr, null);
+    if (!calc) return String(dateStr).replace(/-/g, "");
+    const d = calc.nextOcc;
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  }
+
   function downloadSingleICS(occ) {
-    let dateStr = occ.dateStr.replace(/-/g, "");
+    let dateStr = icsDateFor(occ.dateStr);
     let summary = window.CURRENT_LANG === "MR" ? occ.titleMr : occ.titleEn;
     // A remembrance carries `person`, not `person1`/`person2`, and the old ternary
     // reached straight for `occ.person1.firstName` on anything that was not a birthday.
@@ -2108,7 +2164,7 @@ window.initTreeApp = function () {
     //    so it is never phrased as a birthday here.
     rawData.persons.forEach(p => {
       if (p.status !== "deceased" && p.birthDate && !isUnknownBirthDate(p.birthDate)) {
-        const dateStr = p.birthDate.replace(/-/g, "");
+        const dateStr = icsDateFor(p.birthDate);
         const name = p.name || `${p.firstName} ${p.lastName}`;
         const nameMr = (window.CURRENT_LANG === "MR" && p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;
         const displayName = window.CURRENT_LANG === "MR" ? nameMr : name;
@@ -2132,7 +2188,7 @@ window.initTreeApp = function () {
         const p1 = rawData.persons.find(x => x.id === r.person1Id);
         const p2 = rawData.persons.find(x => x.id === r.person2Id);
         if (p1 && p2 && p1.status !== "deceased" && p2.status !== "deceased") {
-          const dateStr = wedDate.replace(/-/g, "");
+          const dateStr = icsDateFor(wedDate);
           const name1Mr = (window.CURRENT_LANG === "MR" && p1.firstNameMr) ? p1.firstNameMr : p1.firstName.split(" ")[0];
           const name2Mr = (window.CURRENT_LANG === "MR" && p2.firstNameMr) ? p2.firstNameMr : p2.firstName.split(" ")[0];
 
@@ -2157,7 +2213,7 @@ window.initTreeApp = function () {
       // Same screen as the on-screen remembrance card: a placeholder death date writes
       // no .ics event.
       if (p.status === "deceased" && p.deathDate && !isUnknownBirthDate(p.deathDate)) {
-        const dateStr = p.deathDate.replace(/-/g, "");
+        const dateStr = icsDateFor(p.deathDate);
         const name = p.name || `${p.firstName} ${p.lastName}`;
         const nameMr = (p.firstNameMr && p.lastNameMr) ? `${p.firstNameMr} ${p.lastNameMr}` : name;
         const displayName = window.CURRENT_LANG === "MR" ? nameMr : name;

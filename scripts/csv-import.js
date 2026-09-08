@@ -12,6 +12,12 @@ import { resolve } from 'path';
 // to keep this placeholder out of the profile panel, the calendar and the .ics feed.
 const UNKNOWN_BIRTH_DATE = '1674-06-06';
 
+// Year placed on a date whose day and month are known but whose year is not — the Form
+// field says "19-Jan" or "2-july-". Distinct from UNKNOWN_BIRTH_DATE, which stands for a
+// date nobody knows at all: this one is two thirds real, and the calendar can and should
+// raise the occasion on the right day. Keep in step with window.UNKNOWN_YEAR.
+const UNKNOWN_YEAR = 1900;
+
 // The placeholder is only ever legitimate in birthDate, where it exists so a member with
 // no DOB still gets a login hash. It has no meaning in any other date column — but it
 // reached the Sheet as a literal typed answer in Death Date and Marriage Date on a few
@@ -101,11 +107,13 @@ const formatDate = (d) => {
   // 1. Check if already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
   
-  // 2. D-Mon-YY or D-Mon-YYYY (e.g., 29-Dec-85 or 29-Dec-1985)
-  const monMatch = d.match(/^(\d{1,2})-?([a-zA-Z]{3})-?(\d{2,4})$/);
+  // 2. D-Mon-YY or D-Mon-YYYY (e.g., 29-Dec-85, 29-Dec-1985, 2-July-2019)
+  //    The month accepts its full name, not just the three-letter abbreviation, and the
+  //    separators may be dash, slash or space — people type the Form field by hand.
+  const monMatch = d.match(/^(\d{1,2})[-\/\s]?([a-zA-Z]{3,})[-\/\s]?(\d{2,4})$/);
   if (monMatch) {
     const day = monMatch[1].padStart(2, '0');
-    const month = monthMap[monMatch[2].toLowerCase()];
+    const month = monthMap[monMatch[2].slice(0, 3).toLowerCase()];
     let year = monMatch[3];
     if (year.length === 2) {
       year = parseInt(year) >= 30 ? '19' + year : '20' + year;
@@ -125,12 +133,19 @@ const formatDate = (d) => {
     return `${year}-${month}-${day}`;
   }
   
-  // 4. D-Mon (e.g., 19-Jan, 5-Sep, 20-Sep)
-  const dayMonMatch = d.match(/^(\d{1,2})-?([a-zA-Z]{3})$/);
+  // 4. D-Mon with no year (e.g., 19-Jan, 5-Sep, "2-july-"). The trailing separator is
+  //    what a half-filled Form field leaves behind, and dropping it here is the difference
+  //    between a usable day+month and an unparseable string: "2-july-" fell through to
+  //    the raw return below and reached the calendar as "In NaN days".
+  //
+  //    UNKNOWN_YEAR stands in for the year we do not have. The day and month are real, so
+  //    the occasion still lands on the calendar on the right date — see hasKnownYear() in
+  //    tree-helpers.js, which is what stops the UI claiming a 126th anniversary.
+  const dayMonMatch = d.match(/^(\d{1,2})[-\/\s]?([a-zA-Z]{3,})[-\/\s]?$/);
   if (dayMonMatch) {
     const day = dayMonMatch[1].padStart(2, '0');
-    const month = monthMap[dayMonMatch[2].toLowerCase()];
-    if (month) return `1900-${month}-${day}`;
+    const month = monthMap[dayMonMatch[2].slice(0, 3).toLowerCase()];
+    if (month) return `${UNKNOWN_YEAR}-${month}-${day}`;
   }
   
   // 5. 8-digit or 7-digit numbers (DDMMYYYY)

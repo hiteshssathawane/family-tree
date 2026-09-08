@@ -3732,7 +3732,7 @@ window.FAMILY_DATA = {
       "type": "marriage",
       "person1Id": "AARTI_KALINDI_PRAKASHCHANDRA_BISNE",
       "person2Id": "VISHAL___PAHUNE",
-      "startDate": "2-july-",
+      "startDate": "1900-07-02",
       "endDate": null,
       "endReason": null,
       "place": null,
