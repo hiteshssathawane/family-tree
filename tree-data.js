@@ -5754,8 +5754,8 @@ window.I18N_DATA = { en: {
       "bornAt": "{name} यांचा जन्म {place} येथे झाला.",
       "married": "{name} यांचा विवाह {spouse} यांच्याशी झाला.",
       "marriedAt": "{name} यांचा विवाह {spouse} यांच्याशी {place} येथे झाला.",
-      "childBirth": "{name} यांनी {kin} {child} यांचे स्वागत केले.",
-      "childBirthAt": "{name} यांनी {place} येथे {kin} {child} यांचे स्वागत केले.",
+      "childBirth": "{name} यांनी ({kin}) {child} यांचे स्वागत केले.",
+      "childBirthAt": "{name} यांनी {place} येथे ({kin}) {child} यांचे स्वागत केले.",
       "died": "{name} यांचे निधन झाले.",
       "diedAt": "{name} यांचे {place} येथे निधन झाले.",
       "kin": {
