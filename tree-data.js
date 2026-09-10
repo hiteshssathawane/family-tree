@@ -1,7 +1,7 @@
 /* ============================================================
    FAMILY TREE DATA (AUTO-GENERATED)
    ----------------------------------------------------------------
-   Generated on: 2026-09-08
+   Generated on: 2026-09-10
    ============================================================ */
 
 window.FAMILY_DATA = {
@@ -5359,7 +5359,23 @@ window.I18N_DATA = { en: {
     "scrapbookOwn": "Your Scrapbook",
     "scrapbookOf": "{name}'s Scrapbook",
     "emptyScrapbook": "The scrapbook is still waiting for stories.",
-    "emptyScrapbookHint": "Tap + on the canvas to add a memory."
+    "emptyScrapbookHint": "Tap + on the canvas to add a memory.",
+    "scrapbookWith": "With",
+    "autoEvents": {
+      "born": "{name} was born.",
+      "bornAt": "{name} was born in {place}.",
+      "married": "{name} married {spouse}.",
+      "marriedAt": "{name} married {spouse} in {place}.",
+      "childBirth": "{name} welcomed {kin} {child}.",
+      "childBirthAt": "{name} welcomed {kin} {child} in {place}.",
+      "died": "{name} passed away.",
+      "diedAt": "{name} passed away in {place}.",
+      "kin": {
+        "son": "son",
+        "daughter": "daughter",
+        "child": "child"
+      }
+    }
   },
   "calendar": {
     "title": "Family calendar",
@@ -5731,7 +5747,23 @@ window.I18N_DATA = { en: {
     "scrapbookOwn": "तुमचे स्मृतिपुस्तक",
     "scrapbookOf": "{name} यांचे स्मृतिपुस्तक",
     "emptyScrapbook": "स्मृतिपुस्तक अजून कथांची वाट पाहत आहे.",
-    "emptyScrapbookHint": "आठवण जोडण्यासाठी कॅनव्हासवर + दाबा."
+    "emptyScrapbookHint": "आठवण जोडण्यासाठी कॅनव्हासवर + दाबा.",
+    "scrapbookWith": "सोबत",
+    "autoEvents": {
+      "born": "{name} यांचा जन्म झाला.",
+      "bornAt": "{name} यांचा जन्म {place} येथे झाला.",
+      "married": "{name} यांचा विवाह {spouse} यांच्याशी झाला.",
+      "marriedAt": "{name} यांचा विवाह {spouse} यांच्याशी {place} येथे झाला.",
+      "childBirth": "{name} यांच्या घरी {kin} {child} यांचा जन्म झाला.",
+      "childBirthAt": "{name} यांच्या घरी {kin} {child} यांचा जन्म {place} येथे झाला.",
+      "died": "{name} यांचे निधन झाले.",
+      "diedAt": "{name} यांचे {place} येथे निधन झाले.",
+      "kin": {
+        "son": "मुलगा",
+        "daughter": "मुलगी",
+        "child": "अपत्य"
+      }
+    }
   },
   "calendar": {
     "title": "कुटुंब दिनदर्शिका",

@@ -224,12 +224,11 @@ window.initTreeApp = function () {
         renderBioTab(p);
         renderFamilyTab(p);
         renderTimelineTitle(p, currentPersonId);
-        // The scrapbook list holds user-written captions, which do not translate — but
-        // its empty state is our own sentence and has to follow the language.
-        const emptyEl = document.querySelector("#lb-timeline-list .scrap-empty");
-        if (emptyEl) {
-          emptyEl.innerHTML = `${escapeHtml(t("profile.emptyScrapbook", "The scrapbook is still waiting for stories."))}<br>${escapeHtml(t("profile.emptyScrapbookHint", "Tap + on the canvas to add a memory."))}`;
-        }
+        // Rebuild the whole list rather than patching the empty state alone: the auto
+        // entries (born, married, a child's birth, a death) compose their sentence at
+        // render time, so they only follow the language if they are re-rendered. The
+        // hand-written Sheet captions inside are reprinted exactly as they were stored.
+        renderScrapbook(currentPersonId);
         // Keep the relationship picker on the same person, restated in the new language.
         resetRelCalc(true);
       }
@@ -959,6 +958,102 @@ window.initTreeApp = function () {
     bindPersonChips(relsEl);
   }
 
+  /* ============================================================
+     SCRAPBOOK — the profile's timeline tab.
+
+     Auto entries (born / married / childBirth / died) arrive from tree-helpers.js
+     as `kind` + `params` rather than a finished sentence, so the sentence is
+     composed HERE, at render time, in whatever language is current. That is the
+     whole point of the split: this function re-runs on a language toggle, and a
+     caption baked at boot could never have followed it.
+
+     Marathi is used only where the data actually carries it. nameMr/placeMr are
+     null when the record has no Marathi form, and each falls back to the Latin
+     value — so a Marathi sentence may still hold a Latin name or place, exactly
+     as the tree cards and calendar already do. Nothing is transliterated.
+     ============================================================ */
+  function scrapCaption(e) {
+    // A hand-written Sheet entry is already a sentence, in one language. Nothing to compose.
+    if (!e.kind) return e.caption || "";
+    const pr = e.params || {};
+    const mr = window.CURRENT_LANG === "MR";
+    // Marathi when the data has it, the Latin original when it does not.
+    const pick = (en, mrVal) => (mr && mrVal) ? mrVal : (en || "");
+
+    const place = pick(pr.place, pr.placeMr);
+    // Two frames per event: a place is a clause, not an appendable tail — Marathi puts
+    // it before the verb ("... {place} येथे झाला"), English after it.
+    const key = "profile.autoEvents." + e.kind + (place ? "At" : "");
+    const kin = pr.kin
+      ? t("profile.autoEvents.kin." + pr.kin, pr.kin)
+      : "";
+
+    return t(key, "")
+      .replace("{name}",   pick(pr.name, pr.nameMr))
+      .replace("{spouse}", pick(pr.spouse, pr.spouseMr))
+      .replace("{child}",  pick(pr.child, pr.childMr))
+      .replace("{kin}",    kin)
+      .replace("{place}",  place);
+  }
+
+  function renderScrapbook(id) {
+    const list = document.getElementById("lb-timeline-list");
+    if (!list) return;
+    list.innerHTML = "";
+    const entries = F.scrapbook[id] || [];
+    if (!entries.length) {
+      list.innerHTML = `<div class="scrap-empty">${escapeHtml(t("profile.emptyScrapbook", "The scrapbook is still waiting for stories."))}<br>${escapeHtml(t("profile.emptyScrapbookHint", "Tap + on the canvas to add a memory."))}</div>`;
+      return;
+    }
+    entries.forEach(e => {
+      const card = document.createElement("div");
+      card.className = e.remembrance ? "scrap-card remembrance" : "scrap-card";
+      const memorialChip = e.remembrance
+        ? `<span class="scrap-memorial-chip">🕯 ${window.CURRENT_LANG === "MR" ? "स्मरणार्थ" : "In Memory"}</span>`
+        : "";
+      const photos = (e.photos || []).slice(0, 3);
+      const photosHtml = photos.length ? `
+        <div class="scrap-photos count-${photos.length}">
+          ${photos.map(ph => `
+            <div class="scrap-photo ${ph ? "has-photo" : ""}">
+              ${ph ? `<img src="${ph}" alt="" loading="lazy">` : `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:#8a5a36">
+                  <rect x="3" y="5" width="18" height="14" rx="2"/>
+                  <circle cx="9" cy="11" r="1.5"/>
+                  <path d="M3 17l5-5 4 4 3-3 6 6"/>
+                </svg>
+              `}
+            </div>
+          `).join("")}
+        </div>` : "";
+      const tagsHtml = e.tags && e.tags.length ? `
+        <div class="scrap-tags">
+          <span class="label">${escapeHtml(t("profile.scrapbookWith", "With"))}</span>
+          ${e.tags.map(tid => {
+            const tp = F.byId[tid]; if (!tp) return "";
+            return `<button class="scrap-tag" data-id="${tid}">
+              ${thumbHtml(tp, "st-thumb")}
+              <span>${escapeHtml(shortName(tp))}</span>
+            </button>`;
+          }).join("")}
+        </div>` : "";
+      card.innerHTML = `
+        <div class="scrap-date">${formatScrapDate(e.date)}${memorialChip}</div>
+        ${photosHtml}
+        <p class="scrap-caption">${escapeHtml(scrapCaption(e))}</p>
+        ${tagsHtml}
+      `;
+      list.appendChild(card);
+    });
+    list.querySelectorAll(".scrap-tag").forEach(el => {
+      el.addEventListener("click", () => {
+        const targetId = el.dataset.id;
+        closeLightbox();
+        setTimeout(() => openPerson(targetId), 280);
+      });
+    });
+  }
+
   // Overwrites the data-i18n heading in the markup, so it carries its own translation —
   // otherwise the panel reverted to English the moment it opened.
   function renderTimelineTitle(p, id) {
@@ -1443,61 +1538,7 @@ window.initTreeApp = function () {
 
     renderTimelineTitle(p, id);
 
-    // Scrapbook
-    const list = document.getElementById("lb-timeline-list");
-    list.innerHTML = "";
-    const entries = F.scrapbook[id] || [];
-    if (!entries.length) {
-      list.innerHTML = `<div class="scrap-empty">${escapeHtml(t("profile.emptyScrapbook", "The scrapbook is still waiting for stories."))}<br>${escapeHtml(t("profile.emptyScrapbookHint", "Tap + on the canvas to add a memory."))}</div>`;
-    } else {
-      entries.forEach(e => {
-        const card = document.createElement("div");
-        card.className = e.remembrance ? "scrap-card remembrance" : "scrap-card";
-        const memorialChip = e.remembrance
-          ? `<span class="scrap-memorial-chip">🕯 ${window.CURRENT_LANG === "MR" ? "स्मरणार्थ" : "In Memory"}</span>`
-          : "";
-        const photos = (e.photos || []).slice(0, 3);
-        const photosHtml = photos.length ? `
-          <div class="scrap-photos count-${photos.length}">
-            ${photos.map(ph => `
-              <div class="scrap-photo ${ph ? "has-photo" : ""}">
-                ${ph ? `<img src="${ph}" alt="" loading="lazy">` : `
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:#8a5a36">
-                    <rect x="3" y="5" width="18" height="14" rx="2"/>
-                    <circle cx="9" cy="11" r="1.5"/>
-                    <path d="M3 17l5-5 4 4 3-3 6 6"/>
-                  </svg>
-                `}
-              </div>
-            `).join("")}
-          </div>` : "";
-        const tagsHtml = e.tags && e.tags.length ? `
-          <div class="scrap-tags">
-            <span class="label">With</span>
-            ${e.tags.map(tid => {
-              const tp = F.byId[tid]; if (!tp) return "";
-              return `<button class="scrap-tag" data-id="${tid}">
-                ${thumbHtml(tp, "st-thumb")}
-                <span>${escapeHtml(shortName(tp))}</span>
-              </button>`;
-            }).join("")}
-          </div>` : "";
-        card.innerHTML = `
-          <div class="scrap-date">${formatScrapDate(e.date)}${memorialChip}</div>
-          ${photosHtml}
-          <p class="scrap-caption">${escapeHtml(e.caption)}</p>
-          ${tagsHtml}
-        `;
-        list.appendChild(card);
-      });
-      list.querySelectorAll(".scrap-tag").forEach(el => {
-        el.addEventListener("click", () => {
-          const targetId = el.dataset.id;
-          closeLightbox();
-          setTimeout(() => openPerson(targetId), 280);
-        });
-      });
-    }
+    renderScrapbook(id);
 
     lightbox.classList.add("open");
     document.body.style.overflow = "hidden";

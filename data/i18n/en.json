@@ -138,7 +138,23 @@
     "scrapbookOwn": "Your Scrapbook",
     "scrapbookOf": "{name}'s Scrapbook",
     "emptyScrapbook": "The scrapbook is still waiting for stories.",
-    "emptyScrapbookHint": "Tap + on the canvas to add a memory."
+    "emptyScrapbookHint": "Tap + on the canvas to add a memory.",
+    "scrapbookWith": "With",
+    "autoEvents": {
+      "born": "{name} was born.",
+      "bornAt": "{name} was born in {place}.",
+      "married": "{name} married {spouse}.",
+      "marriedAt": "{name} married {spouse} in {place}.",
+      "childBirth": "{name} welcomed {kin} {child}.",
+      "childBirthAt": "{name} welcomed {kin} {child} in {place}.",
+      "died": "{name} passed away.",
+      "diedAt": "{name} passed away in {place}.",
+      "kin": {
+        "son": "son",
+        "daughter": "daughter",
+        "child": "child"
+      }
+    }
   },
   "calendar": {
     "title": "Family calendar",

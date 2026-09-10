@@ -138,7 +138,23 @@
     "scrapbookOwn": "तुमचे स्मृतिपुस्तक",
     "scrapbookOf": "{name} यांचे स्मृतिपुस्तक",
     "emptyScrapbook": "स्मृतिपुस्तक अजून कथांची वाट पाहत आहे.",
-    "emptyScrapbookHint": "आठवण जोडण्यासाठी कॅनव्हासवर + दाबा."
+    "emptyScrapbookHint": "आठवण जोडण्यासाठी कॅनव्हासवर + दाबा.",
+    "scrapbookWith": "सोबत",
+    "autoEvents": {
+      "born": "{name} यांचा जन्म झाला.",
+      "bornAt": "{name} यांचा जन्म {place} येथे झाला.",
+      "married": "{name} यांचा विवाह {spouse} यांच्याशी झाला.",
+      "marriedAt": "{name} यांचा विवाह {spouse} यांच्याशी {place} येथे झाला.",
+      "childBirth": "{name} यांच्या घरी {kin} {child} यांचा जन्म झाला.",
+      "childBirthAt": "{name} यांच्या घरी {kin} {child} यांचा जन्म {place} येथे झाला.",
+      "died": "{name} यांचे निधन झाले.",
+      "diedAt": "{name} यांचे {place} येथे निधन झाले.",
+      "kin": {
+        "son": "मुलगा",
+        "daughter": "मुलगी",
+        "child": "अपत्य"
+      }
+    }
   },
   "calendar": {
     "title": "कुटुंब दिनदर्शिका",

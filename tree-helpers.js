@@ -1378,6 +1378,31 @@ window.processRawFamilyData = function (rawData, initialMe) {
     };
   });
 
+  /* ------------------------------------------------------------------
+     Auto timeline entries carry their PARTS, not a finished sentence.
+
+     They used to be built here as English strings, which meant the language
+     toggle could never reach them: this function runs once at boot, and by the
+     time someone switches to Marathi the sentence is already baked. So each
+     entry ships a `kind` and a `params` bag, and tree-app.js composes the
+     sentence at render time in whichever language is current.
+
+     Marathi is only ever *carried*, never invented. nameMr comes from the
+     record's own firstNameMr/lastNameMr (via outputPeople, so a caption always
+     agrees with the card above it) and placeMr from birthPlaceMr/deathPlaceMr/
+     placeMr if the Sheet has supplied them. Where a value has no Marathi form,
+     the field is left null and the renderer falls back to the Latin one — the
+     sentence around it still turns Marathi. Nothing is transliterated here.
+     ------------------------------------------------------------------ */
+  const mrNameById = {};
+  outputPeople.forEach(op => {
+    mrNameById[op.id] = [op.firstNameMr, op.lastNameMr].filter(Boolean).join(' ').trim() || null;
+  });
+  const enNameOf = (x) => [x.firstName, x.lastName].filter(Boolean).join(' ').trim();
+  const mrNameOf = (x) => mrNameById[x.id] || null;
+  // An empty string is "the Sheet has no Marathi for this", same as absent.
+  const mrOr = (value) => (value && String(value).trim()) || null;
+
   const outputScrapbook = {};
   persons.forEach(p => {
     const timeline = [];
@@ -1385,7 +1410,11 @@ window.processRawFamilyData = function (rawData, initialMe) {
     if (p.birthDate && !isUnknownBirthDate(p.birthDate)) {
       timeline.push({
         date: p.birthDate,
-        caption: `${p.firstName} ${p.lastName} was born${p.birthPlace ? ' in ' + p.birthPlace : ''}.`,
+        kind: 'born',
+        params: {
+          name: enNameOf(p), nameMr: mrNameOf(p),
+          place: p.birthPlace || null, placeMr: mrOr(p.birthPlaceMr)
+        },
         tags: [],
         photos: [null]
       });
@@ -1401,7 +1430,12 @@ window.processRawFamilyData = function (rawData, initialMe) {
       if (spouse) {
         timeline.push({
           date: spouseRel.startDate,
-          caption: `${p.firstName} ${p.lastName} married ${spouse.firstName} ${spouse.lastName}${spouseRel.place ? ' in ' + spouseRel.place : ''}.`,
+          kind: 'married',
+          params: {
+            name: enNameOf(p), nameMr: mrNameOf(p),
+            spouse: enNameOf(spouse), spouseMr: mrNameOf(spouse),
+            place: spouseRel.place || null, placeMr: mrOr(spouseRel.placeMr)
+          },
           tags: [],
           photos: [null]
         });
@@ -1420,16 +1454,22 @@ window.processRawFamilyData = function (rawData, initialMe) {
         const kin = child.gender && child.gender.toLowerCase() === 'f' ? 'daughter'
                   : child.gender && child.gender.toLowerCase() === 'm' ? 'son'
                   : 'child';
-        const childName = [child.firstName, child.lastName].filter(Boolean).join(' ');
         timeline.push({
           date: child.birthDate,
-          caption: `${p.firstName} ${p.lastName} welcomed ${kin} ${childName}${child.birthPlace ? ' in ' + child.birthPlace : ''}.`,
+          kind: 'childBirth',
+          params: {
+            name: enNameOf(p), nameMr: mrNameOf(p),
+            child: enNameOf(child), childMr: mrNameOf(child),
+            kin,
+            place: child.birthPlace || null, placeMr: mrOr(child.birthPlaceMr)
+          },
           tags: [child.id],
           photos: [null]
         });
       });
 
-    // Merge custom scrapbook entries
+    // Merge custom scrapbook entries. These stay finished sentences: they are written
+    // by hand in the Sheet, in one language, and there is nothing to compose them from.
     const customEntries = rawData.scrapbook && rawData.scrapbook[p.id] ? rawData.scrapbook[p.id] : [];
     customEntries.forEach(e => {
       timeline.push({
@@ -1445,7 +1485,11 @@ window.processRawFamilyData = function (rawData, initialMe) {
     if (p.status === 'deceased' && realDate(p.deathDate)) {
       timeline.push({
         date: p.deathDate,
-        caption: `${p.firstName} ${p.lastName} passed away${p.deathPlace ? ' in ' + p.deathPlace : ''}.`,
+        kind: 'died',
+        params: {
+          name: enNameOf(p), nameMr: mrNameOf(p),
+          place: p.deathPlace || null, placeMr: mrOr(p.deathPlaceMr)
+        },
         tags: [],
         photos: [null],
         // Styled distinctly downstream — same "remembrance" treatment as the
