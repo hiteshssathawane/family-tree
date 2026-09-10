@@ -1408,6 +1408,27 @@ window.processRawFamilyData = function (rawData, initialMe) {
       }
     }
 
+    // A child's birth belongs on the parent's timeline too — it is the one life event
+    // the record already knows about both of them. Same placeholder rule as above: an
+    // UNKNOWN_BIRTH_DATE child is skipped rather than dated. The child is carried as a
+    // tag so the entry doubles as a chip through to their own profile.
+    relationships
+      .filter(r => r.type === 'parent-child' && r.parentId === p.id)
+      .forEach(r => {
+        const child = persons.find(x => x.id === r.childId);
+        if (!child || !realDate(child.birthDate)) return;
+        const kin = child.gender && child.gender.toLowerCase() === 'f' ? 'daughter'
+                  : child.gender && child.gender.toLowerCase() === 'm' ? 'son'
+                  : 'child';
+        const childName = [child.firstName, child.lastName].filter(Boolean).join(' ');
+        timeline.push({
+          date: child.birthDate,
+          caption: `${p.firstName} ${p.lastName} welcomed ${kin} ${childName}${child.birthPlace ? ' in ' + child.birthPlace : ''}.`,
+          tags: [child.id],
+          photos: [null]
+        });
+      });
+
     // Merge custom scrapbook entries
     const customEntries = rawData.scrapbook && rawData.scrapbook[p.id] ? rawData.scrapbook[p.id] : [];
     customEntries.forEach(e => {
