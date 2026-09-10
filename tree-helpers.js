@@ -1403,6 +1403,40 @@ window.processRawFamilyData = function (rawData, initialMe) {
   // An empty string is "the Sheet has no Marathi for this", same as absent.
   const mrOr = (value) => (value && String(value).trim()) || null;
 
+  /* A child's birth is the one event that belongs to a couple rather than a person,
+     so it is captioned as one: "Hitesh & Swati Sathawane welcomed son Dhruv".
+
+     Two details this needs that a bare firstName + lastName cannot give:
+       - the married surname. A wife's record keeps her maiden name, so the couple
+         label is built from the display names computed above, which already apply
+         the husband's surname, minus the "(Biradar)" gloss — that bracket exists to
+         identify a face on a card, and reads as an aside inside a sentence.
+       - a shared surname said once. "Hitesh & Swati Sathawane", not "Hitesh
+         Sathawane & Swati Sathawane"; when the surnames differ, both are spelled out.
+     The subject of the timeline is named first — every other entry on the page opens
+     with them, and a person's own timeline should not refer to them second. */
+  const displayById = {};
+  outputPeople.forEach(op => { displayById[op.id] = { en: op.name, mr: op.nameMr }; });
+  const stripMaiden = (s) => (s || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const splitName = (full) => {
+    const parts = String(full || '').split(/\s+/).filter(Boolean);
+    return parts.length < 2
+      ? { first: parts[0] || '', last: '' }
+      : { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] };
+  };
+  const coupleLabel = (aName, bName, conjunction) => {
+    if (!bName) return aName;
+    const a = splitName(aName), b = splitName(bName);
+    return (a.last && a.last === b.last)
+      ? `${a.first} ${conjunction} ${b.first} ${a.last}`
+      : `${aName} ${conjunction} ${bName}`;
+  };
+  const displayEn = (x) => stripMaiden((displayById[x.id] || {}).en) || enNameOf(x);
+  // Marathi per person, not all-or-nothing: one parent having a Marathi name should
+  // not drag the other back into English. A parent with none keeps their Latin name
+  // inside the Marathi sentence, exactly as every other field does.
+  const displayMr = (x) => stripMaiden((displayById[x.id] || {}).mr) || displayEn(x);
+
   const outputScrapbook = {};
   persons.forEach(p => {
     const timeline = [];
@@ -1454,11 +1488,19 @@ window.processRawFamilyData = function (rawData, initialMe) {
         const kin = child.gender && child.gender.toLowerCase() === 'f' ? 'daughter'
                   : child.gender && child.gender.toLowerCase() === 'm' ? 'son'
                   : 'child';
+        // The other parent, when the record names one — a child with a single known
+        // parent keeps a single name in front of the verb.
+        const coParentId = relationships
+          .filter(rr => rr.type === 'parent-child' && rr.childId === child.id)
+          .map(rr => rr.parentId)
+          .find(pid => pid !== p.id);
+        const coParent = coParentId ? persons.find(x => x.id === coParentId) : null;
         timeline.push({
           date: child.birthDate,
           kind: 'childBirth',
           params: {
-            name: enNameOf(p), nameMr: mrNameOf(p),
+            name:   coupleLabel(displayEn(p), coParent ? displayEn(coParent) : null, '&'),
+            nameMr: coupleLabel(displayMr(p), coParent ? displayMr(coParent) : null, 'आणि'),
             child: enNameOf(child), childMr: mrNameOf(child),
             kin,
             place: child.birthPlace || null, placeMr: mrOr(child.birthPlaceMr)
