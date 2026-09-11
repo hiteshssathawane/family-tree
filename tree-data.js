@@ -1,7 +1,7 @@
 /* ============================================================
    FAMILY TREE DATA (AUTO-GENERATED)
    ----------------------------------------------------------------
-   Generated on: 2026-09-10
+   Generated on: 2026-09-11
    ============================================================ */
 
 window.FAMILY_DATA = {
@@ -10,7 +10,7 @@ window.FAMILY_DATA = {
     "description": "A genealogy record of the Sathawane family.",
     "version": "1.0.0",
     "createdAt": "2026-09-02",
-    "updatedAt": "2026-09-08",
+    "updatedAt": "2026-09-11",
     "rootPersonId": "HITESH_JYOTI_SHANKAR_SATHAWANE",
     "privacy": {
       "hideLivingContactInfo": true,
@@ -42,7 +42,7 @@ window.FAMILY_DATA = {
       "lastNameMr": "साठवणे",
       "biography": null,
       "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_hitesh_jyoti_shankar_sathawane.png",
-      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_hitesh_jyoti_shankar_sathawane.png",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_hitesh_jyoti_shankar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -95,16 +95,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "शंकर",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shankar_vatsala_sampathrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shankar_vatsala_sampathrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Jyoti",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": "Waghmare",
       "gender": "F",
@@ -122,8 +122,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "ज्योती",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_jyoti_manaroma_bhaskarrao_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_jyoti_manaroma_bhaskarrao_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -149,8 +149,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "ध्रुव",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_dhruv_swati_hitesh_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_dhruv_swati_hitesh_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -176,8 +176,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "अर्जुन",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_arjun_swati_hitesh_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_arjun_swati_hitesh_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -203,8 +203,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "संपतराव",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sampathrao_bijabai_somaji_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sampathrao_bijabai_somaji_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -230,8 +230,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "महादेव",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_mahadeo_vatsala_sampathrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_mahadeo_vatsala_sampathrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -252,13 +252,13 @@ window.FAMILY_DATA = {
       "occupation": null,
       "education": null,
       "location": null,
-      "commonName": null,
+      "commonName": "Chottu",
       "commonNameMr": null,
       "firstNameMr": "सुधाकर",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sudhakar_vatsala_sampathrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sudhakar_vatsala_sampathrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -284,8 +284,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "रत्नाकर",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ratnakar_vatsala_sampathrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ratnakar_vatsala_sampathrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -311,16 +311,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "अलका",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_alka_vatsala_sampathrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_alka_vatsala_sampathrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Kalindi",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": "Waghmare",
       "gender": "F",
@@ -338,16 +338,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "कालिंदी",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_kalindi_manaroma_bhaskarrao_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_kalindi_manaroma_bhaskarrao_waghmare.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Vijay",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": null,
       "gender": "M",
@@ -365,16 +365,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "विजय",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vijay_manaroma_bhaskarrao_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vijay_manaroma_bhaskarrao_waghmare.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Ajay",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": null,
       "gender": "M",
@@ -392,16 +392,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "अजय",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ajay_manaroma_bhaskarrao_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ajay_manaroma_bhaskarrao_waghmare.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Shashi",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": null,
       "gender": "M",
@@ -419,16 +419,16 @@ window.FAMILY_DATA = {
       "firstNameMr": "शशी",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shashi_manaroma_bhaskarrao_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shashi_manaroma_bhaskarrao_waghmare.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "SHIRIKANTH_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "SHIRIKANTH_MANAROMA_BHASKARRAO_WAGHMARE",
       "firstName": "Shirikanth",
       "fatherName": "Bhaskarrao",
-      "motherName": "Manorama",
+      "motherName": "Manaroma",
       "lastName": "Waghmare",
       "maidenName": null,
       "gender": "M",
@@ -500,8 +500,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "शैला",
       "lastNameMr": "वैद्य",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shaila_shilabai_ramchandrarao_vaidya.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shaila_shilabai_ramchandrarao_vaidya.jpg",
       "tags": [],
       "private": false
     },
@@ -527,8 +527,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "मीनाक्षी",
       "lastNameMr": "शेंडे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_meenakshi_ramilatai_ganpatrao_shende.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_meenakshi_ramilatai_ganpatrao_shende.jpg",
       "tags": [],
       "private": false
     },
@@ -554,8 +554,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "कल्पना",
       "lastNameMr": "लंबट",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_kalpana_kusum_vasantrao_lambat.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_kalpana_kusum_vasantrao_lambat.jpg",
       "tags": [],
       "private": false
     },
@@ -581,8 +581,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "दशरथ",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_dhashrath_kamlabai_balaji_kalambe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_dhashrath_kamlabai_balaji_kalambe.jpg",
       "tags": [],
       "private": false
     },
@@ -608,8 +608,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "प्रकाश",
       "lastNameMr": "बिस्ने",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_prakashchandra_indirabai_vitthalrao_bisne.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_prakashchandra_indirabai_vitthalrao_bisne.jpg",
       "tags": [],
       "private": false
     },
@@ -635,8 +635,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "हिरा",
       "lastNameMr": "खोदसाकर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_heera_venu_mahadeorao_khodaskar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_heera_venu_mahadeorao_khodaskar.jpg",
       "tags": [],
       "private": false
     },
@@ -662,8 +662,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "संगीता",
       "lastNameMr": "किंमतकर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sangeeta_shalini_bhalchandrarao_kimmatkar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sangeeta_shalini_bhalchandrarao_kimmatkar.jpg",
       "tags": [],
       "private": false
     },
@@ -689,8 +689,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "भावना",
       "lastNameMr": "ठाकरे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_bhavana_prathibha_ramakant_thakre.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_bhavana_prathibha_ramakant_thakre.jpg",
       "tags": [],
       "private": false
     },
@@ -704,7 +704,7 @@ window.FAMILY_DATA = {
       "gender": "M",
       "status": "living",
       "maritalStatus": "married",
-      "birthDate": "1987-04-09",
+      "birthDate": "1987-09-04",
       "birthPlace": "Nagpur",
       "deathDate": null,
       "deathPlace": null,
@@ -716,8 +716,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "गौरव",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_gaurav_jyoti_shankar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_gaurav_jyoti_shankar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -743,8 +743,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "राजश्री",
       "lastNameMr": "लांजेवार",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_rajshree_ujwala_rajeev_lanjewar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_rajshree_ujwala_rajeev_lanjewar.jpg",
       "tags": [],
       "private": false
     },
@@ -770,8 +770,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "एरिशा",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_erisha_rajshree_gaurav_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_erisha_rajshree_gaurav_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -785,7 +785,7 @@ window.FAMILY_DATA = {
       "gender": "M",
       "status": "living",
       "maritalStatus": "married",
-      "birthDate": "1674-06-06",
+      "birthDate": "1986-06-10",
       "birthPlace": "Nagpur",
       "deathDate": null,
       "deathPlace": null,
@@ -794,20 +794,47 @@ window.FAMILY_DATA = {
       "location": null,
       "commonName": null,
       "commonNameMr": null,
-      "firstNameMr": "राजश्री",
+      "firstNameMr": "हर्षल",
       "lastNameMr": "लांजेवार",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_harshal_ujwala_rajeev_lanjewar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_harshal_ujwala_rajeev_lanjewar.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "ERIKA_ONIL_HARSHAL_SATHAWANE",
+      "id": "ONIL___GHOTKAR",
+      "firstName": "Onil",
+      "fatherName": "",
+      "motherName": "",
+      "lastName": "Ghotkar",
+      "maidenName": "Ghotkar",
+      "gender": "F",
+      "status": "living",
+      "maritalStatus": "married",
+      "birthDate": "1988-09-01",
+      "birthPlace": "Nagpur",
+      "deathDate": null,
+      "deathPlace": null,
+      "occupation": null,
+      "education": null,
+      "location": null,
+      "commonName": null,
+      "commonNameMr": null,
+      "firstNameMr": "ओनिल",
+      "lastNameMr": "घोटकर",
+      "biography": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_onil___ghotkar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_onil___ghotkar.jpg",
+      "tags": [],
+      "private": false
+    },
+    {
+      "id": "ERIKA_ONIL_HARSHAL_LANJEWAR",
       "firstName": "Erika",
       "fatherName": "Harshal",
       "motherName": "Onil",
-      "lastName": "Sathawane",
+      "lastName": "Lanjewar",
       "maidenName": null,
       "gender": "F",
       "status": "living",
@@ -821,8 +848,8 @@ window.FAMILY_DATA = {
       "location": null,
       "commonName": null,
       "commonNameMr": null,
-      "firstNameMr": "एरिशा",
-      "lastNameMr": "साठवणे",
+      "firstNameMr": "एरिका",
+      "lastNameMr": "लांजेवार",
       "biography": null,
       "profilePhoto": null,
       "backgroundPhoto": null,
@@ -851,8 +878,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "राहुल",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_rahul_shaila_mahadeo_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_rahul_shaila_mahadeo_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -878,8 +905,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "मृणाल",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_mrunal_shaila_mahadeo_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_mrunal_shaila_mahadeo_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -905,8 +932,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "कल्पना",
       "lastNameMr": "शेंद्रे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_kalpana_nandabai_kamlakarrao_shendre.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_kalpana_nandabai_kamlakarrao_shendre.jpg",
       "tags": [],
       "private": false
     },
@@ -932,8 +959,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "अश्विनी",
       "lastNameMr": "म्हांडे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ashwini_archana_diliprao_mhande.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ashwini_archana_diliprao_mhande.jpg",
       "tags": [],
       "private": false
     },
@@ -959,8 +986,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "तक्षिता",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_takshita_kalpana_rahul_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_takshita_kalpana_rahul_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -986,8 +1013,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "सौरभ",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_saurabh_meenakshi_sudhakar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_saurabh_meenakshi_sudhakar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -1010,11 +1037,11 @@ window.FAMILY_DATA = {
       "location": null,
       "commonName": null,
       "commonNameMr": null,
-      "firstNameMr": null,
+      "firstNameMr": "सिद्धेश",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_siddhesh_meenakshi_sudhakar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_siddhesh_meenakshi_sudhakar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -1067,8 +1094,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "वत्सल",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vatsal_kalpana_ratnakar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vatsal_kalpana_ratnakar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -1094,8 +1121,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "श्वेताल",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shwetal_alka_dhashrath_kalambe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shwetal_alka_dhashrath_kalambe.jpg",
       "tags": [],
       "private": false
     },
@@ -1121,8 +1148,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "शिवानी",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shivani_alka_dhashrath_kalambe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shivani_alka_dhashrath_kalambe.jpg",
       "tags": [],
       "private": false
     },
@@ -1148,8 +1175,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "तृषाली",
       "lastNameMr": "दांडेकर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_trushali_kalpana_babanrao_dandekar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_trushali_kalpana_babanrao_dandekar.jpg",
       "tags": [],
       "private": false
     },
@@ -1175,8 +1202,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "हर्षल",
       "lastNameMr": "खोंडे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_harshal_chhaya_shioshankar_khonde.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_harshal_chhaya_shioshankar_khonde.jpg",
       "tags": [],
       "private": false
     },
@@ -1202,8 +1229,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "यशमक",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_yashmit_trushali_shwetal_kalambe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_yashmit_trushali_shwetal_kalambe.jpg",
       "tags": [],
       "private": false
     },
@@ -1229,8 +1256,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "विरिका",
       "lastNameMr": "खोंडे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_virika_shivani_harshal_khonde.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_virika_shivani_harshal_khonde.jpg",
       "tags": [],
       "private": false
     },
@@ -1256,8 +1283,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "दक्ष",
       "lastNameMr": "खोंडे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_daksh_shivani_harshal_khonde.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_daksh_shivani_harshal_khonde.jpg",
       "tags": [],
       "private": false
     },
@@ -1283,8 +1310,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "आरती",
       "lastNameMr": "बिस्ने",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_aarti_kalindi_prakashchandra_bisne.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_aarti_kalindi_prakashchandra_bisne.jpg",
       "tags": [],
       "private": false
     },
@@ -1310,8 +1337,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "अमित",
       "lastNameMr": "बिस्ने",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_amit_kalindi_prakashchandra_bisne.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_amit_kalindi_prakashchandra_bisne.jpg",
       "tags": [],
       "private": false
     },
@@ -1364,8 +1391,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "मैथिली",
       "lastNameMr": "बुरहानपूर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_maithali_ratna_yogesh_bhuranpure.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_maithali_ratna_yogesh_bhuranpure.jpg",
       "tags": [],
       "private": false
     },
@@ -1391,8 +1418,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "श्रेष्ठ",
       "lastNameMr": "पाहुणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shresht_aarti_vishal_pahune.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shresht_aarti_vishal_pahune.jpg",
       "tags": [],
       "private": false
     },
@@ -1418,8 +1445,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "श्रीमी",
       "lastNameMr": "पाहुणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shrimei_aarti_vishal_pahune.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shrimei_aarti_vishal_pahune.jpg",
       "tags": [],
       "private": false
     },
@@ -1445,8 +1472,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "अनन्या",
       "lastNameMr": "बिस्ने",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ananya_maithali_amit_bisne.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ananya_maithali_amit_bisne.jpg",
       "tags": [],
       "private": false
     },
@@ -1472,8 +1499,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "विवान",
       "lastNameMr": "बिस्ने",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vivan_maithali_amit_bisne.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vivan_maithali_amit_bisne.jpg",
       "tags": [],
       "private": false
     },
@@ -1499,8 +1526,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "सुमित",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sumeet_heera_vijay_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sumeet_heera_vijay_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1526,8 +1553,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "सुस्मित",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_susmit_heera_vijay_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_susmit_heera_vijay_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1553,8 +1580,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "मयुरी",
       "lastNameMr": "अढाऊ",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_mayuri_megha_avinash_adhau.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_mayuri_megha_avinash_adhau.jpg",
       "tags": [],
       "private": false
     },
@@ -1580,8 +1607,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "रियान",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_riyan_mayuri_susmit_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_riyan_mayuri_susmit_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1607,8 +1634,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "सौरभी",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_saurabhi_sangeeta_ajay_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_saurabhi_sangeeta_ajay_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1634,8 +1661,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "ऐश्वर्या",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_aishwarya_sangeeta_ajay_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_aishwarya_sangeeta_ajay_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1661,8 +1688,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "वेदांत",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vedant_sangeeta_ajay_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vedant_sangeeta_ajay_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1688,8 +1715,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "गौरव",
       "lastNameMr": "भिरुड",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_gaurav_shailaja_ramesh_bhirud.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_gaurav_shailaja_ramesh_bhirud.jpg",
       "tags": [],
       "private": false
     },
@@ -1715,8 +1742,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "शाश्वत",
       "lastNameMr": "बावनकर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shashwat_vijaya_rajendra_bavankar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shashwat_vijaya_rajendra_bavankar.jpg",
       "tags": [],
       "private": false
     },
@@ -1742,8 +1769,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "आर्यन",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_aryan_bhavana_shashi_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_aryan_bhavana_shashi_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1769,8 +1796,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "श्रिया",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shriya_bhavana_shashi_waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shriya_bhavana_shashi_waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -1850,8 +1877,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "ज्ञानेश्वर",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_nanyeneshwar_yashodhabai_ganpatrao_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_nanyeneshwar_yashodhabai_ganpatrao_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -1877,8 +1904,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "वनिता",
       "lastNameMr": "बर्डे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vanita_anjanabai_mahadorao_barde.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vanita_anjanabai_mahadorao_barde.jpg",
       "tags": [],
       "private": false
     },
@@ -1931,8 +1958,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "भास्कर",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_bhaskar_vanita_nanyeneshwar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_bhaskar_vanita_nanyeneshwar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -1958,8 +1985,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "माधुरी",
       "lastNameMr": "कारेमोरे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_madhuri_kokila_kiran_karemore.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_madhuri_kokila_kiran_karemore.jpg",
       "tags": [],
       "private": false
     },
@@ -1985,8 +2012,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "प्रवीण",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_praveen_vanita_nanyeneshwar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_praveen_vanita_nanyeneshwar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2012,8 +2039,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "नेहा",
       "lastNameMr": "लंबत",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_neha_pushpa_shamrao_lambat.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_neha_pushpa_shamrao_lambat.jpg",
       "tags": [],
       "private": false
     },
@@ -2039,8 +2066,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "निलेश",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_nilesh_vanita_nanyeneshwar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_nilesh_vanita_nanyeneshwar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2066,8 +2093,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "शिल्पा",
       "lastNameMr": "हिंगणकर",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shilpa___hingankar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shilpa___hingankar.jpg",
       "tags": [],
       "private": false
     },
@@ -2147,8 +2174,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "अवंती",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_avanti_madhuri_bhaskar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_avanti_madhuri_bhaskar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2174,8 +2201,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "स्वरूप",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_swaroop_madhuri_bhaskar_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_swaroop_madhuri_bhaskar_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2201,8 +2228,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "ज्ञाना",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_dnyana_neha_praveen_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_dnyana_neha_praveen_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2228,8 +2255,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "भावेश",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_bhavesh_shilpa_nilesh_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_bhavesh_shilpa_nilesh_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2255,8 +2282,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "वेदिका",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_vedika_shilpa_nilesh_sathawane.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_vedika_shilpa_nilesh_sathawane.jpg",
       "tags": [],
       "private": false
     },
@@ -2288,17 +2315,17 @@ window.FAMILY_DATA = {
       "private": false
     },
     {
-      "id": "AYUSHI_SANDHYA_CHANDRAKANT_SATHAWANE",
-      "firstName": "Ayushi",
-      "fatherName": "Chandrakant",
-      "motherName": "Sandhya",
-      "lastName": "Sathawane",
+      "id": "SACHIN_CHAYA_BHIMRAO_BIRADAR",
+      "firstName": "Sachin",
+      "fatherName": "Bhimrao",
+      "motherName": "Chaya",
+      "lastName": "Biradar",
       "maidenName": null,
-      "gender": "F",
+      "gender": "M",
       "status": "living",
       "maritalStatus": "single",
-      "birthDate": "1674-06-06",
-      "birthPlace": "Nagpur",
+      "birthDate": "1991-07-01",
+      "birthPlace": "Latur",
       "deathDate": null,
       "deathPlace": null,
       "occupation": null,
@@ -2306,11 +2333,11 @@ window.FAMILY_DATA = {
       "location": null,
       "commonName": null,
       "commonNameMr": null,
-      "firstNameMr": "आयुषी",
-      "lastNameMr": "साठवणे",
+      "firstNameMr": "सचिन",
+      "lastNameMr": "बिरादार",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_sachin_chaya_bhimrao_biradar.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_sachin_chaya_bhimrao_biradar.jpg",
       "tags": [],
       "private": false
     },
@@ -2336,14 +2363,14 @@ window.FAMILY_DATA = {
       "firstNameMr": "भास्करराव",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_bhaskarrao___waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_bhaskarrao___waghmare.jpg",
       "tags": [],
       "private": false
     },
     {
-      "id": "MANORAMA___WAGHMARE",
-      "firstName": "Manorama",
+      "id": "MANAROMA___WAGHMARE",
+      "firstName": "Manaroma",
       "fatherName": "",
       "motherName": "",
       "lastName": "Waghmare",
@@ -2363,34 +2390,8 @@ window.FAMILY_DATA = {
       "firstNameMr": "मनोरमा",
       "lastNameMr": "वाघमारे",
       "biography": null,
-      "profilePhoto": null,
-      "backgroundPhoto": null,
-      "tags": [],
-      "private": false
-    },
-    {
-      "id": "ONIL___LANJEWAR",
-      "firstName": "Onil",
-      "fatherName": "",
-      "motherName": "",
-      "lastName": "Lanjewar",
-      "maidenName": null,
-      "gender": "F",
-      "status": "living",
-      "maritalStatus": "married",
-      "birthDate": "1674-06-06",
-      "birthPlace": null,
-      "deathDate": null,
-      "deathPlace": null,
-      "occupation": null,
-      "education": null,
-      "location": null,
-      "commonName": null,
-      "commonNameMr": null,
-      "firstNameMr": null,
-      "lastNameMr": null,
-      "biography": "Spouse of Harshal Lanjewar.",
-      "profilePhoto": null,
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_manaroma___waghmare.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_manaroma___waghmare.jpg",
       "tags": [],
       "private": false
     },
@@ -3552,9 +3553,9 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_JYOTI_MANORAMA_BHASKARRAO_WAGHMARE_SHANKAR_VATSALA_SAMPATHRAO_SATHAWANE",
+      "id": "R_M_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE_SHANKAR_VATSALA_SAMPATHRAO_SATHAWANE",
       "type": "marriage",
-      "person1Id": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "person1Id": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "person2Id": "SHANKAR_VATSALA_SAMPATHRAO_SATHAWANE",
       "startDate": "1984-11-29",
       "endDate": null,
@@ -3618,9 +3619,9 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_KALINDI_MANORAMA_BHASKARRAO_WAGHMARE_PRAKASHCHANDRA_INDIRABAI_VITTHALRAO_BISNE",
+      "id": "R_M_KALINDI_MANAROMA_BHASKARRAO_WAGHMARE_PRAKASHCHANDRA_INDIRABAI_VITTHALRAO_BISNE",
       "type": "marriage",
-      "person1Id": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "person1Id": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "person2Id": "PRAKASHCHANDRA_INDIRABAI_VITTHALRAO_BISNE",
       "startDate": "1975-06-10",
       "endDate": null,
@@ -3629,10 +3630,10 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_HEERA_VENU_MAHADEORAO_KHODASKAR_VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_M_HEERA_VENU_MAHADEORAO_KHODASKAR_VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "marriage",
       "person1Id": "HEERA_VENU_MAHADEORAO_KHODASKAR",
-      "person2Id": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "person2Id": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "startDate": "1986-05-15",
       "endDate": null,
       "endReason": null,
@@ -3640,9 +3641,9 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_AJAY_MANORAMA_BHASKARRAO_WAGHMARE_SANGEETA_SHALINI_BHALCHANDRARAO_KIMMATKAR",
+      "id": "R_M_AJAY_MANAROMA_BHASKARRAO_WAGHMARE_SANGEETA_SHALINI_BHALCHANDRARAO_KIMMATKAR",
       "type": "marriage",
-      "person1Id": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "person1Id": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "person2Id": "SANGEETA_SHALINI_BHALCHANDRARAO_KIMMATKAR",
       "startDate": "1989-06-30",
       "endDate": null,
@@ -3651,10 +3652,10 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_BHAVANA_PRATHIBHA_RAMAKANT_THAKRE_SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_M_BHAVANA_PRATHIBHA_RAMAKANT_THAKRE_SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "marriage",
       "person1Id": "BHAVANA_PRATHIBHA_RAMAKANT_THAKRE",
-      "person2Id": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "person2Id": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
       "startDate": "2004-10-26",
       "endDate": null,
       "endReason": null,
@@ -3673,10 +3674,10 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_HARSHAL_UJWALA_RAJEEV_LANJEWAR_ONIL___LANJEWAR",
+      "id": "R_M_HARSHAL_UJWALA_RAJEEV_LANJEWAR_ONIL___GHOTKAR",
       "type": "marriage",
       "person1Id": "HARSHAL_UJWALA_RAJEEV_LANJEWAR",
-      "person2Id": "ONIL___LANJEWAR",
+      "person2Id": "ONIL___GHOTKAR",
       "startDate": null,
       "endDate": null,
       "endReason": null,
@@ -3860,10 +3861,10 @@ window.FAMILY_DATA = {
       "notes": null
     },
     {
-      "id": "R_M_BHASKARRAO___WAGHMARE_MANORAMA___WAGHMARE",
+      "id": "R_M_BHASKARRAO___WAGHMARE_MANAROMA___WAGHMARE",
       "type": "marriage",
       "person1Id": "BHASKARRAO___WAGHMARE",
-      "person2Id": "MANORAMA___WAGHMARE",
+      "person2Id": "MANAROMA___WAGHMARE",
       "startDate": null,
       "endDate": null,
       "endReason": null,
@@ -4109,9 +4110,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_JYOTI_MANORAMA_BHASKARRAO_WAGHMARE_HITESH_JYOTI_SHANKAR_SATHAWANE",
+      "id": "R_PC_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE_HITESH_JYOTI_SHANKAR_SATHAWANE",
       "type": "parent-child",
-      "parentId": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "HITESH_JYOTI_SHANKAR_SATHAWANE",
       "relation": "biological"
     },
@@ -4144,17 +4145,17 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_BHASKARRAO___WAGHMARE_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
       "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "childId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_MANORAMA___WAGHMARE_JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_MANAROMA___WAGHMARE_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
@@ -4256,73 +4257,73 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_BHASKARRAO___WAGHMARE_KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
       "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "childId": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_MANORAMA___WAGHMARE_KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_MANAROMA___WAGHMARE_KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
-      "type": "parent-child",
-      "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
-      "relation": "biological"
-    },
-    {
-      "id": "R_PC_MANORAMA___WAGHMARE_VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
-      "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
-      "relation": "biological"
-    },
-    {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_BHASKARRAO___WAGHMARE_VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
       "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "childId": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_MANORAMA___WAGHMARE_AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_MANAROMA___WAGHMARE_VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
-      "type": "parent-child",
-      "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
-      "relation": "biological"
-    },
-    {
-      "id": "R_PC_MANORAMA___WAGHMARE_SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
-      "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
-      "relation": "biological"
-    },
-    {
-      "id": "R_PC_BHASKARRAO___WAGHMARE_SHIRIKANTH_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_BHASKARRAO___WAGHMARE_AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
       "parentId": "BHASKARRAO___WAGHMARE",
-      "childId": "SHIRIKANTH_MANORAMA_BHASKARRAO_WAGHMARE",
+      "childId": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_MANORAMA___WAGHMARE_SHIRIKANTH_MANORAMA_BHASKARRAO_WAGHMARE",
+      "id": "R_PC_MANAROMA___WAGHMARE_AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "type": "parent-child",
-      "parentId": "MANORAMA___WAGHMARE",
-      "childId": "SHIRIKANTH_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_BHASKARRAO___WAGHMARE_SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
+      "type": "parent-child",
+      "parentId": "BHASKARRAO___WAGHMARE",
+      "childId": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_MANAROMA___WAGHMARE_SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
+      "type": "parent-child",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_BHASKARRAO___WAGHMARE_SHIRIKANTH_MANAROMA_BHASKARRAO_WAGHMARE",
+      "type": "parent-child",
+      "parentId": "BHASKARRAO___WAGHMARE",
+      "childId": "SHIRIKANTH_MANAROMA_BHASKARRAO_WAGHMARE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_MANAROMA___WAGHMARE_SHIRIKANTH_MANAROMA_BHASKARRAO_WAGHMARE",
+      "type": "parent-child",
+      "parentId": "MANAROMA___WAGHMARE",
+      "childId": "SHIRIKANTH_MANAROMA_BHASKARRAO_WAGHMARE",
       "relation": "biological"
     },
     {
@@ -4452,9 +4453,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_JYOTI_MANORAMA_BHASKARRAO_WAGHMARE_GAURAV_JYOTI_SHANKAR_SATHAWANE",
+      "id": "R_PC_JYOTI_MANAROMA_BHASKARRAO_WAGHMARE_GAURAV_JYOTI_SHANKAR_SATHAWANE",
       "type": "parent-child",
-      "parentId": "JYOTI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "JYOTI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "GAURAV_JYOTI_SHANKAR_SATHAWANE",
       "relation": "biological"
     },
@@ -4501,17 +4502,17 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_HARSHAL_UJWALA_RAJEEV_LANJEWAR_ERIKA_ONIL_HARSHAL_SATHAWANE",
+      "id": "R_PC_HARSHAL_UJWALA_RAJEEV_LANJEWAR_ERIKA_ONIL_HARSHAL_LANJEWAR",
       "type": "parent-child",
       "parentId": "HARSHAL_UJWALA_RAJEEV_LANJEWAR",
-      "childId": "ERIKA_ONIL_HARSHAL_SATHAWANE",
+      "childId": "ERIKA_ONIL_HARSHAL_LANJEWAR",
       "relation": "biological"
     },
     {
-      "id": "R_PC_ONIL___LANJEWAR_ERIKA_ONIL_HARSHAL_SATHAWANE",
+      "id": "R_PC_ONIL___GHOTKAR_ERIKA_ONIL_HARSHAL_LANJEWAR",
       "type": "parent-child",
-      "parentId": "ONIL___LANJEWAR",
-      "childId": "ERIKA_ONIL_HARSHAL_SATHAWANE",
+      "parentId": "ONIL___GHOTKAR",
+      "childId": "ERIKA_ONIL_HARSHAL_LANJEWAR",
       "relation": "biological"
     },
     {
@@ -4746,9 +4747,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_KALINDI_MANORAMA_BHASKARRAO_WAGHMARE_AARTI_KALINDI_PRAKASHCHANDRA_BISNE",
+      "id": "R_PC_KALINDI_MANAROMA_BHASKARRAO_WAGHMARE_AARTI_KALINDI_PRAKASHCHANDRA_BISNE",
       "type": "parent-child",
-      "parentId": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "AARTI_KALINDI_PRAKASHCHANDRA_BISNE",
       "relation": "biological"
     },
@@ -4760,9 +4761,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_KALINDI_MANORAMA_BHASKARRAO_WAGHMARE_AMIT_KALINDI_PRAKASHCHANDRA_BISNE",
+      "id": "R_PC_KALINDI_MANAROMA_BHASKARRAO_WAGHMARE_AMIT_KALINDI_PRAKASHCHANDRA_BISNE",
       "type": "parent-child",
-      "parentId": "KALINDI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "KALINDI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "AMIT_KALINDI_PRAKASHCHANDRA_BISNE",
       "relation": "biological"
     },
@@ -4837,9 +4838,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_VIJAY_MANORAMA_BHASKARRAO_WAGHMARE_SUMEET_HEERA_VIJAY_WAGHMARE",
+      "id": "R_PC_VIJAY_MANAROMA_BHASKARRAO_WAGHMARE_SUMEET_HEERA_VIJAY_WAGHMARE",
       "type": "parent-child",
-      "parentId": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "SUMEET_HEERA_VIJAY_WAGHMARE",
       "relation": "biological"
     },
@@ -4851,9 +4852,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_VIJAY_MANORAMA_BHASKARRAO_WAGHMARE_SUSMIT_HEERA_VIJAY_WAGHMARE",
+      "id": "R_PC_VIJAY_MANAROMA_BHASKARRAO_WAGHMARE_SUSMIT_HEERA_VIJAY_WAGHMARE",
       "type": "parent-child",
-      "parentId": "VIJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "VIJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "SUSMIT_HEERA_VIJAY_WAGHMARE",
       "relation": "biological"
     },
@@ -4893,9 +4894,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_AJAY_MANORAMA_BHASKARRAO_WAGHMARE_SAURABHI_SANGEETA_AJAY_WAGHMARE",
+      "id": "R_PC_AJAY_MANAROMA_BHASKARRAO_WAGHMARE_SAURABHI_SANGEETA_AJAY_WAGHMARE",
       "type": "parent-child",
-      "parentId": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "SAURABHI_SANGEETA_AJAY_WAGHMARE",
       "relation": "biological"
     },
@@ -4907,9 +4908,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_AJAY_MANORAMA_BHASKARRAO_WAGHMARE_AISHWARYA_SANGEETA_AJAY_WAGHMARE",
+      "id": "R_PC_AJAY_MANAROMA_BHASKARRAO_WAGHMARE_AISHWARYA_SANGEETA_AJAY_WAGHMARE",
       "type": "parent-child",
-      "parentId": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "AISHWARYA_SANGEETA_AJAY_WAGHMARE",
       "relation": "biological"
     },
@@ -4921,9 +4922,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_AJAY_MANORAMA_BHASKARRAO_WAGHMARE_VEDANT_SANGEETA_AJAY_WAGHMARE",
+      "id": "R_PC_AJAY_MANAROMA_BHASKARRAO_WAGHMARE_VEDANT_SANGEETA_AJAY_WAGHMARE",
       "type": "parent-child",
-      "parentId": "AJAY_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "AJAY_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "VEDANT_SANGEETA_AJAY_WAGHMARE",
       "relation": "biological"
     },
@@ -4963,9 +4964,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_SHASHI_MANORAMA_BHASKARRAO_WAGHMARE_ARYAN_BHAVANA_SHASHI_WAGHMARE",
+      "id": "R_PC_SHASHI_MANAROMA_BHASKARRAO_WAGHMARE_ARYAN_BHAVANA_SHASHI_WAGHMARE",
       "type": "parent-child",
-      "parentId": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "ARYAN_BHAVANA_SHASHI_WAGHMARE",
       "relation": "biological"
     },
@@ -4977,9 +4978,9 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_SHASHI_MANORAMA_BHASKARRAO_WAGHMARE_SHRIYA_BHAVANA_SHASHI_WAGHMARE",
+      "id": "R_PC_SHASHI_MANAROMA_BHASKARRAO_WAGHMARE_SHRIYA_BHAVANA_SHASHI_WAGHMARE",
       "type": "parent-child",
-      "parentId": "SHASHI_MANORAMA_BHASKARRAO_WAGHMARE",
+      "parentId": "SHASHI_MANAROMA_BHASKARRAO_WAGHMARE",
       "childId": "SHRIYA_BHAVANA_SHASHI_WAGHMARE",
       "relation": "biological"
     },
@@ -5201,17 +5202,17 @@ window.FAMILY_DATA = {
       "relation": "biological"
     },
     {
-      "id": "R_PC_CHANDRAKANT_VANITA_NANYENESHWAR_SATHAWANE_AYUSHI_SANDHYA_CHANDRAKANT_SATHAWANE",
+      "id": "R_PC_BHIMRAO___BIRADAR_SACHIN_CHAYA_BHIMRAO_BIRADAR",
       "type": "parent-child",
-      "parentId": "CHANDRAKANT_VANITA_NANYENESHWAR_SATHAWANE",
-      "childId": "AYUSHI_SANDHYA_CHANDRAKANT_SATHAWANE",
+      "parentId": "BHIMRAO___BIRADAR",
+      "childId": "SACHIN_CHAYA_BHIMRAO_BIRADAR",
       "relation": "biological"
     },
     {
-      "id": "R_PC_SANDHYA___AWACHAT_AYUSHI_SANDHYA_CHANDRAKANT_SATHAWANE",
+      "id": "R_PC_CHAYA___BIRADAR_SACHIN_CHAYA_BHIMRAO_BIRADAR",
       "type": "parent-child",
-      "parentId": "SANDHYA___AWACHAT",
-      "childId": "AYUSHI_SANDHYA_CHANDRAKANT_SATHAWANE",
+      "parentId": "CHAYA___BIRADAR",
+      "childId": "SACHIN_CHAYA_BHIMRAO_BIRADAR",
       "relation": "biological"
     }
   ],
