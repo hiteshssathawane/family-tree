@@ -116,6 +116,9 @@ window.initTreeApp = function () {
      ============================================================ */
   const DEFAULT_PHOTO = "assets/profile-default.png";
   const DEFAULT_COVER = "assets/background-default.png";
+  // How much of a cover photo's height the profile panel shows. Below 1 the band is
+  // shorter than the photo, trimmed evenly top and bottom.
+  const COVER_VISIBLE_HEIGHT = 0.9;
 
   // A photo URL that 404s is the same situation as no photo at all — an R2 object that
   // was deleted, or a Drive link that never got rewritten — and without this the browser
@@ -838,8 +841,18 @@ window.initTreeApp = function () {
   const minimapVp     = document.getElementById("minimap-viewport");
   function updateMinimap() {
     const mc = minimapCanvas;
+    // Draw in CSS pixels, not backing-store pixels. The viewport rect is a plain
+    // absolutely-positioned div, so its coordinates are CSS pixels either way — when the
+    // two spaces differed the green box sat at a multiple of its true position.
+    const dpr = window.devicePixelRatio || 1;
+    const w = mc.clientWidth, h = mc.clientHeight;
+    if (!w || !h) return;
+    if (mc.width !== Math.round(w * dpr) || mc.height !== Math.round(h * dpr)) {
+      mc.width  = Math.round(w * dpr);
+      mc.height = Math.round(h * dpr);
+    }
     const ctx = mc.getContext("2d");
-    const w = mc.width, h = mc.height;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     // bounds of all people
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -880,7 +893,7 @@ window.initTreeApp = function () {
         else if (id !== ME) color = "#2D7A2D";
       }
       ctx.fillStyle = color;
-      const r = p.me ? 4 : (p.deceased ? 2.5 : 3);
+      const r = p.me ? 3 : (p.deceased ? 1.8 : 2.2);
       ctx.beginPath();
       ctx.arc(p.x * s + ox, p.y * s + oy, r, 0, Math.PI * 2);
       ctx.fill();
@@ -896,10 +909,14 @@ window.initTreeApp = function () {
     const top    = wTop    * s + oy;
     const wid    = (wRight - wLeft) * s;
     const hgt    = (wBottom - wTop) * s;
-    minimapVp.style.left   = Math.max(0, left) + "px";
-    minimapVp.style.top    = Math.max(0, top)  + "px";
-    minimapVp.style.width  = Math.min(w, wid)  + "px";
-    minimapVp.style.height = Math.min(h, hgt)  + "px";
+    // Clip to the minimap rather than clamping each side on its own: clamping the origin
+    // up to 0 while keeping the full width pushed the far edge past where the view ends.
+    const x0 = Math.max(0, left), x1 = Math.min(w, left + wid);
+    const y0 = Math.max(0, top),  y1 = Math.min(h, top  + hgt);
+    minimapVp.style.left   = x0 + "px";
+    minimapVp.style.top    = y0 + "px";
+    minimapVp.style.width  = Math.max(0, x1 - x0) + "px";
+    minimapVp.style.height = Math.max(0, y1 - y0) + "px";
   }
 
   /* ============================================================
@@ -1011,18 +1028,15 @@ window.initTreeApp = function () {
       const memorialChip = e.remembrance
         ? `<span class="scrap-memorial-chip">🕯 ${window.CURRENT_LANG === "MR" ? "स्मरणार्थ" : "In Memory"}</span>`
         : "";
-      const photos = (e.photos || []).slice(0, 3);
+      // Generated entries (birth, marriage, a child's birth) carry photos:[null] as a slot
+      // for a photo nobody has added yet. Rendering that slot gave every one of them a
+      // full-width empty frame, so only real photos get a box.
+      const photos = (e.photos || []).filter(Boolean).slice(0, 3);
       const photosHtml = photos.length ? `
         <div class="scrap-photos count-${photos.length}">
           ${photos.map(ph => `
-            <div class="scrap-photo ${ph ? "has-photo" : ""}">
-              ${ph ? `<img src="${ph}" alt="" loading="lazy">` : `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:#8a5a36">
-                  <rect x="3" y="5" width="18" height="14" rx="2"/>
-                  <circle cx="9" cy="11" r="1.5"/>
-                  <path d="M3 17l5-5 4 4 3-3 6 6"/>
-                </svg>
-              `}
+            <div class="scrap-photo has-photo">
+              <img src="${ph}" alt="" loading="lazy">
             </div>
           `).join("")}
         </div>` : "";
@@ -1474,12 +1488,24 @@ window.initTreeApp = function () {
     // If person has a background cover photo, render it in full resolution. Otherwise, blur profile photo.
     // Only a real cover opens in the viewer — the blurred fallback is the avatar again,
     // and the avatar is already clickable in its own right.
+    // Only a real cover gets to reshape the box; the fallbacks keep the CSS default band.
+    cover.style.removeProperty("--cover-ratio");
     if (p.backgroundPhoto) {
       const img = document.createElement("img");
       img.className = "lb-cover-img";
       img.src = p.backgroundPhoto;
       img.loading = "lazy";
       img.dataset.viewerSrc = p.backgroundPhoto;
+      // Shape the box to the photo, showing COVER_VISIBLE_HEIGHT of it — object-position
+      // is centred, so the remainder comes off the top and bottom evenly. Clamped because
+      // a portrait or near-square upload would otherwise push the profile below the fold.
+      const fitCover = () => {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const r = img.naturalWidth / img.naturalHeight / COVER_VISIBLE_HEIGHT;
+        cover.style.setProperty("--cover-ratio", Math.min(4, Math.max(16 / 9, r)));
+      };
+      img.addEventListener("load", fitCover);
+      if (img.complete) fitCover();
       coverMedia.appendChild(img);
     } else if (p.photo) {
       const img = document.createElement("img");
