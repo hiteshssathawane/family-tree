@@ -911,6 +911,19 @@ family.persons.forEach(p => {
     matchedEntry.personId = p.id;
 
     addAuthEntry(matchedEntry);
+
+    // A married woman can also sign in under her maiden surname; same person, same role.
+    const maidenLast = (p.maidenName || p.lastName || '').trim();
+    if (maidenLast && maidenLast.toLowerCase() !== String(loginLastName).trim().toLowerCase()) {
+      const maidenName = `${p.firstName} ${maidenLast}`.trim();
+      const maidenNorm = (maidenName.toLowerCase().replace(/\s+/g, '') + dobForHash).replace(/[^a-z0-9]/g, '');
+      addAuthEntry({
+        ...matchedEntry,
+        hash: createHash('sha256').update(maidenNorm).digest('hex'),
+        displayName: maidenName,
+        personId: p.id
+      });
+    }
   }
 });
 
