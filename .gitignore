@@ -23,3 +23,10 @@ backups/
 # "Family Details.csv" carries mobile numbers (CLAUDE.md rule 5).
 # Photos live in Cloudflare R2; family.json holds their public URLs.
 Family/
+
+# Throwaway probes and local session notes
+scratch/
+NEXT_SESSION.md
+
+# Per-machine Claude Code permissions
+.claude/settings.local.json
