@@ -2017,7 +2017,7 @@ window.initTreeApp = function () {
         ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 3c1.5 2 3 3.5 3 5.5a3 3 0 0 1-6 0C9 6.5 10.5 5 12 3zM8 21h8M12 14v7"/></svg> ${window.CURRENT_LANG === "MR" ? "पुण्यतिथी" : "Remembrance"}`
         : occ.type === "birthday"
           ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M4 21h16M5 21v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6M5 17c2 1.5 3 1.5 5 0s3-1.5 5 0 3 1.5 4 0M12 13V9M12 6v.5"/></svg> ${occ.isDeceased ? (window.CURRENT_LANG === "MR" ? "जयंती" : "Birth Anniversary") : (window.CURRENT_LANG === "MR" ? "वाढदिवस" : "Birthday")}`
-          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h8"/></svg> ${window.CURRENT_LANG === "MR" ? "लग्नाचा वाढदिवस" : "Anniversary"}`;
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px; height:12px;"><path d="M12 20.5s-7.5-4.6-7.5-10A4.5 4.5 0 0 1 12 7.6a4.5 4.5 0 0 1 7.5 2.9c0 5.4-7.5 10-7.5 10z"/></svg> ${window.CURRENT_LANG === "MR" ? "लग्नाचा वाढदिवस" : "Anniversary"}`;
 
       // The marker the owner asked for: every card about a deceased member says so.
       const memorialChip = occ.isDeceased
