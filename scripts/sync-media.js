@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { PutObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, ListObjectsV2Command, CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import 'dotenv/config'; // Loads variables from .env file if it exists
 import crypto from 'crypto';
 import { execSync } from 'child_process';
@@ -195,15 +195,78 @@ async function syncField(person, fieldName, filePrefix) {
   return false;
 }
 
-async function findExistingR2Photo(filePrefix, personId) {
-  for (const ext of ['jpg', 'png', 'webp']) {
-    const key = `${filePrefix}_${personId.toLowerCase()}.${ext}`;
-    try {
-      await r2.send(new HeadObjectCommand({ Bucket: bucketName, Key: key }));
-      return `${publicBaseUrl}/${key}`;
-    } catch (_) { /* not found, try next extension */ }
+// R2 files are named after the person ID, and the ID is built from spellings. Correcting a
+// spelling in the Sheet changes the ID, orphaning the photo under its old name. Find the
+// orphan whose old name is a near-miss of the new ID (same first name, small edit distance)
+// and copy it to the new name. Ambiguous matches are skipped rather than guessed.
+let r2KeyCache = null;
+let knownPersonStems = new Set();
+const claimedOrphans = new Set();
+
+async function listR2Keys() {
+  if (r2KeyCache) return r2KeyCache;
+  const keys = new Set();
+  let token;
+  do {
+    const out = await r2.send(new ListObjectsV2Command({ Bucket: bucketName, ContinuationToken: token }));
+    (out.Contents || []).forEach(o => keys.add(o.Key));
+    token = out.NextContinuationToken;
+  } while (token);
+  r2KeyCache = keys;
+  return keys;
+}
+
+function editDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
   }
-  return null;
+  return prev[b.length];
+}
+
+async function findExistingR2Photo(filePrefix, personId) {
+  const keys = await listR2Keys();
+  const stem = personId.toLowerCase();
+
+  for (const ext of ['jpg', 'png', 'webp']) {
+    const key = `${filePrefix}_${stem}.${ext}`;
+    if (keys.has(key)) return `${publicBaseUrl}/${key}`;
+  }
+
+  const limit = Math.max(3, Math.round(stem.length * 0.2));
+  const firstName = stem.split('_')[0];
+  const candidates = [];
+  for (const key of keys) {
+    const m = key.match(new RegExp(`^${filePrefix}_(.+)\\.(jpg|png|webp)$`));
+    if (!m || knownPersonStems.has(m[1]) || claimedOrphans.has(key)) continue;
+    if (editDistance(m[1].split('_')[0], firstName) > 2) continue;
+    const dist = editDistance(stem, m[1]);
+    if (dist <= limit) candidates.push({ key, ext: m[2], dist });
+  }
+  candidates.sort((a, b) => a.dist - b.dist);
+  if (!candidates.length) return null;
+  if (candidates.length > 1 && candidates[0].dist === candidates[1].dist) {
+    console.warn(`   ⚠️  Ambiguous old R2 photos for ${personId}: ${candidates.map(c => c.key).join(', ')} — not copying.`);
+    return null;
+  }
+
+  const best = candidates[0];
+  const newKey = `${filePrefix}_${stem}.${best.ext}`;
+  await r2.send(new CopyObjectCommand({
+    Bucket: bucketName,
+    CopySource: `${bucketName}/${best.key}`,
+    Key: newKey,
+    ContentType: best.ext === 'jpg' ? 'image/jpeg' : `image/${best.ext}`,
+    MetadataDirective: 'REPLACE',
+  }));
+  claimedOrphans.add(best.key);
+  keys.add(newKey);
+  console.log(`   📋 Copied old R2 photo ${best.key} -> ${newKey}`);
+  return `${publicBaseUrl}/${newKey}`;
 }
 
 async function syncScrapbook(family) {
@@ -259,6 +322,7 @@ async function sync() {
   }
 
   const family = JSON.parse(readFileSync(familyPath, 'utf8'));
+  knownPersonStems = new Set(family.persons.map(p => p.id.toLowerCase()));
   let updated = false;
 
   console.log('📸 Scanning family.json for Google Drive media links...');
