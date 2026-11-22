@@ -53,7 +53,7 @@ Follow this checklist to manually test the core features of the application.
 ### 🔑 1. Authentication & Sign-in Flow
 * [ ] **Family Password Gate**
   * Type an incorrect password and click **Continue**. Verify that an alert error is shown.
-  * Enter the correct family password: `InLovingMemoryOfJyoti=Energy` and click **Continue**. Verify it smoothly transitions to the Name & DOB step.
+  * Enter the correct family password: the family password (GitHub secret `FAMILY_PASSWORD`) and click **Continue**. Verify it smoothly transitions to the Name & DOB step.
 * [ ] **Identity Hash Verification**
   * Input a random name/DOB (e.g., "John Doe", "01/01/2000") and click **Continue**. Verify it shows an identity verification failure.
   * Input the correct credentials for **Hitesh Sathawane** (Admin):

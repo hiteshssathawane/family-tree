@@ -4648,11 +4648,6 @@
     });
 
     function nextStep() {
-      const pwd = document.getElementById('familyPassword').value;
-      if (pwd.trim() !== 'InLovingMemoryOfJyoti=Energy') {
-        alert('Incorrect family password. Please try again.');
-        return;
-      }
       document.getElementById('step1').classList.remove('active');
       document.getElementById('step2').classList.add('active');
     }

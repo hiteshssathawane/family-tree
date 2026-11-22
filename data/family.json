@@ -4,7 +4,7 @@
     "description": "A genealogy record of the Sathawane family.",
     "version": "1.0.0",
     "createdAt": "2026-09-02",
-    "updatedAt": "2026-11-09",
+    "updatedAt": "2026-11-22",
     "rootPersonId": "HITESH_JYOTI_SHANKAR_SATHAWANE",
     "privacy": {
       "hideLivingContactInfo": true,
@@ -932,12 +932,12 @@
       "private": false
     },
     {
-      "id": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "id": "ASHWINI_ARCHANA_DILIP_MENDHE",
       "firstName": "Ashwini",
-      "fatherName": "Diliprao",
+      "fatherName": "Dilip",
       "motherName": "Archana",
-      "lastName": "Mhande",
-      "maidenName": "Mhande",
+      "lastName": "Mendhe",
+      "maidenName": null,
       "gender": "F",
       "status": "living",
       "maritalStatus": "married",
@@ -953,8 +953,8 @@
       "firstNameMr": "अश्विनी",
       "lastNameMr": "म्हांडे",
       "biography": null,
-      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ashwini_archana_diliprao_mhande.jpg",
-      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ashwini_archana_diliprao_mhande.jpg",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_ashwini_archana_dilip_mendhe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_ashwini_archana_dilip_mendhe.jpg",
       "tags": [],
       "private": false
     },
@@ -1007,7 +1007,7 @@
       "firstNameMr": "सौरभ",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": "https://drive.google.com/open?id=1oEJIkQFLJ3BEzKKKL73DZeLzHTcCIodn",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_saurabh_minakshi_sudhakar_sathawane.jpg",
       "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_saurabh_minakshi_sudhakar_sathawane.jpg",
       "tags": [],
       "private": false
@@ -1034,7 +1034,7 @@
       "firstNameMr": "सिद्धेश",
       "lastNameMr": "साठवणे",
       "biography": null,
-      "profilePhoto": "https://drive.google.com/open?id=1GyALzI7X3WqFrXFKyxoKrApaUOZMCSTK",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_siddhesh_minakshi_sudhakar_sathawane.jpg",
       "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_siddhesh_minakshi_sudhakar_sathawane.jpg",
       "tags": [],
       "private": false
@@ -1112,11 +1112,11 @@
       "location": null,
       "commonName": "Mickey",
       "commonNameMr": null,
-      "firstNameMr": "श्वेताल",
+      "firstNameMr": "श्वेतल",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": "https://drive.google.com/open?id=1re9Kyg8WrRxvC9n5Sw71PTw82mgn9Oh7",
-      "backgroundPhoto": "https://drive.google.com/open?id=1re9Kyg8WrRxvC9n5Sw71PTw82mgn9Oh7",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shwetal_alka_dashrath_kalambe.jpg",
+      "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shwetal_alka_dashrath_kalambe.jpg",
       "tags": [],
       "private": false
     },
@@ -1142,7 +1142,7 @@
       "firstNameMr": "शिवानी",
       "lastNameMr": "कळंबे",
       "biography": null,
-      "profilePhoto": "https://drive.google.com/open?id=1xVKg201-9e-4mkKaZZ5c_K8VXfRlV-gO",
+      "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_shivani_alka_dashrath_kalambe.jpg",
       "backgroundPhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/background_shivani_alka_dashrath_kalambe.jpg",
       "tags": [],
       "private": false
@@ -1220,7 +1220,7 @@
       "location": null,
       "commonName": null,
       "commonNameMr": null,
-      "firstNameMr": "यशमक",
+      "firstNameMr": "यशमीत",
       "lastNameMr": "कळंबे",
       "biography": null,
       "profilePhoto": "https://pub-51dbdc7eb2f346efb74d0ec6e3b08829.r2.dev/profile_yashmit_trushali_shwetal_kalambe.jpg",
@@ -2390,6 +2390,32 @@
       "private": false
     },
     {
+      "id": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "firstName": "Ashwini",
+      "fatherName": "Diliprao",
+      "motherName": "Archana",
+      "lastName": "Mhande",
+      "maidenName": "Mhande",
+      "gender": "F",
+      "status": "living",
+      "maritalStatus": "married",
+      "birthDate": "1674-06-06",
+      "birthPlace": null,
+      "deathDate": null,
+      "deathPlace": null,
+      "occupation": null,
+      "education": null,
+      "location": null,
+      "commonName": null,
+      "commonNameMr": null,
+      "firstNameMr": null,
+      "lastNameMr": null,
+      "biography": "Spouse of Mrunal Sathawane.",
+      "profilePhoto": null,
+      "tags": [],
+      "private": false
+    },
+    {
       "id": "BIJABAI___SAKHARKAR",
       "firstName": "Bijabai",
       "fatherName": "",
@@ -3014,11 +3040,11 @@
       "private": false
     },
     {
-      "id": "DILIPRAO___MHANDE",
-      "firstName": "Diliprao",
+      "id": "DILIP___MENDHE",
+      "firstName": "Dilip",
       "fatherName": "",
       "motherName": "",
-      "lastName": "Mhande",
+      "lastName": "Mendhe",
       "maidenName": null,
       "gender": "M",
       "status": "living",
@@ -3034,17 +3060,17 @@
       "commonNameMr": null,
       "firstNameMr": null,
       "lastNameMr": null,
-      "biography": "Father of Ashwini Mhande.",
+      "biography": "Father of Ashwini Mendhe.",
       "profilePhoto": null,
       "tags": [],
       "private": false
     },
     {
-      "id": "ARCHANA___MHANDE",
+      "id": "ARCHANA___MENDHE",
       "firstName": "Archana",
       "fatherName": "",
       "motherName": "",
-      "lastName": "Mhande",
+      "lastName": "Mendhe",
       "maidenName": null,
       "gender": "F",
       "status": "living",
@@ -3060,7 +3086,7 @@
       "commonNameMr": null,
       "firstNameMr": null,
       "lastNameMr": null,
-      "biography": "Mother of Ashwini Mhande.",
+      "biography": "Mother of Ashwini Mendhe.",
       "profilePhoto": null,
       "tags": [],
       "private": false
@@ -3532,6 +3558,32 @@
       "profilePhoto": null,
       "tags": [],
       "private": false
+    },
+    {
+      "id": "DILIPRAO___MHANDE",
+      "firstName": "Diliprao",
+      "fatherName": "",
+      "motherName": "",
+      "lastName": "Mhande",
+      "maidenName": null,
+      "gender": "M",
+      "status": "deceased",
+      "maritalStatus": "married",
+      "birthDate": "1674-06-06",
+      "birthPlace": null,
+      "deathDate": null,
+      "deathPlace": null,
+      "occupation": null,
+      "education": null,
+      "location": null,
+      "commonName": null,
+      "commonNameMr": null,
+      "firstNameMr": null,
+      "lastNameMr": null,
+      "biography": "Father of Ashwini Mhande.",
+      "profilePhoto": null,
+      "tags": [],
+      "private": false
     }
   ],
   "relationships": [
@@ -3693,6 +3745,17 @@
       "id": "R_M_ASHWINI_ARCHANA_DILIPRAO_MHANDE_MRUNAL_SHAILA_MAHADEO_SATHAWANE",
       "type": "marriage",
       "person1Id": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "person2Id": "MRUNAL_SHAILA_MAHADEO_SATHAWANE",
+      "startDate": "2022-11-27",
+      "endDate": null,
+      "endReason": null,
+      "place": null,
+      "notes": null
+    },
+    {
+      "id": "R_M_ASHWINI_ARCHANA_DILIP_MENDHE_MRUNAL_SHAILA_MAHADEO_SATHAWANE",
+      "type": "marriage",
+      "person1Id": "ASHWINI_ARCHANA_DILIP_MENDHE",
       "person2Id": "MRUNAL_SHAILA_MAHADEO_SATHAWANE",
       "startDate": "2022-11-27",
       "endDate": null,
@@ -3987,10 +4050,10 @@
       "notes": "Auto-created parental marriage link."
     },
     {
-      "id": "R_M_ARCHANA___MHANDE_DILIPRAO___MHANDE",
+      "id": "R_M_ARCHANA___MENDHE_DILIP___MENDHE",
       "type": "marriage",
-      "person1Id": "ARCHANA___MHANDE",
-      "person2Id": "DILIPRAO___MHANDE",
+      "person1Id": "ARCHANA___MENDHE",
+      "person2Id": "DILIP___MENDHE",
       "startDate": null,
       "endDate": null,
       "endReason": null,
@@ -4090,6 +4153,17 @@
       "type": "marriage",
       "person1Id": "PUSHPA___LAMBAT",
       "person2Id": "SHAMRAO___LAMBAT",
+      "startDate": null,
+      "endDate": null,
+      "endReason": null,
+      "place": null,
+      "notes": "Auto-created parental marriage link."
+    },
+    {
+      "id": "R_M_ARCHANA___MENDHE_DILIPRAO___MHANDE",
+      "type": "marriage",
+      "person1Id": "ARCHANA___MENDHE",
+      "person2Id": "DILIPRAO___MHANDE",
       "startDate": null,
       "endDate": null,
       "endReason": null,
@@ -4552,17 +4626,17 @@
       "relation": "biological"
     },
     {
-      "id": "R_PC_DILIPRAO___MHANDE_ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "id": "R_PC_DILIP___MENDHE_ASHWINI_ARCHANA_DILIP_MENDHE",
       "type": "parent-child",
-      "parentId": "DILIPRAO___MHANDE",
-      "childId": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "parentId": "DILIP___MENDHE",
+      "childId": "ASHWINI_ARCHANA_DILIP_MENDHE",
       "relation": "biological"
     },
     {
-      "id": "R_PC_ARCHANA___MHANDE_ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "id": "R_PC_ARCHANA___MENDHE_ASHWINI_ARCHANA_DILIP_MENDHE",
       "type": "parent-child",
-      "parentId": "ARCHANA___MHANDE",
-      "childId": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "parentId": "ARCHANA___MENDHE",
+      "childId": "ASHWINI_ARCHANA_DILIP_MENDHE",
       "relation": "biological"
     },
     {
@@ -5207,6 +5281,20 @@
       "type": "parent-child",
       "parentId": "CHAYA___BIRADAR",
       "childId": "SACHIN_CHAYA_BHIMRAO_BIRADAR",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_DILIPRAO___MHANDE_ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "type": "parent-child",
+      "parentId": "DILIPRAO___MHANDE",
+      "childId": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "relation": "biological"
+    },
+    {
+      "id": "R_PC_ARCHANA___MENDHE_ASHWINI_ARCHANA_DILIPRAO_MHANDE",
+      "type": "parent-child",
+      "parentId": "ARCHANA___MENDHE",
+      "childId": "ASHWINI_ARCHANA_DILIPRAO_MHANDE",
       "relation": "biological"
     }
   ],

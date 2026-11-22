@@ -116,7 +116,7 @@ There is no `media/` directory and no `public/` directory. Photos live in Cloudf
 
 ### Layer 1 — staticrypt AES-256
 - Encrypts entire `index.html` before deploy
-- Family password: `InLovingMemoryOfJyoti=Energy`
+- Family password: the family password (GitHub secret `FAMILY_PASSWORD`)
 - Password NEVER committed to repo — set as GitHub Secret only
 - GitHub Action runs staticrypt on every push to main
 
@@ -209,7 +209,7 @@ Role       : admin
 ```
 Repo   : hiteshssathawane/family-tree (public — safe, AES-256 encrypted)
 Branch : main → auto-deploys via GitHub Actions to GitHub Pages
-Secret : FAMILY_PASSWORD = InLovingMemoryOfJyoti=Energy
+Secret : FAMILY_PASSWORD (GitHub → Settings → Environments → github-pages; value never committed)
          (GitHub → Settings → Secrets → Actions)
 ```
 

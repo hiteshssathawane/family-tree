@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import 'dotenv/config'; // Loads variables from .env file if it exists
 import crypto from 'crypto';
 import { execSync } from 'child_process';
@@ -182,10 +182,28 @@ async function syncField(person, fieldName, filePrefix) {
         return true;
       } catch (err) {
         console.error(`   ❌ Failed to sync media for ${person.firstName} [${fieldName}]: ${err.message}`);
+        // Drive originals are deleted after upload, so R2 may already hold the photo
+        const existingUrl = await findExistingR2Photo(filePrefix, person.id);
+        if (existingUrl) {
+          console.log(`   ♻️  Drive file is gone, reusing existing R2 photo: ${existingUrl}`);
+          person[fieldName] = existingUrl;
+          return true;
+        }
       }
     }
   }
   return false;
+}
+
+async function findExistingR2Photo(filePrefix, personId) {
+  for (const ext of ['jpg', 'png', 'webp']) {
+    const key = `${filePrefix}_${personId.toLowerCase()}.${ext}`;
+    try {
+      await r2.send(new HeadObjectCommand({ Bucket: bucketName, Key: key }));
+      return `${publicBaseUrl}/${key}`;
+    } catch (_) { /* not found, try next extension */ }
+  }
+  return null;
 }
 
 async function syncScrapbook(family) {

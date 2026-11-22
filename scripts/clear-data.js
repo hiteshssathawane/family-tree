@@ -213,7 +213,7 @@ try {
 // 6. Print login credentials for verification
 console.log('\n🔑 Use the following credentials to sign in:');
 console.log('═════════════════════════════════════════════');
-console.log(`  Family Password : InLovingMemoryOfJyoti=Energy`);
+console.log(`  Family Password : (see FAMILY_PASSWORD secret)`);
 console.log(`  Full Name       : ${hiteshName}`);
 console.log(`  Date of Birth   : ${hiteshDobFormatted}`);
 console.log(`  Admin Person ID : ${hiteshId}`);
