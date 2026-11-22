@@ -724,7 +724,18 @@ window.initTreeApp = function () {
   function fitAll() {
     fitToIds(F.people.map(p => p.id), 120);
   }
-  function centerOnMe() { panToPerson(ME, { scale: 1.0 }); }
+  function centerOnMe() {
+    const me = F.byId[ME];
+    const sp = me && me.spouse && F.byId[me.spouse];
+    if (window.innerWidth <= 768 && sp) {
+      // On a phone, frame the couple together instead of cutting the spouse off the edge.
+      const scale = Math.max(minScale, Math.min(1, (canvas.clientWidth - 24) / (Math.abs(me.x - sp.x) + 150)));
+      // The -110 lifts the couple into the gap between the header and the bottom nav.
+      setView({ x: -((me.x + sp.x) / 2) * scale, y: -((me.y + sp.y) / 2) * scale - 110, scale }, true);
+      return;
+    }
+    panToPerson(ME, { scale: 1.0 });
+  }
 
   // Mouse drag
   let dragging = false, dragStart = null, viewStart = null;
@@ -2351,8 +2362,8 @@ window.initTreeApp = function () {
     // Ancestors (parents are visible just above, grandparents/great-grandparents
     // require panning up) stay outside the chrome zone naturally.
     setTimeout(() => {
-      const isMobile = window.innerWidth <= 768;
-      panToPerson(ME, { scale: isMobile ? 1.0 : 0.95 });
+      if (window.innerWidth <= 768) centerOnMe();
+      else panToPerson(ME, { scale: 0.95 });
     }, 80);
   }
 

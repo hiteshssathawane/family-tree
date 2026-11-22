@@ -3105,8 +3105,18 @@
     .wordmark { display: none; }
     .me-chip .mc-name { display: none; }
     .me-chip { padding: 4px; }
-    .tags-row { padding: 4px 12px 8px; }
-    .tag { padding: 6px 11px; font-size: 11.5px; }
+    .top-tabs { display: none; }
+    .tags-row {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin: 8px -12px 0;
+      padding: 2px 12px 8px;
+    }
+    .tags-row::-webkit-scrollbar { display: none; }
+    .tag { padding: 6px 11px; font-size: 11.5px; white-space: nowrap; }
     .zoom-ctrls { bottom: 84px; right: 12px; }
     .minimap { display: none; }
     .mobile-nav { display: block; }
